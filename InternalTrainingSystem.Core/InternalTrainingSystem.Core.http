@@ -1,0 +1,6 @@
+@InternalTrainingSystem.Core_HostAddress = http://localhost:5149
+
+GET {{InternalTrainingSystem.Core_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
