@@ -33,7 +33,15 @@ namespace InternalTrainingSystem.Core.Extensions
                     if (value.StartsWith('"') && value.EndsWith('"'))
                         value = value[1..^1];
                     
-                    envVars[key] = value;
+                    // Map CONNECTION_STRING to proper configuration key
+                    if (key == "CONNECTION_STRING")
+                    {
+                        envVars["ConnectionStrings:DefaultConnection"] = value;
+                    }
+                    else
+                    {
+                        envVars[key] = value;
+                    }
                 }
                 
                 configuration.AddInMemoryCollection(envVars);
