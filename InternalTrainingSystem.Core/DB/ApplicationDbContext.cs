@@ -1,0 +1,195 @@
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Models;
+
+namespace InternalTrainingSystem.Core.DB
+{
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<Course> Courses { get; set; }
+        public DbSet<CourseEnrollment> CourseEnrollments { get; set; }
+        public DbSet<Quiz> Quizzes { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<Answer> Answers { get; set; }
+        public DbSet<QuizAttempt> QuizAttempts { get; set; }
+        public DbSet<UserAnswer> UserAnswers { get; set; }
+        public DbSet<Schedule> Schedules { get; set; }
+        public DbSet<ScheduleParticipant> ScheduleParticipants { get; set; }
+        public DbSet<CourseHistory> CourseHistories { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            // Course relationships
+            builder.Entity<Course>()
+                .HasOne(c => c.CreatedBy)
+                .WithMany(u => u.CreatedCourses)
+                .HasForeignKey(c => c.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // CourseEnrollment relationships
+            builder.Entity<CourseEnrollment>()
+                .HasOne(ce => ce.User)
+                .WithMany(u => u.CourseEnrollments)
+                .HasForeignKey(ce => ce.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<CourseEnrollment>()
+                .HasOne(ce => ce.Course)
+                .WithMany(c => c.CourseEnrollments)
+                .HasForeignKey(ce => ce.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Quiz relationships
+            builder.Entity<Quiz>()
+                .HasOne(q => q.Course)
+                .WithMany(c => c.Quizzes)
+                .HasForeignKey(q => q.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Question relationships
+            builder.Entity<Question>()
+                .HasOne(q => q.Quiz)
+                .WithMany(qz => qz.Questions)
+                .HasForeignKey(q => q.QuizId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Answer relationships
+            builder.Entity<Answer>()
+                .HasOne(a => a.Question)
+                .WithMany(q => q.Answers)
+                .HasForeignKey(a => a.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // QuizAttempt relationships
+            builder.Entity<QuizAttempt>()
+                .HasOne(qa => qa.User)
+                .WithMany(u => u.QuizAttempts)
+                .HasForeignKey(qa => qa.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<QuizAttempt>()
+                .HasOne(qa => qa.Quiz)
+                .WithMany(q => q.QuizAttempts)
+                .HasForeignKey(qa => qa.QuizId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // UserAnswer relationships
+            builder.Entity<UserAnswer>()
+                .HasOne(ua => ua.QuizAttempt)
+                .WithMany(qa => qa.UserAnswers)
+                .HasForeignKey(ua => ua.AttemptId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserAnswer>()
+                .HasOne(ua => ua.Question)
+                .WithMany(q => q.UserAnswers)
+                .HasForeignKey(ua => ua.QuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<UserAnswer>()
+                .HasOne(ua => ua.Answer)
+                .WithMany(a => a.UserAnswers)
+                .HasForeignKey(ua => ua.AnswerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Schedule relationships
+            builder.Entity<Schedule>()
+                .HasOne(s => s.Course)
+                .WithMany(c => c.Schedules)
+                .HasForeignKey(s => s.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Schedule>()
+                .HasOne(s => s.Instructor)
+                .WithMany(u => u.Schedules)
+                .HasForeignKey(s => s.InstructorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ScheduleParticipant relationships
+            builder.Entity<ScheduleParticipant>()
+                .HasOne(sp => sp.Schedule)
+                .WithMany(s => s.ScheduleParticipants)
+                .HasForeignKey(sp => sp.ScheduleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ScheduleParticipant>()
+                .HasOne(sp => sp.User)
+                .WithMany()
+                .HasForeignKey(sp => sp.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for better performance
+            builder.Entity<CourseEnrollment>()
+                .HasIndex(ce => new { ce.UserId, ce.CourseId })
+                .IsUnique();
+
+            builder.Entity<QuizAttempt>()
+                .HasIndex(qa => new { qa.UserId, qa.QuizId, qa.AttemptNumber });
+
+            builder.Entity<ScheduleParticipant>()
+                .HasIndex(sp => new { sp.ScheduleId, sp.UserId })
+                .IsUnique();
+
+            // CourseHistory relationships
+            builder.Entity<CourseHistory>()
+                .HasOne(ch => ch.User)
+                .WithMany(u => u.CourseHistories)
+                .HasForeignKey(ch => ch.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<CourseHistory>()
+                .HasOne(ch => ch.Course)
+                .WithMany(c => c.CourseHistories)
+                .HasForeignKey(ch => ch.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<CourseHistory>()
+                .HasOne(ch => ch.Enrollment)
+                .WithMany(ce => ce.CourseHistories)
+                .HasForeignKey(ch => ch.EnrollmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<CourseHistory>()
+                .HasOne(ch => ch.QuizAttempt)
+                .WithMany(qa => qa.CourseHistories)
+                .HasForeignKey(ch => ch.QuizAttemptId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<CourseHistory>()
+                .HasOne(ch => ch.Schedule)
+                .WithMany(s => s.CourseHistories)
+                .HasForeignKey(ch => ch.ScheduleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for CourseHistory
+            builder.Entity<CourseHistory>()
+                .HasIndex(ch => new { ch.UserId, ch.CourseId, ch.ActionDate });
+
+            builder.Entity<CourseHistory>()
+                .HasIndex(ch => ch.Action);
+
+            builder.Entity<CourseHistory>()
+                .HasIndex(ch => ch.ActionDate);
+
+            // Precision for decimal properties
+            builder.Entity<QuizAttempt>()
+                .Property(qa => qa.Percentage)
+                .HasPrecision(5, 2);
+
+            builder.Entity<CourseHistory>()
+                .Property(ch => ch.ProgressBefore)
+                .HasPrecision(5, 2);
+
+            builder.Entity<CourseHistory>()
+                .Property(ch => ch.ProgressAfter)
+                .HasPrecision(5, 2);
+        }
+    }
+}
