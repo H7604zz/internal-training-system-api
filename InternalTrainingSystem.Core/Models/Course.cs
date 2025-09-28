@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Models
+namespace InternalTrainingSystem.Core.Models
 {
     public class Course
     {
@@ -16,8 +16,7 @@ namespace Models
         public string? Description { get; set; }
 
         [Required]
-        [StringLength(100)]
-        public string Category { get; set; } = string.Empty;
+        public int CourseCategoryId { get; set; }
 
         public int Duration { get; set; } // in hours
 
@@ -37,6 +36,9 @@ namespace Models
         // Navigation Properties
         [ForeignKey("CreatedById")]
         public virtual ApplicationUser CreatedBy { get; set; } = null!;
+
+        [ForeignKey("CourseCategoryId")]
+        public virtual CourseCategory CourseCategory { get; set; } = null!;
 
         public virtual ICollection<CourseEnrollment> CourseEnrollments { get; set; } = new List<CourseEnrollment>();
         public virtual ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>();

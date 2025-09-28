@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Models
+namespace InternalTrainingSystem.Core.Models
 {
     public class CourseHistory
     {
@@ -15,28 +15,7 @@ namespace Models
         [StringLength(500)]
         public string? Description { get; set; }
 
-        [Column(TypeName = "decimal(5,2)")]
-        public decimal? ProgressBefore { get; set; } // Progress before this action (0-100%)
-
-        [Column(TypeName = "decimal(5,2)")]
-        public decimal? ProgressAfter { get; set; } // Progress after this action (0-100%)
-
-        public int? ScoreBefore { get; set; } // Score before action (for quiz-related actions)
-
-        public int? ScoreAfter { get; set; } // Score after action (for quiz-related actions)
-
-        [StringLength(100)]
-        public string? AdditionalData { get; set; } // JSON string for extra data if needed
-
         public DateTime ActionDate { get; set; } = DateTime.UtcNow;
-
-        [StringLength(100)]
-        public string? DeviceInfo { get; set; } // Device/browser info
-
-        [StringLength(45)]
-        public string? IPAddress { get; set; }
-
-        public TimeSpan? TimeSpent { get; set; } // Duration of activity session
 
         // Foreign Keys
         [Required]

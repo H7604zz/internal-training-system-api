@@ -22,6 +22,695 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Answer", b =>
+                {
+                    b.Property<int>("AnswerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AnswerId"));
+
+                    b.Property<string>("AnswerText")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AnswerId");
+
+                    b.HasIndex("QuestionId");
+
+                    b.ToTable("Answers");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.ApplicationUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Department")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("EmployeeId")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("HireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastLoginDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Position")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Attendance", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CheckInTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CheckOutTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExcuseReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsExcused")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserId", "ScheduleId");
+
+                    b.HasIndex("CheckInTime");
+
+                    b.HasIndex("ScheduleId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Attendances");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Course", b =>
+                {
+                    b.Property<int>("CourseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourseId"));
+
+                    b.Property<int>("CourseCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CourseName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("CourseId");
+
+                    b.HasIndex("CourseCategoryId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseCategory", b =>
+                {
+                    b.Property<int>("CourseCategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourseCategoryId"));
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("CourseCategoryId");
+
+                    b.HasIndex("CategoryName")
+                        .IsUnique();
+
+                    b.ToTable("CourseCategories");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseEnrollment", b =>
+                {
+                    b.Property<int>("EnrollmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EnrollmentId"));
+
+                    b.Property<DateTime?>("CompletionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EnrollmentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Grade")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime?>("LastAccessedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Score")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("EnrollmentId");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("UserId", "CourseId")
+                        .IsUnique();
+
+                    b.ToTable("CourseEnrollments");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseHistory", b =>
+                {
+                    b.Property<int>("HistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryId"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("ActionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("EnrollmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("QuizAttemptId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ScheduleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("HistoryId");
+
+                    b.HasIndex("Action");
+
+                    b.HasIndex("ActionDate");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("EnrollmentId");
+
+                    b.HasIndex("QuizAttemptId");
+
+                    b.HasIndex("ScheduleId");
+
+                    b.HasIndex("UserId", "CourseId", "ActionDate");
+
+                    b.ToTable("CourseHistories");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Question", b =>
+                {
+                    b.Property<int>("QuestionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QuestionId"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<string>("QuestionText")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("QuestionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("QuizId")
+                        .HasColumnType("int");
+
+                    b.HasKey("QuestionId");
+
+                    b.HasIndex("QuizId");
+
+                    b.ToTable("Questions");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Quiz", b =>
+                {
+                    b.Property<int>("QuizId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QuizId"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PassingScore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TimeLimit")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("QuizId");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("Quizzes");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.QuizAttempt", b =>
+                {
+                    b.Property<int>("AttemptId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AttemptId"));
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPassed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxScore")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Percentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("float(5)");
+
+                    b.Property<int>("QuizId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("AttemptId");
+
+                    b.HasIndex("QuizId");
+
+                    b.HasIndex("UserId", "QuizId", "AttemptNumber");
+
+                    b.ToTable("QuizAttempts");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Schedule", b =>
+                {
+                    b.Property<int>("ScheduleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ScheduleId"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InstructorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsOnline")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("MaxParticipants")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OnlineLink")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("ScheduleId");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("InstructorId");
+
+                    b.ToTable("Schedules");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.ScheduleParticipant", b =>
+                {
+                    b.Property<int>("ParticipantId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ParticipantId"));
+
+                    b.Property<DateTime?>("AttendanceDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("RegisteredDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ParticipantId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ScheduleId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ScheduleParticipants");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.UserAnswer", b =>
+                {
+                    b.Property<int>("UserAnswerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserAnswerId"));
+
+                    b.Property<int?>("AnswerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AnswerText")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("AnsweredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("AttemptId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserAnswerId");
+
+                    b.HasIndex("AnswerId");
+
+                    b.HasIndex("AttemptId");
+
+                    b.HasIndex("QuestionId");
+
+                    b.ToTable("UserAnswers");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.UserRoleHistory", b =>
+                {
+                    b.Property<int>("HistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryId"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ActionBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("ActionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("HistoryId");
+
+                    b.HasIndex("Action");
+
+                    b.HasIndex("ActionBy");
+
+                    b.HasIndex("ActionDate");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId", "ActionDate");
+
+                    b.HasIndex("UserId", "RoleId", "ActionDate")
+                        .IsUnique();
+
+                    b.ToTable("UserRoleHistories");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -159,647 +848,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Models.Answer", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Answer", b =>
                 {
-                    b.Property<int>("AnswerId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AnswerId"));
-
-                    b.Property<string>("AnswerText")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsCorrect")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("OrderIndex")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("AnswerId");
-
-                    b.HasIndex("QuestionId");
-
-                    b.ToTable("Answers");
-                });
-
-            modelBuilder.Entity("Models.ApplicationUser", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Department")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("EmployeeId")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime?>("HireDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastLoginDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Position")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex")
-                        .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("Models.Course", b =>
-                {
-                    b.Property<int>("CourseId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourseId"));
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("CourseName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("CreatedById")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int>("Duration")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Level")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("CourseId");
-
-                    b.HasIndex("CreatedById");
-
-                    b.ToTable("Courses");
-                });
-
-            modelBuilder.Entity("Models.CourseEnrollment", b =>
-                {
-                    b.Property<int>("EnrollmentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EnrollmentId"));
-
-                    b.Property<DateTime?>("CompletionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("EnrollmentDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Grade")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<DateTime?>("LastAccessedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Progress")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("Score")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("EnrollmentId");
-
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("UserId", "CourseId")
-                        .IsUnique();
-
-                    b.ToTable("CourseEnrollments");
-                });
-
-            modelBuilder.Entity("Models.CourseHistory", b =>
-                {
-                    b.Property<int>("HistoryId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryId"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("ActionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("AdditionalData")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("DeviceInfo")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int?>("EnrollmentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("IPAddress")
-                        .HasMaxLength(45)
-                        .HasColumnType("nvarchar(45)");
-
-                    b.Property<decimal?>("ProgressAfter")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<decimal?>("ProgressBefore")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<int?>("QuizAttemptId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ScheduleId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ScoreAfter")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ScoreBefore")
-                        .HasColumnType("int");
-
-                    b.Property<TimeSpan?>("TimeSpent")
-                        .HasColumnType("time");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("HistoryId");
-
-                    b.HasIndex("Action");
-
-                    b.HasIndex("ActionDate");
-
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("EnrollmentId");
-
-                    b.HasIndex("QuizAttemptId");
-
-                    b.HasIndex("ScheduleId");
-
-                    b.HasIndex("UserId", "CourseId", "ActionDate");
-
-                    b.ToTable("CourseHistories");
-                });
-
-            modelBuilder.Entity("Models.Question", b =>
-                {
-                    b.Property<int>("QuestionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QuestionId"));
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("OrderIndex")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("int");
-
-                    b.Property<string>("QuestionText")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("QuestionType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("QuizId")
-                        .HasColumnType("int");
-
-                    b.HasKey("QuestionId");
-
-                    b.HasIndex("QuizId");
-
-                    b.ToTable("Questions");
-                });
-
-            modelBuilder.Entity("Models.Quiz", b =>
-                {
-                    b.Property<int>("QuizId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QuizId"));
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MaxAttempts")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PassingScore")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TimeLimit")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("QuizId");
-
-                    b.HasIndex("CourseId");
-
-                    b.ToTable("Quizzes");
-                });
-
-            modelBuilder.Entity("Models.QuizAttempt", b =>
-                {
-                    b.Property<int>("AttemptId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AttemptId"));
-
-                    b.Property<int>("AttemptNumber")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("EndTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsPassed")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MaxScore")
-                        .HasColumnType("int");
-
-                    b.Property<double>("Percentage")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("float(5)");
-
-                    b.Property<int>("QuizId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("StartTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("AttemptId");
-
-                    b.HasIndex("QuizId");
-
-                    b.HasIndex("UserId", "QuizId", "AttemptNumber");
-
-                    b.ToTable("QuizAttempts");
-                });
-
-            modelBuilder.Entity("Models.Schedule", b =>
-                {
-                    b.Property<int>("ScheduleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ScheduleId"));
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("InstructorId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<bool>("IsOnline")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Location")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("MaxParticipants")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OnlineLink")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("ScheduleId");
-
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("InstructorId");
-
-                    b.ToTable("Schedules");
-                });
-
-            modelBuilder.Entity("Models.ScheduleParticipant", b =>
-                {
-                    b.Property<int>("ParticipantId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ParticipantId"));
-
-                    b.Property<DateTime?>("AttendanceDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime>("RegisteredDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ScheduleId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("ParticipantId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("ScheduleId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("ScheduleParticipants");
-                });
-
-            modelBuilder.Entity("Models.UserAnswer", b =>
-                {
-                    b.Property<int>("UserAnswerId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserAnswerId"));
-
-                    b.Property<int?>("AnswerId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AnswerText")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime>("AnsweredAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("AttemptId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsCorrect")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("UserAnswerId");
-
-                    b.HasIndex("AnswerId");
-
-                    b.HasIndex("AttemptId");
-
-                    b.HasIndex("QuestionId");
-
-                    b.ToTable("UserAnswers");
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
-                {
-                    b.HasOne("Models.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
-                {
-                    b.HasOne("Models.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Models.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
-                {
-                    b.HasOne("Models.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Models.Answer", b =>
-                {
-                    b.HasOne("Models.Question", "Question")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Question", "Question")
                         .WithMany("Answers")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -808,26 +859,53 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("Question");
                 });
 
-            modelBuilder.Entity("Models.Course", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Attendance", b =>
                 {
-                    b.HasOne("Models.ApplicationUser", "CreatedBy")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Schedule", "Schedule")
+                        .WithMany("Attendances")
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
+                        .WithMany("Attendances")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Schedule");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Course", b =>
+                {
+                    b.HasOne("InternalTrainingSystem.Core.Models.CourseCategory", "CourseCategory")
+                        .WithMany("Courses")
+                        .HasForeignKey("CourseCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "CreatedBy")
                         .WithMany("CreatedCourses")
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("CourseCategory");
+
                     b.Navigation("CreatedBy");
                 });
 
-            modelBuilder.Entity("Models.CourseEnrollment", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseEnrollment", b =>
                 {
-                    b.HasOne("Models.Course", "Course")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Course", "Course")
                         .WithMany("CourseEnrollments")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.ApplicationUser", "User")
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
                         .WithMany("CourseEnrollments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -838,30 +916,30 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Models.CourseHistory", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseHistory", b =>
                 {
-                    b.HasOne("Models.Course", "Course")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Course", "Course")
                         .WithMany("CourseHistories")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.CourseEnrollment", "Enrollment")
+                    b.HasOne("InternalTrainingSystem.Core.Models.CourseEnrollment", "Enrollment")
                         .WithMany("CourseHistories")
                         .HasForeignKey("EnrollmentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Models.QuizAttempt", "QuizAttempt")
+                    b.HasOne("InternalTrainingSystem.Core.Models.QuizAttempt", "QuizAttempt")
                         .WithMany("CourseHistories")
                         .HasForeignKey("QuizAttemptId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Models.Schedule", "Schedule")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Schedule", "Schedule")
                         .WithMany("CourseHistories")
                         .HasForeignKey("ScheduleId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Models.ApplicationUser", "User")
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
                         .WithMany("CourseHistories")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -878,9 +956,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Models.Question", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Question", b =>
                 {
-                    b.HasOne("Models.Quiz", "Quiz")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Quiz", "Quiz")
                         .WithMany("Questions")
                         .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -889,9 +967,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("Quiz");
                 });
 
-            modelBuilder.Entity("Models.Quiz", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Quiz", b =>
                 {
-                    b.HasOne("Models.Course", "Course")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Course", "Course")
                         .WithMany("Quizzes")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -900,15 +978,15 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("Course");
                 });
 
-            modelBuilder.Entity("Models.QuizAttempt", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.QuizAttempt", b =>
                 {
-                    b.HasOne("Models.Quiz", "Quiz")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Quiz", "Quiz")
                         .WithMany("QuizAttempts")
                         .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.ApplicationUser", "User")
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
                         .WithMany("QuizAttempts")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -919,15 +997,15 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Models.Schedule", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Schedule", b =>
                 {
-                    b.HasOne("Models.Course", "Course")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Course", "Course")
                         .WithMany("Schedules")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.ApplicationUser", "Instructor")
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "Instructor")
                         .WithMany("Schedules")
                         .HasForeignKey("InstructorId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -938,15 +1016,15 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("Instructor");
                 });
 
-            modelBuilder.Entity("Models.ScheduleParticipant", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.ScheduleParticipant", b =>
                 {
-                    b.HasOne("Models.Schedule", "Schedule")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Schedule", "Schedule")
                         .WithMany("ScheduleParticipants")
                         .HasForeignKey("ScheduleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.ApplicationUser", "User")
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -957,20 +1035,20 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Models.UserAnswer", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.UserAnswer", b =>
                 {
-                    b.HasOne("Models.Answer", "Answer")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Answer", "Answer")
                         .WithMany("UserAnswers")
                         .HasForeignKey("AnswerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Models.QuizAttempt", "QuizAttempt")
+                    b.HasOne("InternalTrainingSystem.Core.Models.QuizAttempt", "QuizAttempt")
                         .WithMany("UserAnswers")
                         .HasForeignKey("AttemptId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.Question", "Question")
+                    b.HasOne("InternalTrainingSystem.Core.Models.Question", "Question")
                         .WithMany("UserAnswers")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -983,13 +1061,84 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("QuizAttempt");
                 });
 
-            modelBuilder.Entity("Models.Answer", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.UserRoleHistory", b =>
+                {
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "ActionByUser")
+                        .WithMany()
+                        .HasForeignKey("ActionBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ActionByUser");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Answer", b =>
                 {
                     b.Navigation("UserAnswers");
                 });
 
-            modelBuilder.Entity("Models.ApplicationUser", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.ApplicationUser", b =>
                 {
+                    b.Navigation("Attendances");
+
                     b.Navigation("CourseEnrollments");
 
                     b.Navigation("CourseHistories");
@@ -1001,7 +1150,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("Schedules");
                 });
 
-            modelBuilder.Entity("Models.Course", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Course", b =>
                 {
                     b.Navigation("CourseEnrollments");
 
@@ -1012,34 +1161,41 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("Schedules");
                 });
 
-            modelBuilder.Entity("Models.CourseEnrollment", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseCategory", b =>
+                {
+                    b.Navigation("Courses");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseEnrollment", b =>
                 {
                     b.Navigation("CourseHistories");
                 });
 
-            modelBuilder.Entity("Models.Question", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Question", b =>
                 {
                     b.Navigation("Answers");
 
                     b.Navigation("UserAnswers");
                 });
 
-            modelBuilder.Entity("Models.Quiz", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Quiz", b =>
                 {
                     b.Navigation("Questions");
 
                     b.Navigation("QuizAttempts");
                 });
 
-            modelBuilder.Entity("Models.QuizAttempt", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.QuizAttempt", b =>
                 {
                     b.Navigation("CourseHistories");
 
                     b.Navigation("UserAnswers");
                 });
 
-            modelBuilder.Entity("Models.Schedule", b =>
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Schedule", b =>
                 {
+                    b.Navigation("Attendances");
+
                     b.Navigation("CourseHistories");
 
                     b.Navigation("ScheduleParticipants");

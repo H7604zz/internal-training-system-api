@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using InternalTrainingSystem.Core.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Models;
 
 namespace InternalTrainingSystem.Core.DB
 {
@@ -11,6 +11,7 @@ namespace InternalTrainingSystem.Core.DB
         {
         }
 
+        public DbSet<CourseCategory> CourseCategories { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<CourseEnrollment> CourseEnrollments { get; set; }
         public DbSet<Quiz> Quizzes { get; set; }
@@ -21,6 +22,8 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<ScheduleParticipant> ScheduleParticipants { get; set; }
         public DbSet<CourseHistory> CourseHistories { get; set; }
+        public DbSet<Attendance> Attendances { get; set; }
+        public DbSet<UserRoleHistory> UserRoleHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -31,6 +34,12 @@ namespace InternalTrainingSystem.Core.DB
                 .HasOne(c => c.CreatedBy)
                 .WithMany(u => u.CreatedCourses)
                 .HasForeignKey(c => c.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Course>()
+                .HasOne(c => c.CourseCategory)
+                .WithMany(cat => cat.Courses)
+                .HasForeignKey(c => c.CourseCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // CourseEnrollment relationships
@@ -125,6 +134,22 @@ namespace InternalTrainingSystem.Core.DB
                 .HasForeignKey(sp => sp.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Attendance relationships and composite key
+            builder.Entity<Attendance>()
+                .HasKey(a => new { a.UserId, a.ScheduleId });
+
+            builder.Entity<Attendance>()
+                .HasOne(a => a.User)
+                .WithMany(u => u.Attendances)
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Attendance>()
+                .HasOne(a => a.Schedule)
+                .WithMany(s => s.Attendances)
+                .HasForeignKey(a => a.ScheduleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // Indexes for better performance
             builder.Entity<CourseEnrollment>()
                 .HasIndex(ce => new { ce.UserId, ce.CourseId })
@@ -136,6 +161,13 @@ namespace InternalTrainingSystem.Core.DB
             builder.Entity<ScheduleParticipant>()
                 .HasIndex(sp => new { sp.ScheduleId, sp.UserId })
                 .IsUnique();
+
+            // Indexes for Attendance
+            builder.Entity<Attendance>()
+                .HasIndex(a => a.CheckInTime);
+
+            builder.Entity<Attendance>()
+                .HasIndex(a => a.Status);
 
             // CourseHistory relationships
             builder.Entity<CourseHistory>()
@@ -168,6 +200,11 @@ namespace InternalTrainingSystem.Core.DB
                 .HasForeignKey(ch => ch.ScheduleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Indexes for CourseCategory
+            builder.Entity<CourseCategory>()
+                .HasIndex(c => c.CategoryName)
+                .IsUnique();
+
             // Indexes for CourseHistory
             builder.Entity<CourseHistory>()
                 .HasIndex(ch => new { ch.UserId, ch.CourseId, ch.ActionDate });
@@ -183,13 +220,36 @@ namespace InternalTrainingSystem.Core.DB
                 .Property(qa => qa.Percentage)
                 .HasPrecision(5, 2);
 
-            builder.Entity<CourseHistory>()
-                .Property(ch => ch.ProgressBefore)
-                .HasPrecision(5, 2);
+            // UserRoleHistory unique constraint for business logic
+            builder.Entity<UserRoleHistory>()
+                .HasIndex(urh => new { urh.UserId, urh.RoleId, urh.ActionDate })
+                .IsUnique();
 
-            builder.Entity<CourseHistory>()
-                .Property(ch => ch.ProgressAfter)
-                .HasPrecision(5, 2);
+            // UserRoleHistory relationships
+            builder.Entity<UserRoleHistory>()
+                .HasOne(urh => urh.User)
+                .WithMany()
+                .HasForeignKey(urh => urh.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // Thay đổi từ Cascade thành Restrict
+
+            builder.Entity<UserRoleHistory>()
+                .HasOne(urh => urh.ActionByUser)
+                .WithMany()
+                .HasForeignKey(urh => urh.ActionBy)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Indexes for UserRoleHistory
+            builder.Entity<UserRoleHistory>()
+                .HasIndex(urh => new { urh.UserId, urh.ActionDate });
+
+            builder.Entity<UserRoleHistory>()
+                .HasIndex(urh => urh.Action);
+
+            builder.Entity<UserRoleHistory>()
+                .HasIndex(urh => urh.ActionDate);
+
+            builder.Entity<UserRoleHistory>()
+                .HasIndex(urh => urh.RoleId);
         }
     }
 }

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Models 
+namespace InternalTrainingSystem.Core.Models
 {
     public class Schedule
     {
@@ -50,5 +50,6 @@ namespace Models
 
         public virtual ICollection<ScheduleParticipant> ScheduleParticipants { get; set; } = new List<ScheduleParticipant>();
         public virtual ICollection<CourseHistory> CourseHistories { get; set; } = new List<CourseHistory>();
+        public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
     }
 }

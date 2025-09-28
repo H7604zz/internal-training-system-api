@@ -59,6 +59,21 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CourseCategories",
+                columns: table => new
+                {
+                    CourseCategoryId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CategoryName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CourseCategories", x => x.CourseCategoryId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -165,6 +180,37 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "UserRoleHistories",
+                columns: table => new
+                {
+                    HistoryId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    RoleId = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    RoleName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ActionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ActionBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserRoleHistories", x => x.HistoryId);
+                    table.ForeignKey(
+                        name: "FK_UserRoleHistories_AspNetUsers_ActionBy",
+                        column: x => x.ActionBy,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_UserRoleHistories_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Courses",
                 columns: table => new
                 {
@@ -172,7 +218,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CourseName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CourseCategoryId = table.Column<int>(type: "int", nullable: false),
                     Duration = table.Column<int>(type: "int", nullable: false),
                     Level = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
@@ -188,6 +234,12 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         column: x => x.CreatedById,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Courses_CourseCategories_CourseCategoryId",
+                        column: x => x.CourseCategoryId,
+                        principalTable: "CourseCategories",
+                        principalColumn: "CourseCategoryId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -347,6 +399,38 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Attendances",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ScheduleId = table.Column<int>(type: "int", nullable: false),
+                    CheckInTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CheckOutTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsExcused = table.Column<bool>(type: "bit", nullable: false),
+                    ExcuseReason = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Attendances", x => new { x.UserId, x.ScheduleId });
+                    table.ForeignKey(
+                        name: "FK_Attendances_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Attendances_Schedules_ScheduleId",
+                        column: x => x.ScheduleId,
+                        principalTable: "Schedules",
+                        principalColumn: "ScheduleId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ScheduleParticipants",
                 columns: table => new
                 {
@@ -407,15 +491,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Action = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ProgressBefore = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: true),
-                    ProgressAfter = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: true),
-                    ScoreBefore = table.Column<int>(type: "int", nullable: true),
-                    ScoreAfter = table.Column<int>(type: "int", nullable: true),
-                    AdditionalData = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     ActionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DeviceInfo = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    IPAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true),
-                    TimeSpent = table.Column<TimeSpan>(type: "time", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CourseId = table.Column<int>(type: "int", nullable: false),
                     EnrollmentId = table.Column<int>(type: "int", nullable: true),
@@ -539,6 +615,27 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Attendances_CheckInTime",
+                table: "Attendances",
+                column: "CheckInTime");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attendances_ScheduleId",
+                table: "Attendances",
+                column: "ScheduleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attendances_Status",
+                table: "Attendances",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CourseCategories_CategoryName",
+                table: "CourseCategories",
+                column: "CategoryName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CourseEnrollments_CourseId",
                 table: "CourseEnrollments",
                 column: "CourseId");
@@ -583,6 +680,11 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 name: "IX_CourseHistories_UserId_CourseId_ActionDate",
                 table: "CourseHistories",
                 columns: new[] { "UserId", "CourseId", "ActionDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Courses_CourseCategoryId",
+                table: "Courses",
+                column: "CourseCategoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Courses_CreatedById",
@@ -644,6 +746,37 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 name: "IX_UserAnswers_QuestionId",
                 table: "UserAnswers",
                 column: "QuestionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoleHistories_Action",
+                table: "UserRoleHistories",
+                column: "Action");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoleHistories_ActionBy",
+                table: "UserRoleHistories",
+                column: "ActionBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoleHistories_ActionDate",
+                table: "UserRoleHistories",
+                column: "ActionDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoleHistories_RoleId",
+                table: "UserRoleHistories",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoleHistories_UserId_ActionDate",
+                table: "UserRoleHistories",
+                columns: new[] { "UserId", "ActionDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoleHistories_UserId_RoleId_ActionDate",
+                table: "UserRoleHistories",
+                columns: new[] { "UserId", "RoleId", "ActionDate" },
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -665,6 +798,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "Attendances");
+
+            migrationBuilder.DropTable(
                 name: "CourseHistories");
 
             migrationBuilder.DropTable(
@@ -672,6 +808,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserAnswers");
+
+            migrationBuilder.DropTable(
+                name: "UserRoleHistories");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -699,6 +838,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "CourseCategories");
         }
     }
 }

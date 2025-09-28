@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
-namespace Models
+namespace InternalTrainingSystem.Core.Models
 {
     public class ApplicationUser : IdentityUser
     {
@@ -32,5 +32,6 @@ namespace Models
         public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
         public virtual ICollection<Course> CreatedCourses { get; set; } = new List<Course>();
         public virtual ICollection<CourseHistory> CourseHistories { get; set; } = new List<CourseHistory>();
+        public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
     }
 }

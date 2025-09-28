@@ -2,7 +2,7 @@ using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Extensions;
 using InternalTrainingSystem.Core.DB;
 using Microsoft.EntityFrameworkCore;
-using Models;
+using InternalTrainingSystem.Core.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
