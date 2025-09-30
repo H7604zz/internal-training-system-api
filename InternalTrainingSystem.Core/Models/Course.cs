@@ -44,5 +44,6 @@ namespace InternalTrainingSystem.Core.Models
         public virtual ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>();
         public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
         public virtual ICollection<CourseHistory> CourseHistories { get; set; } = new List<CourseHistory>();
+        public virtual ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
     }
 }

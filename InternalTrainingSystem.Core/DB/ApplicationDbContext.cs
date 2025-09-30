@@ -1,6 +1,7 @@
 ﻿using InternalTrainingSystem.Core.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace InternalTrainingSystem.Core.DB
 {
@@ -24,6 +25,7 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<CourseHistory> CourseHistories { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<UserRoleHistory> UserRoleHistories { get; set; }
+        public DbSet<Certificate> Certificates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -200,6 +202,16 @@ namespace InternalTrainingSystem.Core.DB
                 .HasForeignKey(ch => ch.ScheduleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Entity<Certificate>()
+                .HasOne(c => c.Course)                   
+                .WithMany(course => course.Certificates) 
+                .HasForeignKey(c => c.CourseId);
+
+            builder.Entity<Certificate>()
+                .HasOne(c => c.User)                     
+                .WithMany(u => u.Certificates)          
+                .HasForeignKey(c => c.UserId);
+
             // Indexes for CourseCategory
             builder.Entity<CourseCategory>()
                 .HasIndex(c => c.CategoryName)
@@ -250,6 +262,11 @@ namespace InternalTrainingSystem.Core.DB
 
             builder.Entity<UserRoleHistory>()
                 .HasIndex(urh => urh.RoleId);
+
+            // Indexes for CourseCategory
+            builder.Entity<Certificate>()
+                .HasIndex(c => new { c.UserId, c.CourseId })
+                .IsUnique();
         }
     }
 }
