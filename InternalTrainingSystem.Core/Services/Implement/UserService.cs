@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.EntityFrameworkCore;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -16,14 +17,15 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public List<ApplicationUser> GetUserRoleStaffWithoutCertificate(int courseId)
         {
-            var users = (from u in _context.Users
-                         join ur in _context.UserRoles on u.Id equals ur.UserId
-                         join r in _context.Roles on ur.RoleId equals r.Id
-                         where r.Name == UserRoles.Staff
-                               && !_context.Certificates.Any(c => c.UserId == u.Id && c.CourseId == courseId)
-                         select u)
-             .Distinct()
-             .ToList();
+            var users = _context.Users
+                .Include(u => u.CourseEnrollments)
+                .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
+                .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
+                .Where(x => x.r.Name == UserRoles.Staff
+                            && !_context.Certificates.Any(c => c.UserId == x.u.Id && c.CourseId == courseId))
+                .Select(x => x.u)
+                .Distinct()
+                .ToList();
 
             return users;
         }
