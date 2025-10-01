@@ -26,7 +26,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
             if (!staffWithoutCertificate.Any())
                 return NotFound("Không có nhân viên nào cần học khóa này.");
-            var course = _couseService.GetCourseByCouseID(courseId);
+            var course = _couseService.GetCourseByCourseID(courseId);
             if (course == null)
                 return NotFound("Không tìm thấy khóa học tương ứng.");
 
@@ -34,7 +34,7 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 _mailService.SendEmailAsync(user.Email!,
                     "Thông báo mở lớp học " + course.CourseName,
-                    $"Xin chào {user.UserName}, nếu bạn chưa có chứng chỉ cho khóa học {courseId}, vui lòng tham gia lớp học sắp tới.");
+                    $"Xin chào {user.UserName}, nếu bạn chưa có chứng chỉ cho khóa học, vui lòng tham gia lớp học sắp tới.");
             }
 
             return Ok(new { Message = "Đã gửi mail cho danh sách nhân viên cần học.", Count = staffWithoutCertificate .Count});

@@ -14,7 +14,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _context = context;
         }
 
-        public Course? GetCourseByCouseID(int? couseId)
+        public Course? GetCourseByCourseID(int? couseId)
         {
             return _context.Courses
                  .Include(c => c.CourseCategory)
