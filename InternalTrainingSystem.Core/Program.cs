@@ -8,6 +8,8 @@ using InternalTrainingSystem.Core.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using InternalTrainingSystem.Core.Middleware;
+using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using InternalTrainingSystem.Core.Services.Implement;
 
@@ -45,6 +47,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 // Register Services
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 
 // Configure JWT Authentication
 // Read from configuration instead of environment variables directly
@@ -133,6 +136,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
+
+// Add token blacklist middleware before authentication
+app.UseMiddleware<TokenBlacklistMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

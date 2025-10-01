@@ -5,6 +5,8 @@ using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.DTOs;
 using System.Security.Claims;
 using InternalTrainingSystem.Core.Services.Implement;
+using InternalTrainingSystem.Core.Services.Interface;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -15,15 +17,18 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IJwtService _jwtService;
+        private readonly ITokenBlacklistService _tokenBlacklistService;
 
         public AuthController(
             UserManager<ApplicationUser> userManager, 
             SignInManager<ApplicationUser> signInManager,
-            IJwtService jwtService)
+            IJwtService jwtService,
+            ITokenBlacklistService tokenBlacklistService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _jwtService = jwtService;
+            _tokenBlacklistService = tokenBlacklistService;
         }
 
         /// <summary>
@@ -227,5 +232,39 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
+        /// <summary>
+        /// Logout current user
+        /// </summary>
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponseDto>> Logout()
+        {
+            try
+            {
+                var jwtId = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                
+                // Check if token is already blacklisted
+                if (!string.IsNullOrEmpty(jwtId) && await _tokenBlacklistService.IsTokenBlacklistedAsync(jwtId))
+                {
+                    return BadRequest(ApiResponseDto.ErrorResult("User already logged out"));
+                }
+                
+
+                // Blacklist the current token
+                if (!string.IsNullOrEmpty(jwtId))
+                {
+                    var expiry = DateTime.UtcNow.AddDays(7); // Token expiry time
+                    await _tokenBlacklistService.BlacklistTokenAsync(jwtId, expiry);
+                }
+
+                await _signInManager.SignOutAsync();
+
+                return Ok(ApiResponseDto.SuccessResult(null, "Logout successful"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponseDto.ErrorResult($"Error during logout: {ex.Message}"));
+            }
+        }
     }
 }
