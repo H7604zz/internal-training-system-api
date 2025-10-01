@@ -3,6 +3,9 @@ using InternalTrainingSystem.Core.Extensions;
 using InternalTrainingSystem.Core.DB;
 using Microsoft.EntityFrameworkCore;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Services.Implement;
+using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +47,10 @@ builder.Services.Configure<ApplicationSettings>(builder.Configuration.GetSection
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEmailSender, EmailSenderService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
 
 var app = builder.Build();
 
