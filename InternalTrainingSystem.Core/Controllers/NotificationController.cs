@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
-    [Route("api/notifications")]
+    [Route("api/[controller]")]
     [ApiController]
     public class NotificationController : ControllerBase
     {
