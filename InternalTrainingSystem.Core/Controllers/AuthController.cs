@@ -186,5 +186,46 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
+        /// <summary>
+        /// Change password for current user
+        /// </summary>
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponseDto>> ChangePassword([FromBody] ChangePasswordRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponseDto.ErrorResult("Invalid input data"));
+                }
+
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(ApiResponseDto.ErrorResult("User not found"));
+                }
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return NotFound(ApiResponseDto.ErrorResult("User not found"));
+                }
+
+                var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+                if (result.Succeeded)
+                {
+                    return Ok(ApiResponseDto.SuccessResult(null, "Password changed successfully"));
+                }
+
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return BadRequest(ApiResponseDto.ErrorResult("Failed to change password", errors));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponseDto.ErrorResult($"Error changing password: {ex.Message}"));
+            }
+        }
+
     }
 }
