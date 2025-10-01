@@ -11,6 +11,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
     {
         Task<string> GenerateAccessTokenAsync(ApplicationUser user);
         string GenerateRefreshToken();
+        string GenerateRefreshToken(string userId);
         ClaimsPrincipal? ValidateToken(string token);
         Task<TokenResponseDto> RefreshTokenAsync(string refreshToken);
     }
@@ -97,6 +98,23 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return Convert.ToBase64String(randomBytes);
         }
 
+        // Temporary in-memory storage for refresh tokens
+        // In production, use database or Redis
+        private static readonly Dictionary<string, string> _refreshTokenStore = new();
+
+        public string GenerateRefreshToken(string userId)
+        {
+            var randomBytes = new byte[64];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            var refreshToken = Convert.ToBase64String(randomBytes);
+            
+            // Store the mapping between refresh token and user ID
+            _refreshTokenStore[refreshToken] = userId;
+            
+            return refreshToken;
+        }
+
         public ClaimsPrincipal? ValidateToken(string token)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
@@ -130,16 +148,129 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }
         }
 
-        public Task<TokenResponseDto> RefreshTokenAsync(string refreshToken)
+        public async Task<TokenResponseDto> RefreshTokenAsync(string refreshToken)
         {
-            // In a real implementation, you would validate the refresh token against your database
-            // For now, this is a simplified version
-            throw new NotImplementedException("Refresh token functionality will be implemented based on your storage strategy");
+            try
+            {
+                // In a simplified implementation, we'll validate the refresh token format
+                // In production, you should store refresh tokens in database with expiry dates
+                
+                if (string.IsNullOrEmpty(refreshToken))
+                {
+                    return new TokenResponseDto
+                    {
+                        Success = false,
+                        Message = "Refresh token is required"
+                    };
+                }
+
+                // For this example, we'll decode the refresh token to extract user info
+                // In production, you should look up the refresh token in your database
+                try
+                {
+                    var refreshTokenBytes = Convert.FromBase64String(refreshToken);
+                    var refreshTokenString = System.Text.Encoding.UTF8.GetString(refreshTokenBytes);
+                    
+                    // Simple validation - in production, check against database
+                    if (refreshTokenString.Length < 10)
+                    {
+                        return new TokenResponseDto
+                        {
+                            Success = false,
+                            Message = "Invalid refresh token format"
+                        };
+                    }
+
+                    // For demo purposes, we'll extract userId from token claims
+                    // In production, get userId from database based on refresh token
+                    var userId = ExtractUserIdFromRefreshToken(refreshToken);
+                    
+                    if (string.IsNullOrEmpty(userId))
+                    {
+                        return new TokenResponseDto
+                        {
+                            Success = false,
+                            Message = "Could not extract user from refresh token"
+                        };
+                    }
+
+                    var user = await _userManager.FindByIdAsync(userId);
+                    if (user == null || !user.IsActive)
+                    {
+                        return new TokenResponseDto
+                        {
+                            Success = false,
+                            Message = "User not found or inactive"
+                        };
+                    }
+
+                    // Generate new tokens
+                    var newAccessToken = await GenerateAccessTokenAsync(user);
+                    var newRefreshToken = GenerateRefreshToken(user.Id); // Pass userId for new refresh token
+                    
+                    // Invalidate old refresh token
+                    _refreshTokenStore.Remove(refreshToken);
+                    
+                    var expireMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") ?? "60");
+                    var expiresAt = DateTime.UtcNow.AddMinutes(expireMinutes);
+
+                    return new TokenResponseDto
+                    {
+                        Success = true,
+                        Message = "Token refreshed successfully",
+                        UserId = user.Id,
+                        AccessToken = newAccessToken,
+                        RefreshToken = newRefreshToken,
+                        ExpiresAt = expiresAt
+                    };
+                }
+                catch (FormatException)
+                {
+                    return new TokenResponseDto
+                    {
+                        Success = false,
+                        Message = "Invalid refresh token format"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in RefreshTokenAsync: {ex.Message}");
+                return new TokenResponseDto
+                {
+                    Success = false,
+                    Message = "Internal error occurred while refreshing token"
+                };
+            }
+        }
+
+        private string ExtractUserIdFromRefreshToken(string refreshToken)
+        {
+            try
+            {
+                // Look up user ID from our in-memory store
+                // In production, query database for refresh token
+                if (_refreshTokenStore.TryGetValue(refreshToken, out var userId))
+                {
+                    return userId;
+                }
+                
+                Console.WriteLine($"Refresh token not found in store: {refreshToken.Substring(0, Math.Min(10, refreshToken.Length))}...");
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error extracting user ID from refresh token: {ex.Message}");
+                return string.Empty;
+            }
         }
     }
 
     public class TokenResponseDto
     {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string? UserId { get; set; }
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
         public DateTime ExpiresAt { get; set; }

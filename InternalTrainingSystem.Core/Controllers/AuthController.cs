@@ -20,7 +20,7 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly ITokenBlacklistService _tokenBlacklistService;
 
         public AuthController(
-            UserManager<ApplicationUser> userManager, 
+            UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             IJwtService jwtService,
             ITokenBlacklistService tokenBlacklistService)
@@ -60,7 +60,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 }
 
                 var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
-                
+
                 if (result.Succeeded)
                 {
                     try
@@ -74,8 +74,8 @@ namespace InternalTrainingSystem.Core.Controllers
 
                         // Generate JWT tokens
                         var accessToken = await _jwtService.GenerateAccessTokenAsync(user);
-                        var refreshToken = _jwtService.GenerateRefreshToken();
-                        
+                        var refreshToken = _jwtService.GenerateRefreshToken(user.Id); // Pass userId
+
                         // Calculate expiry time
                         var expireMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") ?? "60");
                         var expiresAt = DateTime.UtcNow.AddMinutes(expireMinutes);
@@ -242,13 +242,13 @@ namespace InternalTrainingSystem.Core.Controllers
             try
             {
                 var jwtId = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
-                
+
                 // Check if token is already blacklisted
                 if (!string.IsNullOrEmpty(jwtId) && await _tokenBlacklistService.IsTokenBlacklistedAsync(jwtId))
                 {
                     return BadRequest(ApiResponseDto.ErrorResult("User already logged out"));
                 }
-                
+
 
                 // Blacklist the current token
                 if (!string.IsNullOrEmpty(jwtId))
@@ -264,6 +264,82 @@ namespace InternalTrainingSystem.Core.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResponseDto.ErrorResult($"Error during logout: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Refresh JWT token
+        /// </summary>
+        [HttpPost("refresh-token")]
+        [AllowAnonymous]
+        public async Task<ActionResult<LoginResponseDto>> RefreshToken([FromBody] RefreshTokenRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid || string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    return BadRequest(new LoginResponseDto
+                    {
+                        Success = false,
+                        Message = "Invalid refresh token"
+                    });
+                }
+
+                // Validate refresh token using JWT service
+                var tokenResponse = await _jwtService.RefreshTokenAsync(request.RefreshToken);
+                
+                if (tokenResponse == null || !tokenResponse.Success)
+                {
+                    return Unauthorized(new LoginResponseDto
+                    {
+                        Success = false,
+                        Message = tokenResponse?.Message ?? "Invalid or expired refresh token"
+                    });
+                }
+
+                // Get user information for response
+                var user = await _userManager.FindByIdAsync(tokenResponse.UserId!);
+                if (user == null || !user.IsActive)
+                {
+                    return Unauthorized(new LoginResponseDto
+                    {
+                        Success = false,
+                        Message = "User not found or inactive"
+                    });
+                }
+
+                var roles = await _userManager.GetRolesAsync(user);
+
+                var response = new LoginResponseDto
+                {
+                    Success = true,
+                    Message = "Token refreshed successfully",
+                    User = new UserProfileDto
+                    {
+                        Id = user.Id,
+                        FullName = user.FullName,
+                        Email = user.Email!,
+                        EmployeeId = user.EmployeeId,
+                        Department = user.Department,
+                        Position = user.Position,
+                        Roles = roles.ToList(),
+                        IsActive = user.IsActive,
+                        LastLoginDate = user.LastLoginDate
+                    },
+                    AccessToken = tokenResponse.AccessToken,
+                    RefreshToken = tokenResponse.RefreshToken,
+                    ExpiresAt = tokenResponse.ExpiresAt
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new LoginResponseDto
+                {
+                    Success = false,
+                    Message = $"Error refreshing token: {ex.Message}"
+                });
             }
         }
     }
