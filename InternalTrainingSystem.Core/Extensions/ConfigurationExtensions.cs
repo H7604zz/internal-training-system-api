@@ -32,15 +32,37 @@ namespace InternalTrainingSystem.Core.Extensions
                     // Remove quotes if present
                     if (value.StartsWith('"') && value.EndsWith('"'))
                         value = value[1..^1];
-                    
+
                     // Map CONNECTION_STRING to proper configuration key
-                    if (key == "CONNECTION_STRING")
+                    switch (key)
                     {
-                        envVars["ConnectionStrings:DefaultConnection"] = value;
-                    }
-                    else
-                    {
-                        envVars[key] = value;
+                        case "CONNECTION_STRING":
+                            envVars["ConnectionStrings:DefaultConnection"] = value;
+                            break;
+
+                        // Email settings
+                        case "SMTP_SERVER":
+                            envVars["EmailSettings:SmtpServer"] = value;
+                            break;
+                        case "SMTP_PORT":
+                            envVars["EmailSettings:SmtpPort"] = value;
+                            break;
+                        case "SMTP_USERNAME":
+                            envVars["EmailSettings:SmtpUsername"] = value;
+                            break;
+                        case "SMTP_PASSWORD":
+                            envVars["EmailSettings:SmtpPassword"] = value;
+                            break;
+                        case "FROM_EMAIL":
+                            envVars["EmailSettings:FromEmail"] = value;
+                            break;
+                        case "FROM_NAME":
+                            envVars["EmailSettings:FromName"] = value;
+                            break;
+
+                        default:
+                            envVars[key] = value;
+                            break;
                     }
                 }
                 
