@@ -3,6 +3,8 @@ using InternalTrainingSystem.Core.Extensions;
 using InternalTrainingSystem.Core.DB;
 using Microsoft.EntityFrameworkCore;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Services.Implement;
+using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Identity;
 using InternalTrainingSystem.Core.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -29,6 +31,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseSqlServer(connectionString);
 });
+
+builder.Services.AddScoped<ICourseService, CourseService>();
 
 // Configure Identity
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
@@ -123,6 +127,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
