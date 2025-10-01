@@ -1,9 +1,11 @@
-﻿using InternalTrainingSystem.Core.Models;
+﻿using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Models;
 
 namespace InternalTrainingSystem.Core.Services.Interface
 {
     public interface ICourseService
     {
         public Course? GetCourseByCourseID(int? couseId);
+        Task<IEnumerable<CourseListDto>> GetCoursesByIdentifiersAsync(List<string> identifiers);
     }
 }
