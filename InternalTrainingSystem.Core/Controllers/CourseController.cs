@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Dto.Courses;
+﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Dto.Courses;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Http;
@@ -100,6 +101,12 @@ namespace InternalTrainingSystem.Core.Controllers
             if (!ok) return NotFound(new { message = $"Course {id} not found" });
 
             return Ok(new { courseId = id, isActive = dto.IsActive });
+        }
+        [HttpGet("search")]
+        public async Task<ActionResult<PagedResult<CourseListItemDto>>> Search([FromQuery] CourseSearchRequest req, CancellationToken ct)
+        {
+            var result = await _service.SearchAsync(req, ct);
+            return Ok(result);
         }
 
     }
