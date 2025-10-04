@@ -1,5 +1,5 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Dto.Courses;
+using InternalTrainingSystem.Core.DTOs.Courses;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Http;
@@ -42,13 +42,11 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-            // Lấy user hiện tại (nếu có auth)
             var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                         ?? "system"; // fallback nếu chưa có auth
+                         ?? "system"; 
 
             var now = DateTime.UtcNow;
 
-            // Map DTO -> Entity, server tự set các field hệ thống
             var entity = new Course
             {
                 CourseName = dto.CourseName.Trim(),
@@ -56,7 +54,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 CourseCategoryId = dto.CourseCategoryId,
                 Duration = dto.Duration,
                 Level = dto.Level,
-                IsActive = true,       // mặc định Active khi tạo (tùy business của bạn)
+                IsActive = true,       
                 CreatedDate = now,
                 UpdatedDate = null,
                 CreatedById = userId
