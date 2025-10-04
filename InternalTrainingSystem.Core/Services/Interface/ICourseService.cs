@@ -1,4 +1,4 @@
-﻿using InternalTrainingSystem.Core.Dto.Courses;
+﻿using InternalTrainingSystem.Core.DTOs.Courses;
 using InternalTrainingSystem.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using InternalTrainingSystem.Core.Configuration;

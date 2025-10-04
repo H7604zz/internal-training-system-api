@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Linq;
 using InternalTrainingSystem.Core.DB;
-using InternalTrainingSystem.Core.Dto.Courses;
+using InternalTrainingSystem.Core.DTOs.Courses;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Mvc;

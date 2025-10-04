@@ -1,4 +1,4 @@
-﻿namespace InternalTrainingSystem.Core.Dto.Courses
+﻿namespace InternalTrainingSystem.Core.DTOs.Courses
 {
     public class CourseListItemDto
     {
