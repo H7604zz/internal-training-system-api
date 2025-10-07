@@ -30,7 +30,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return users;
         }
 
-        public List<ApplicationUser> GetUserRoleStaffWithoutCertificate(int courseId)
+        public List<ApplicationUser> GetUserRoleEligibleStaff(int courseId)
         {
             var users = _context.Users
                 .Include(u => u.CourseEnrollments)

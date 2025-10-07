@@ -2,7 +2,7 @@
 
 namespace InternalTrainingSystem.Core.DTOs
 {
-    public class StaffWithoutCertificateResponse
+    public class EligibleStaffResponse
     {
         public string? EmployeeId { get; set; }
         public string FullName { get; set; }
@@ -12,6 +12,8 @@ namespace InternalTrainingSystem.Core.DTOs
 
         public string? Position { get; set; }
         public string? Status { get; set; }
+
+        public string? Reason { get; set; }
     }
 
     public class StaffConfirmCourseResponse

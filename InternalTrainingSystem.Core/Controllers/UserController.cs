@@ -21,9 +21,9 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpGet("{courseId}/eligible-staff")]
         public IActionResult GetEligibleUsers(int courseId)
         { 
-            var staffWithoutCertificate = _userService.GetUserRoleStaffWithoutCertificate(courseId);
+            var staffWithoutCertificate = _userService.GetUserRoleEligibleStaff(courseId);
 
-            var response = staffWithoutCertificate.Select(u => new StaffWithoutCertificateResponse
+            var response = staffWithoutCertificate.Select(u => new EligibleStaffResponse
             {
                 EmployeeId = u.EmployeeId,
                 FullName = u.FullName,
@@ -32,6 +32,8 @@ namespace InternalTrainingSystem.Core.Controllers
                 Position = u.Position,
                 Status = u.CourseEnrollments
                 .FirstOrDefault(e => e.CourseId == courseId)?.Status ?? EnrollmentConstants.Status.NotEnrolled,
+                Reason = u.CourseEnrollments
+                .FirstOrDefault(e => e.CourseId == courseId)?.RejectionReason ?? "Không lí do!",
             }).ToList();
 
             return Ok(response);
