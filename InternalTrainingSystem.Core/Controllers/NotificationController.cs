@@ -48,7 +48,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 SentAt = DateTime.UtcNow,
             });
 
-            return Ok(new { Message = "Đã gửi mail cho danh sách nhân viên cần học.", Count = EligibleStaff.Count});
+            return Ok(new { Message = "Đã gửi mail cho danh sách nhân viên cần học."});
         }
 
         [HttpGet("{courseId}/notification-status/{type}")]
