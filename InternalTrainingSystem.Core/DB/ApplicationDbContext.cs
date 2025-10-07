@@ -28,6 +28,7 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<Certificate> Certificates { get; set; }
         public DbSet<Class> Classes { get; set; }
         public DbSet<ClassEnrollment> ClassEnrollments { get; set; }
+        public DbSet<CourseNotification> CourseNotifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -211,13 +212,13 @@ namespace InternalTrainingSystem.Core.DB
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Certificate>()
-                .HasOne(c => c.Course)                   
-                .WithMany(course => course.Certificates) 
+                .HasOne(c => c.Course)
+                .WithMany(course => course.Certificates)
                 .HasForeignKey(c => c.CourseId);
 
             builder.Entity<Certificate>()
-                .HasOne(c => c.User)                     
-                .WithMany(u => u.Certificates)          
+                .HasOne(c => c.User)
+                .WithMany(u => u.Certificates)
                 .HasForeignKey(c => c.UserId);
 
             // Indexes for CourseCategory
@@ -336,6 +337,10 @@ namespace InternalTrainingSystem.Core.DB
             builder.Entity<ClassEnrollment>()
                 .Property(ce => ce.FinalGrade)
                 .HasPrecision(5, 2);
+
+            builder.Entity<CourseNotification>()
+                .HasIndex(c => new { c.CourseId, c.Type })
+                .IsUnique();
         }
     }
 }
