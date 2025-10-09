@@ -11,7 +11,6 @@ using System.Text;
 using InternalTrainingSystem.Core.Middleware;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
-using InternalTrainingSystem.Core.Services.Implement;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,7 +44,6 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
 // Register Services
-builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 
