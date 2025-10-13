@@ -80,5 +80,44 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 })
                 .ToListAsync();
         }
+
+        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId)
+        {
+            var course = await _context.Courses
+                .Include(c => c.CourseCategory)
+                .Include(c => c.CourseEnrollments)
+                .FirstOrDefaultAsync(c => c.CourseId == courseId);
+
+            if (course == null)
+            {
+                return null;
+            }
+
+            // Calculate enrollment count
+            var enrollmentCount = course.CourseEnrollments?.Count ?? 0;
+
+            // For now, we'll use a default rating of 4.5. 
+            // In the future, this should be calculated from actual ratings
+            var averageRating = 4.5;
+
+            return new CourseDetailDto
+            {
+                CourseId = course.CourseId,
+                CourseName = course.CourseName,
+                Description = course.Description,
+                Duration = course.Duration,
+                Level = course.Level,
+                CategoryName = course.CourseCategory?.CategoryName ?? "Unknown",
+                CategoryId = course.CourseCategoryId,
+                IsActive = course.IsActive,
+                CreatedDate = course.CreatedDate,
+                UpdatedDate = course.UpdatedDate,
+                Prerequisites = null, // Not available in current model
+                Objectives = null, // Not available in current model
+                Price = null, // Not available in current model
+                EnrollmentCount = enrollmentCount,
+                AverageRating = averageRating
+            };
+        }
     }
 }

@@ -47,5 +47,23 @@ namespace InternalTrainingSystem.Core.Controllers
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
         }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<CourseDetailDto>> GetCourseDetail(int id)
+        {
+            try
+            {
+                var course = await _courseService.GetCourseDetailAsync(id);
+                if (course == null)
+                {
+                    return NotFound(new { message = "Course not found" });
+                }
+                return Ok(course);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
     }
 }

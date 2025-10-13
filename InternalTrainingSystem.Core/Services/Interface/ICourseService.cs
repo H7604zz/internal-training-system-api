@@ -8,5 +8,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         public Course? GetCourseByCourseID(int? couseId);
         Task<IEnumerable<CourseListDto>> GetAllCoursesAsync();
         Task<IEnumerable<CourseListDto>> GetCoursesByIdentifiersAsync(List<string> identifiers);
+        Task<CourseDetailDto?> GetCourseDetailAsync(int courseId);
     }
 }
