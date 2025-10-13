@@ -1,5 +1,4 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.DTOs.Courses;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Services.Interface;
@@ -24,16 +23,16 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<Course>> GetAll()
         {
-            var items = _service.GetCourses();
+            var items = _courseService.GetAllCoursesAsync();
             return Ok(items);
         }
 
         // GET: /api/courses/5
         [HttpGet("{id:int}")]
-        public ActionResult<Course> GetById(int id)
+        public ActionResult<Course> GetById(int courseId)
         {
-            var item = _service.GetCourses().FirstOrDefault(x => x.CourseId == id);
-            if (item == null) return NotFound(new { message = $"Course {id} not found" });
+            var item = _courseService.GetCourseByCourseID(courseId);
+            if (item == null) return NotFound(new { message = $"Course {courseId} not found" });
             return Ok(item);
         }
 
@@ -44,7 +43,7 @@ namespace InternalTrainingSystem.Core.Controllers
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
             var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                         ?? "system"; 
+                         ?? "system";
 
             var now = DateTime.UtcNow;
 
@@ -55,13 +54,13 @@ namespace InternalTrainingSystem.Core.Controllers
                 CourseCategoryId = dto.CourseCategoryId,
                 Duration = dto.Duration,
                 Level = dto.Level,
-                IsActive = true,       
+                IsActive = true,
                 CreatedDate = now,
                 UpdatedDate = null,
                 CreatedById = userId
             };
 
-            var created = _service.CreateCourses(entity);
+            var created = _courseService.CreateCourses(entity);
             if (created == null) return BadRequest(new { message = "Create course failed" });
 
             return CreatedAtAction(nameof(GetById), new { id = created.CourseId }, created);
@@ -75,7 +74,7 @@ namespace InternalTrainingSystem.Core.Controllers
             if (id != course.CourseId)
                 return BadRequest(new { message = "Id in route and body must match" });
 
-            var ok = _service.UpdateCourses(course);
+            var ok = _courseService.UpdateCourses(course);
             if (!ok) return NotFound(new { message = $"Course {id} not found or update failed" });
 
             return NoContent();
@@ -85,7 +84,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpDelete("{id:int}")]
         public IActionResult Delete(int id)
         {
-            var ok = _service.DeleteCoursesByCourseId(id);
+            var ok = _courseService.DeleteCoursesByCourseId(id);
             if (!ok) return NotFound(new { message = $"Course {id} not found or delete failed" });
 
             return NoContent();
@@ -96,70 +95,72 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPatch("{id:int}/status")]
         public IActionResult ToggleStatus(int id, [FromBody] ToggleStatusDto dto)
         {
-            var ok = _service.ToggleStatus(id, dto.IsActive);
+            var ok = _courseService.ToggleStatus(id, dto.IsActive);
             if (!ok) return NotFound(new { message = $"Course {id} not found" });
 
             return Ok(new { courseId = id, isActive = dto.IsActive });
         }
-        
+
         [HttpGet("search")]
-        public async Task<ActionResult<PagedResult<CourseListItemDto>>> Search([FromQuery] CourseSearchRequest req, CancellationToken ct)
+        public async Task<ActionResult<PagedResult<CourseListItemDto>>> Search([FromQuery] CourseSearchRequest req,
+            CancellationToken ct)
         {
-            var result = await _service.SearchAsync(req, ct);
+            var result = await _courseService.SearchAsync(req, ct);
             return Ok(result);
         }
 
-    }
-    
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<CourseListDto>>> GetAllCourses()
-    {
-        try
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<CourseListDto>>> GetAllCourses()
         {
-            var courses = await _courseService.GetAllCoursesAsync();
-            return Ok(courses);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Internal server error", error = ex.Message });
-        }
-    }
-
-    [HttpPost("by-identifiers")]
-    public async Task<ActionResult<IEnumerable<CourseListDto>>> GetCoursesByIdentifiers([FromBody] GetCoursesByIdentifiersRequest request)
-    {
-        try
-        {
-            if (request?.Identifiers == null || !request.Identifiers.Any())
+            try
             {
-                return BadRequest(new { message = "Identifiers list cannot be empty" });
+                var courses = await _courseService.GetAllCoursesAsync();
+                return Ok(courses);
             }
-
-            var courses = await _courseService.GetCoursesByIdentifiersAsync(request.Identifiers);
-            return Ok(courses);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Internal server error", error = ex.Message });
-        }
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<CourseDetailDto>> GetCourseDetail(int id)
-    {
-        try
-        {
-            var course = await _courseService.GetCourseDetailAsync(id);
-            if (course == null)
+            catch (Exception ex)
             {
-                return NotFound(new { message = "Course not found" });
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
-            return Ok(course);
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Internal server error", error = ex.Message });
-        }
-    }
 
+        [HttpPost("by-identifiers")]
+        public async Task<ActionResult<IEnumerable<CourseListDto>>> GetCoursesByIdentifiers(
+            [FromBody] GetCoursesByIdentifiersRequest request)
+        {
+            try
+            {
+                if (request?.Identifiers == null || !request.Identifiers.Any())
+                {
+                    return BadRequest(new { message = "Identifiers list cannot be empty" });
+                }
+
+                var courses = await _courseService.GetCoursesByIdentifiersAsync(request.Identifiers);
+                return Ok(courses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<CourseDetailDto>> GetCourseDetail(int id)
+        {
+            try
+            {
+                var course = await _courseService.GetCourseDetailAsync(id);
+                if (course == null)
+                {
+                    return NotFound(new { message = "Course not found" });
+                }
+
+                return Ok(course);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
+
+    }
 }
