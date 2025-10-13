@@ -15,6 +15,20 @@ namespace InternalTrainingSystem.Core.Controllers
             _courseService = courseService;
         }
 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<CourseListDto>>> GetAllCourses()
+        {
+            try
+            {
+                var courses = await _courseService.GetAllCoursesAsync();
+                return Ok(courses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
+
         [HttpPost("by-identifiers")]
         public async Task<ActionResult<IEnumerable<CourseListDto>>> GetCoursesByIdentifiers([FromBody] GetCoursesByIdentifiersRequest request)
         {
