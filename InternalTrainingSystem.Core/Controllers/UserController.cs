@@ -20,7 +20,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
         [HttpGet("{courseId}/eligible-staff")]
         public IActionResult GetEligibleUsers(int courseId)
-        { 
+        {
             var staffWithoutCertificate = _userService.GetUserRoleEligibleStaff(courseId);
 
             var response = staffWithoutCertificate.Select(u => new EligibleStaffResponse
@@ -46,12 +46,31 @@ namespace InternalTrainingSystem.Core.Controllers
 
             var response = confirmedUsers.Select(u => new StaffConfirmCourseResponse
             {
+                Id = u.Id,
                 EmployeeId = u.EmployeeId,
                 FullName = u.FullName,
                 Email = u.Email!,
                 Department = u.Department,
                 Position = u.Position,
                 Status = EnrollmentConstants.Status.Enrolled,
+            }).ToList();
+
+            return Ok(response);
+        }
+
+        [HttpGet("mentors")]
+        public IActionResult GetMentors()
+        {
+            var mentors = _userService.GetMentors();
+
+            var response = mentors.Select(m => new MentorResponse
+            {
+                Id = m.Id,
+                EmployeeId = m.EmployeeId,
+                FullName = m.FullName,
+                Email = m.Email!,
+                Department = m.Department,
+                Position = m.Position
             }).ToList();
 
             return Ok(response);
