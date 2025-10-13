@@ -100,6 +100,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
             return Ok(new { courseId = id, isActive = dto.IsActive });
         }
+        
         [HttpGet("search")]
         public async Task<ActionResult<PagedResult<CourseListItemDto>>> Search([FromQuery] CourseSearchRequest req, CancellationToken ct)
         {
