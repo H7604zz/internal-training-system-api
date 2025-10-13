@@ -20,6 +20,26 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return _context.Courses.FirstOrDefault(c => c.CourseId == couseId);
         }
 
+        public async Task<IEnumerable<CourseListDto>> GetAllCoursesAsync()
+        {
+            return await _context.Courses
+                .Include(c => c.CourseCategory)
+                .Where(c => c.IsActive)
+                .OrderByDescending(c => c.CreatedDate)
+                .Select(c => new CourseListDto
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    Description = c.Description,
+                    Duration = c.Duration,
+                    Level = c.Level,
+                    CategoryName = c.CourseCategory.CategoryName,
+                    IsActive = c.IsActive,
+                    CreatedDate = c.CreatedDate
+                })
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<CourseListDto>> GetCoursesByIdentifiersAsync(List<string> identifiers)
         {
             if (identifiers == null || !identifiers.Any())
@@ -44,7 +64,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             return await _context.Courses
                 .Include(c => c.CourseCategory)
-                .Where(c => courseIds.Contains(c.CourseId) || 
+                .Where(c => courseIds.Contains(c.CourseId) ||
                            courseNames.Any(name => c.CourseName.ToLower().Contains(name.ToLower())))
                 .OrderByDescending(c => c.CreatedDate)
                 .Select(c => new CourseListDto
