@@ -1,6 +1,7 @@
 ﻿using InternalTrainingSystem.Core.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace InternalTrainingSystem.Core.DB
 {
@@ -24,6 +25,10 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<CourseHistory> CourseHistories { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<UserRoleHistory> UserRoleHistories { get; set; }
+        public DbSet<Certificate> Certificates { get; set; }
+        public DbSet<Class> Classes { get; set; }
+        public DbSet<ClassEnrollment> ClassEnrollments { get; set; }
+        public DbSet<CourseNotification> CourseNotifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -121,6 +126,12 @@ namespace InternalTrainingSystem.Core.DB
                 .HasForeignKey(s => s.InstructorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Entity<Schedule>()
+                .HasOne(s => s.Class)
+                .WithMany(cl => cl.Schedules)
+                .HasForeignKey(s => s.ClassId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // ScheduleParticipant relationships
             builder.Entity<ScheduleParticipant>()
                 .HasOne(sp => sp.Schedule)
@@ -200,6 +211,16 @@ namespace InternalTrainingSystem.Core.DB
                 .HasForeignKey(ch => ch.ScheduleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Entity<Certificate>()
+                .HasOne(c => c.Course)
+                .WithMany(course => course.Certificates)
+                .HasForeignKey(c => c.CourseId);
+
+            builder.Entity<Certificate>()
+                .HasOne(c => c.User)
+                .WithMany(u => u.Certificates)
+                .HasForeignKey(c => c.UserId);
+
             // Indexes for CourseCategory
             builder.Entity<CourseCategory>()
                 .HasIndex(c => c.CategoryName)
@@ -250,6 +271,76 @@ namespace InternalTrainingSystem.Core.DB
 
             builder.Entity<UserRoleHistory>()
                 .HasIndex(urh => urh.RoleId);
+
+            // Indexes for CourseCategory
+            builder.Entity<Certificate>()
+                .HasIndex(c => new { c.UserId, c.CourseId })
+                .IsUnique();
+
+            // Class relationships
+            builder.Entity<Class>()
+                .HasOne(cl => cl.Course)
+                .WithMany(c => c.Classes)
+                .HasForeignKey(cl => cl.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Class>()
+                .HasOne(cl => cl.Mentor)
+                .WithMany(u => u.MentoredClasses)
+                .HasForeignKey(cl => cl.MentorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Class>()
+                .HasOne(cl => cl.CreatedBy)
+                .WithMany(u => u.CreatedClasses)
+                .HasForeignKey(cl => cl.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ClassEnrollment relationships
+            builder.Entity<ClassEnrollment>()
+                .HasOne(ce => ce.Class)
+                .WithMany(cl => cl.ClassEnrollments)
+                .HasForeignKey(ce => ce.ClassId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ClassEnrollment>()
+                .HasOne(ce => ce.Student)
+                .WithMany(u => u.ClassEnrollments)
+                .HasForeignKey(ce => ce.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for Class
+            builder.Entity<Class>()
+                .HasIndex(cl => cl.ClassName);
+
+            builder.Entity<Class>()
+                .HasIndex(cl => new { cl.CourseId, cl.MentorId });
+
+            builder.Entity<Class>()
+                .HasIndex(cl => cl.Status);
+
+            builder.Entity<Class>()
+                .HasIndex(cl => new { cl.StartDate, cl.EndDate });
+
+            // Indexes for ClassEnrollment
+            builder.Entity<ClassEnrollment>()
+                .HasIndex(ce => new { ce.ClassId, ce.StudentId })
+                .IsUnique();
+
+            builder.Entity<ClassEnrollment>()
+                .HasIndex(ce => ce.Status);
+
+            builder.Entity<ClassEnrollment>()
+                .HasIndex(ce => ce.EnrollmentDate);
+
+            // Precision for decimal properties in ClassEnrollment
+            builder.Entity<ClassEnrollment>()
+                .Property(ce => ce.FinalGrade)
+                .HasPrecision(5, 2);
+
+            builder.Entity<CourseNotification>()
+                .HasIndex(c => new { c.CourseId, c.Type })
+                .IsUnique();
         }
     }
 }

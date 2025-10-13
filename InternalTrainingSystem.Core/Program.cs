@@ -13,6 +13,7 @@ using System.Text;
 using InternalTrainingSystem.Core.Middleware;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +38,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 
 // Configure Identity
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequireDigit = true;
@@ -123,6 +124,13 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Internal Training System API", Version = "v1" });
 });
+
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEmailSender, EmailSenderService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ICourseEnrollmentService, CourseEnrollmentService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IClassService, ClassService>();
 
 var app = builder.Build();
 

@@ -21,6 +21,7 @@
     {
         public static class Status
         {
+            public const string NotEnrolled = "NotEnrolled";
             public const string Enrolled = "Enrolled";
             public const string InProgress = "InProgress";
             public const string Completed = "Completed";
