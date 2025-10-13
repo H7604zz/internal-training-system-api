@@ -57,5 +57,18 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             return mentors;
         }
+
+        public List<ApplicationUser> GetAllStaff()
+        {
+            var staff = _context.Users
+                .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
+                .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
+                .Where(x => x.r.Name == UserRoles.Staff && x.u.IsActive)
+                .Select(x => x.u)
+                .Distinct()
+                .ToList();
+
+            return staff;
+        }
     }
 }

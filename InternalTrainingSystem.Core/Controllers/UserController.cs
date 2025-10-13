@@ -75,5 +75,23 @@ namespace InternalTrainingSystem.Core.Controllers
 
             return Ok(response);
         }
+
+        [HttpGet("staff")]
+        public IActionResult GetAllStaff()
+        {
+            var staff = _userService.GetAllStaff();
+
+            var response = staff.Select(s => new StaffResponse
+            {
+                Id = s.Id,
+                EmployeeId = s.EmployeeId,
+                FullName = s.FullName,
+                Email = s.Email!,
+                Department = s.Department,
+                Position = s.Position
+            }).ToList();
+
+            return Ok(response);
+        }
     }
 }
