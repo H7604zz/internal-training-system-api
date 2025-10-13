@@ -32,7 +32,10 @@ namespace InternalTrainingSystem.Core.Extensions
                     // Remove quotes if present
                     if (value.StartsWith('"') && value.EndsWith('"'))
                         value = value[1..^1];
-
+                    
+                    // Set both environment variable and configuration
+                    Environment.SetEnvironmentVariable(key, value);
+                    
                     // Map CONNECTION_STRING to proper configuration key
                     switch (key)
                     {
@@ -67,6 +70,12 @@ namespace InternalTrainingSystem.Core.Extensions
                 }
                 
                 configuration.AddInMemoryCollection(envVars);
+                
+                Console.WriteLine($"Loaded {envVars.Count} environment variables from {envPath}");
+            }
+            else
+            {
+                Console.WriteLine($"Environment file not found at: {envPath}");
             }
         }
 
