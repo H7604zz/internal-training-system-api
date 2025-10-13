@@ -41,12 +41,17 @@ namespace InternalTrainingSystem.Core.Models
         [Required]
         public string InstructorId { get; set; } = string.Empty;
 
+        public int? ClassId { get; set; } // Optional: Schedule can be linked to a specific class
+
         // Navigation Properties
         [ForeignKey("CourseId")]
         public virtual Course Course { get; set; } = null!;
 
         [ForeignKey("InstructorId")]
         public virtual ApplicationUser Instructor { get; set; } = null!;
+
+        [ForeignKey("ClassId")]
+        public virtual Class? Class { get; set; }
 
         public virtual ICollection<ScheduleParticipant> ScheduleParticipants { get; set; } = new List<ScheduleParticipant>();
         public virtual ICollection<CourseHistory> CourseHistories { get; set; } = new List<CourseHistory>();

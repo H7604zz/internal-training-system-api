@@ -24,6 +24,9 @@ namespace InternalTrainingSystem.Core.Models
 
         public DateTime? LastAccessedDate { get; set; }
 
+        [StringLength(255)]
+        public string? RejectionReason { get; set; }
+
         // Foreign Keys
         [Required]
         public string UserId { get; set; } = string.Empty;
