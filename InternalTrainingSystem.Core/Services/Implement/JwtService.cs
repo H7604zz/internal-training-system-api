@@ -55,7 +55,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     new Claim(ClaimTypes.Email, user.Email ?? ""),
                     new Claim(ClaimTypes.Name, user.FullName ?? ""),
                     new Claim("EmployeeId", user.EmployeeId ?? ""),
-                    new Claim("Department", user.Department ?? ""),
+                    new Claim("Department", user.Department ?.Name ?? ""),
                     new Claim("Position", user.Position ?? ""),
                     new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                     new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),

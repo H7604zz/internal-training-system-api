@@ -28,7 +28,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 EmployeeId = u.EmployeeId,
                 FullName = u.FullName,
                 Email = u.Email!,
-                Department = u.Department,
+                Department = u.Department?.Name,
                 Position = u.Position,
                 Status = u.CourseEnrollments
                 .FirstOrDefault(e => e.CourseId == courseId)?.Status ?? EnrollmentConstants.Status.NotEnrolled,
@@ -50,7 +50,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 EmployeeId = u.EmployeeId,
                 FullName = u.FullName,
                 Email = u.Email!,
-                Department = u.Department,
+                Department = u.Department?.Name,
                 Position = u.Position,
                 Status = EnrollmentConstants.Status.Enrolled,
             }).ToList();
@@ -69,7 +69,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 EmployeeId = m.EmployeeId,
                 FullName = m.FullName,
                 Email = m.Email!,
-                Department = m.Department,
+                Department = m.Department?.Name,
                 Position = m.Position
             }).ToList();
 
@@ -87,7 +87,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 EmployeeId = s.EmployeeId,
                 FullName = s.FullName,
                 Email = s.Email!,
-                Department = s.Department,
+                Department = s.Department?.Name,
                 Position = s.Position
             }).ToList();
 
