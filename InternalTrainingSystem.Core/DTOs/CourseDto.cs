@@ -9,6 +9,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Description { get; set; }
         public int Duration { get; set; }
         public string Level { get; set; } = string.Empty;
+        public string? Department { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public DateTime CreatedDate { get; set; }
@@ -21,6 +22,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Description { get; set; }
         public int Duration { get; set; }
         public string Level { get; set; } = string.Empty;
+        public string? Department { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public DateTime CreatedDate { get; set; }
@@ -37,7 +39,7 @@ namespace InternalTrainingSystem.Core.DTOs
     {
         public List<string> Identifiers { get; set; } = new List<string>();
     }
-    
+
     public class CreateCourseDto
     {
         [Required, StringLength(200)]
@@ -54,8 +56,11 @@ namespace InternalTrainingSystem.Core.DTOs
 
         [Required, RegularExpression("Beginner|Intermediate|Advanced")]
         public string Level { get; set; } = "Beginner";
+
+        [StringLength(100)]
+        public string? Department { get; set; }
     }
-    
+
     public class CourseSearchRequest
     {
         public string? Q { get; set; }
@@ -68,6 +73,7 @@ namespace InternalTrainingSystem.Core.DTOs
 
         public bool? IsActive { get; set; }
         public string? Level { get; set; }
+        public string? Department { get; set; }
         public int? DurationFrom { get; set; }
         public int? DurationTo { get; set; }
         public DateTime? CreatedFrom { get; set; }
@@ -76,7 +82,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
     }
-    
+
     public class CourseListItemDto
     {
         public int CourseId { get; set; }
@@ -86,6 +92,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string CourseCategoryName { get; set; } = string.Empty;
         public int Duration { get; set; }
         public string Level { get; set; } = "Beginner";
+        public string? Department { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedDate { get; set; }
     }
