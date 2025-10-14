@@ -37,6 +37,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 CourseCategoryId = dto.CourseCategoryId,
                 Duration = dto.Duration,
                 Level = dto.Level,
+                Department = dto.Department,
                 IsActive = true,
                 CreatedDate = now,
                 UpdatedDate = null,
