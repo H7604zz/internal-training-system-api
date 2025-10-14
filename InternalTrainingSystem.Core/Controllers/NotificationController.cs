@@ -14,13 +14,15 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IEmailSender _mailService;
         private readonly ICourseService _couseService;
         private readonly INotificationService _notificationService;
+        private readonly string _baseUrl;
         public NotificationController(IUserService userServices, IEmailSender mailService,
-            ICourseService couseService, INotificationService notificationService)
+            ICourseService couseService, INotificationService notificationService, IConfiguration config)
         {
             _userService = userServices;
             _mailService = mailService;
             _couseService = couseService;
             _notificationService = notificationService;
+            _baseUrl = config["ApplicationSettings:ApiBaseUrl"] ?? "http://localhost:7001";
         }
 
         [HttpPost("{courseId}/notify-eligible-users")]
@@ -36,9 +38,19 @@ namespace InternalTrainingSystem.Core.Controllers
 
             foreach (var user in EligibleStaff)
             {
-                _mailService.SendEmailAsync(user.Email!,
+                string confirmPageUrl = $"{_baseUrl}/courses/confirm?courseId={courseId}&userId={user.Id}";
+
+                _mailService.SendEmailAsync(
+                    "ducnthe172246@fpt.edu.vn",
                     "Thông báo mở lớp học " + course.CourseName,
-                    $"Xin chào {user.UserName}, nếu bạn chưa có chứng chỉ cho khóa học, vui lòng tham gia lớp học sắp tới.");
+                    $@"
+                    Xin chào {user.UserName},<br/><br/>
+                    Lớp học <b>{course.CourseName}</b> đã được mở.<br/>
+                    Vui lòng truy cập liên kết sau để xác nhận tham gia:<br/><br/>
+                    <a href='{confirmPageUrl}'>➡ Vào trang xác nhận tham gia khóa học</a><br/><br/>
+                    Cảm ơn!
+                    "
+                );
             }
 
             _notificationService.SaveNotificationAsync(new CourseNotification
@@ -48,7 +60,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 SentAt = DateTime.UtcNow,
             });
 
-            return Ok(new { Message = "Đã gửi mail cho danh sách nhân viên cần học."});
+            return Ok(new { Message = "Đã gửi mail cho danh sách nhân viên cần học." });
         }
 
         [HttpGet("{courseId}/notification-status/{type}")]
