@@ -29,6 +29,7 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<Class> Classes { get; set; }
         public DbSet<ClassEnrollment> ClassEnrollments { get; set; }
         public DbSet<CourseNotification> CourseNotifications { get; set; }
+        public DbSet<Department> Departments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -341,6 +342,39 @@ namespace InternalTrainingSystem.Core.DB
             builder.Entity<CourseNotification>()
                 .HasIndex(c => new { c.CourseId, c.Type })
                 .IsUnique();
+            // Department relationships
+            builder.Entity<Department>(e =>
+            {
+                e.Property(d => d.Name).IsRequired().HasMaxLength(200);
+                e.Property(d => d.Description).HasMaxLength(1000);
+
+                e.HasIndex(d => d.Name).IsUnique();
+
+                e.HasOne(d => d.User)
+                 .WithOne(u => u.Department)
+                 .HasForeignKey<Department>(d => d.UserId)
+                 .OnDelete(DeleteBehavior.SetNull);
+            });
+            
+            builder.Entity<Department>()
+                   .HasMany(d => d.Courses)
+                   .WithMany(c => c.Departments)
+                   .UsingEntity<Dictionary<string, object>>(
+                       "DepartmentCourse",
+                       r => r.HasOne<Course>()
+                             .WithMany()
+                             .HasForeignKey("CourseId")
+                             .OnDelete(DeleteBehavior.Cascade),
+                       l => l.HasOne<Department>()
+                             .WithMany()
+                             .HasForeignKey("DepartmentId")
+                             .OnDelete(DeleteBehavior.Cascade),
+                       j =>
+                       {
+                           j.HasKey("DepartmentId", "CourseId");
+                           j.HasIndex("CourseId", "DepartmentId"); 
+                       }
+                   );
         }
     }
 }

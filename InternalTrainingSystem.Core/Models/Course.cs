@@ -46,5 +46,6 @@ namespace InternalTrainingSystem.Core.Models
         public virtual ICollection<CourseHistory> CourseHistories { get; set; } = new List<CourseHistory>();
         public virtual ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
         public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
+        public ICollection<Department> Departments { get; set; } = new List<Department>();
     }
 }

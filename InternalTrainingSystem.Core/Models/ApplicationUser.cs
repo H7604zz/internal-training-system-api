@@ -13,9 +13,6 @@ namespace InternalTrainingSystem.Core.Models
         public string? EmployeeId { get; set; }
 
         [StringLength(100)]
-        public string? Department { get; set; }
-
-        [StringLength(100)]
         public string? Position { get; set; }
 
         public DateTime? HireDate { get; set; }
@@ -27,6 +24,7 @@ namespace InternalTrainingSystem.Core.Models
         public DateTime? LastLoginDate { get; set; }
 
         // Navigation properties
+        public Department? Department { get; set; }
         public virtual ICollection<CourseEnrollment> CourseEnrollments { get; set; } = new List<CourseEnrollment>();
         public virtual ICollection<QuizAttempt> QuizAttempts { get; set; } = new List<QuizAttempt>();
         public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
