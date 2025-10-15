@@ -127,7 +127,7 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}/detail")]
         public async Task<ActionResult<CourseDetailDto>> GetCourseDetail(int id)
         {
             try

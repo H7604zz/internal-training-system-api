@@ -6,7 +6,6 @@ using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Identity;
-using InternalTrainingSystem.Core.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -129,6 +128,7 @@ builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ICourseEnrollmentService, CourseEnrollmentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IClassService, ClassService>();
+builder.Services.AddScoped<ICourseMaterialService, CourseMaterialService>();
 
 var app = builder.Build();
 
