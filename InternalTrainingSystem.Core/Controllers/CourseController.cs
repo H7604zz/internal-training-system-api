@@ -20,12 +20,12 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         // GET: /api/courses
-        [HttpGet]
-        public ActionResult<IEnumerable<Course>> GetAll()
-        {
-            var items = _courseService.GetAllCoursesAsync();
-            return Ok(items);
-        }
+        //[HttpGet]
+        //public ActionResult<IEnumerable<Course>> GetAll()
+        //{
+        //    var items = _courseService.GetAllCoursesAsync();
+        //    return Ok(items);
+        //}
 
         // GET: /api/courses/5
         [HttpGet("{id:int}")]
@@ -143,7 +143,7 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}/detail")]
         public async Task<ActionResult<CourseDetailDto>> GetCourseDetail(int id)
         {
             try
