@@ -19,6 +19,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             var users = _context.Users
                .Include(u => u.CourseEnrollments)
+               .Include(u => u.Department)
                .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
                .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
                .Where(x => x.r.Name == UserRoles.Staff
@@ -32,12 +33,19 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public List<ApplicationUser> GetUserRoleEligibleStaff(int courseId)
         {
+            var departmentIds = _context.Courses
+               .Where(c => c.CourseId == courseId)
+               .SelectMany(c => c.Departments.Select(d => d.Id))
+               .ToList();
+
             var users = _context.Users
                 .Include(u => u.CourseEnrollments)
                 .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
                 .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
                 .Where(x => x.r.Name == UserRoles.Staff
-                            && !_context.Certificates.Any(c => c.UserId == x.u.Id && c.CourseId == courseId))
+                    && !_context.Certificates.Any(c => c.UserId == x.u.Id && c.CourseId == courseId)
+                    && departmentIds.Contains(x.u.Department!.Id)
+                )
                 .Select(x => x.u)
                 .Distinct()
                 .ToList();

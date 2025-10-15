@@ -11,8 +11,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using InternalTrainingSystem.Core.Middleware;
-using InternalTrainingSystem.Core.Services.Implement;
-using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
