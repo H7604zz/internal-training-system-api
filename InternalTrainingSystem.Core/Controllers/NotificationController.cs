@@ -40,8 +40,8 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 string confirmPageUrl = $"{_baseUrl}/courses/confirm?courseId={courseId}&userId={user.Id}";
 
-                _mailService.SendEmailAsync(
-                    "ducnthe172246@fpt.edu.vn",
+                Hangfire.BackgroundJob.Enqueue(() => _mailService.SendEmailAsync(
+                    user.Email!,
                     "Thông báo mở lớp học " + course.CourseName,
                     $@"
                     Xin chào {user.UserName},<br/><br/>
@@ -50,7 +50,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     <a href='{confirmPageUrl}'>➡ Vào trang xác nhận tham gia khóa học</a><br/><br/>
                     Cảm ơn!
                     "
-                );
+                ));
             }
 
             _notificationService.SaveNotificationAsync(new CourseNotification
