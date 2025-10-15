@@ -29,6 +29,8 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<Class> Classes { get; set; }
         public DbSet<ClassEnrollment> ClassEnrollments { get; set; }
         public DbSet<CourseNotification> CourseNotifications { get; set; }
+        public DbSet<CourseModule> CourseModules { get; set; }
+        public DbSet<Lesson> Lessons { get; set; }
         public DbSet<Department> Departments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -375,6 +377,30 @@ namespace InternalTrainingSystem.Core.DB
                            j.HasIndex("CourseId", "DepartmentId"); 
                        }
                    );
+
+            // CourseModule
+            builder.Entity<CourseModule>()
+                .HasOne(m => m.Course)
+                .WithMany(c => c.Modules)                    
+                .HasForeignKey(m => m.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<CourseModule>()
+                .HasIndex(m => new { m.CourseId, m.OrderIndex }); 
+
+            // Lesson
+            builder.Entity<Lesson>()
+                .HasOne(l => l.Module)
+                .WithMany(m => m.Lessons)
+                .HasForeignKey(l => l.ModuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Lesson>()
+                .HasIndex(l => new { l.ModuleId, l.OrderIndex }); 
+
+            
+            builder.Entity<Lesson>()
+                .HasIndex(l => l.Type);
         }
     }
 }
