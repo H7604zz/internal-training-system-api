@@ -11,9 +11,9 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<IEnumerable<CourseListDto>> GetAllCoursesAsync();
         Task<IEnumerable<CourseListDto>> GetCoursesByIdentifiersAsync(List<string> identifiers);
         Task<CourseDetailDto?> GetCourseDetailAsync(int courseId);
-        public bool UpdateCourses(Course course);
-        public bool DeleteCoursesByCourseId(int id);
-        public Course? CreateCourses(Course course);
+        Task<bool> DeleteCourseAsync(int id);
+        Task<Course?> CreateCourseAsync(Course course, List<int>? departmentIds);
+        Task<Course?> UpdateCourseAsync(UpdateCourseDto dto);
         public bool ToggleStatus(int id, string status);
         Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default);
 
