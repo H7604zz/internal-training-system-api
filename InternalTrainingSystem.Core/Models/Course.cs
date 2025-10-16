@@ -32,6 +32,10 @@ namespace InternalTrainingSystem.Core.Models
 
         public DateTime? UpdatedDate { get; set; }
 
+        public bool IsOnline { get; set; } = true;
+
+        public bool IsMandatory { get; set; } = false;
+
         // Foreign Keys
         [Required]
         public string CreatedById { get; set; } = string.Empty;
