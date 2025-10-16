@@ -10,7 +10,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public int Duration { get; set; }
         public string Level { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
+        public string? Status { get; set; }
         public DateTime CreatedDate { get; set; }
     }
 
@@ -22,7 +22,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public int Duration { get; set; }
         public string Level { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
+        public string? Status { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public int? CategoryId { get; set; }
@@ -86,7 +86,9 @@ namespace InternalTrainingSystem.Core.DTOs
         public string CourseCategoryName { get; set; } = string.Empty;
         public int Duration { get; set; }
         public string Level { get; set; } = "Beginner";
-        public bool IsActive { get; set; }
+        public string? Status { get; set; }
         public DateTime CreatedDate { get; set; }
     }
+
+    public record ToggleStatusDto(string Status);
 }
