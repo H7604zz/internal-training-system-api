@@ -14,7 +14,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         public bool UpdateCourses(Course course);
         public bool DeleteCoursesByCourseId(int id);
         public Course? CreateCourses(Course course);
-        public bool ToggleStatus(int id, bool isActive);
+        public bool ToggleStatus(int id, string status);
         Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default);
 
     }

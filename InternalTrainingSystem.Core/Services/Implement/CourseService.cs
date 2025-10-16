@@ -5,6 +5,7 @@ using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Constants;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -65,14 +66,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }
         }
 
-        public bool ToggleStatus(int id, bool isActive)
+        public bool ToggleStatus(int id, string status)
         {
             var course = _context.Courses.Find(id);
             if (course == null) return false;
-
-            course.IsActive = isActive;
-            course.UpdatedDate = DateTime.UtcNow;
-            return _context.SaveChanges() > 0;
+            if (course.Status.ToLower().Equals(CourseConstants.Status.Apporove.ToLower())){
+                course.Status = status;
+                course.UpdatedDate = DateTime.UtcNow;
+                return _context.SaveChanges() > 0;
+            }
+            return false;
         }
         public async Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default)
         {
@@ -113,7 +116,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 q = q.Where(c => c.CourseCategoryId == req.CategoryId.Value);
 
             if (req.IsActive.HasValue)
-                q = q.Where(c => c.IsActive == req.IsActive.Value);
+                q = q.Where(c => c.Status == Constants.CourseConstants.Status.Active == req.IsActive.Value);
 
             if (!string.IsNullOrWhiteSpace(req.Level))
                 q = q.Where(c => c.Level == req.Level);
@@ -148,7 +151,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     CourseCategoryName = c.CourseCategory.CategoryName,
                     Duration = c.Duration,
                     Level = c.Level,
-                    IsActive = c.IsActive,
+                    Status = c.Status,
                     CreatedDate = c.CreatedDate
                 })
                 .ToListAsync(ct);
@@ -186,7 +189,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _context.Courses
                 .Include(c => c.CourseCategory)
-                .Where(c => c.IsActive)
+                .Where(c => c.Status==CourseConstants.Status.Active)
                 .OrderByDescending(c => c.CreatedDate)
                 .Select(c => new CourseListDto
                 {
@@ -196,7 +199,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Duration = c.Duration,
                     Level = c.Level,
                     CategoryName = c.CourseCategory.CategoryName,
-                    IsActive = c.IsActive,
+                    Status = CourseConstants.Status.Active,
                     CreatedDate = c.CreatedDate
                 })
                 .ToListAsync();
@@ -237,7 +240,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Duration = c.Duration,
                     Level = c.Level,
                     CategoryName = c.CourseCategory.CategoryName,
-                    IsActive = c.IsActive,
+                    Status = c.Status,
                     CreatedDate = c.CreatedDate
                 })
                 .ToListAsync();
@@ -271,7 +274,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Level = course.Level,
                 CategoryName = course.CourseCategory?.CategoryName ?? "Unknown",
                 CategoryId = course.CourseCategoryId,
-                IsActive = course.IsActive,
+                Status = course.Status,
                 CreatedDate = course.CreatedDate,
                 UpdatedDate = course.UpdatedDate,
                 Prerequisites = null, // Not available in current model

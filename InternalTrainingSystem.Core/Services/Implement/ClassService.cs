@@ -82,7 +82,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     {
                         // Check if course exists
                         var course = await _context.Courses
-                            .FirstOrDefaultAsync(c => c.CourseId == classRequest.CourseId && c.IsActive);
+                            .FirstOrDefaultAsync(c => c.CourseId == classRequest.CourseId && c.Status == Constants.CourseConstants.Status.Active);
                         if (course == null)
                         {
                             throw new ArgumentException($"Course with ID {classRequest.CourseId} not found or inactive");

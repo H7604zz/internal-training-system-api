@@ -5,6 +5,7 @@ using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using InternalTrainingSystem.Core.Constants;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -37,7 +38,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 CourseCategoryId = dto.CourseCategoryId,
                 Duration = dto.Duration,
                 Level = dto.Level,
-                IsActive = true,
+                Status = CourseConstants.Status.Pending,
                 CreatedDate = now,
                 UpdatedDate = null,
                 CreatedById = userId
@@ -73,15 +74,13 @@ namespace InternalTrainingSystem.Core.Controllers
             return NoContent();
         }
 
-        public record ToggleStatusDto(bool IsActive);
-
         [HttpPatch("{id:int}/status")]
         public IActionResult ToggleStatus(int id, [FromBody] ToggleStatusDto dto)
         {
-            var ok = _courseService.ToggleStatus(id, dto.IsActive);
+            var ok = _courseService.ToggleStatus(id, dto.Status);
             if (!ok) return NotFound(new { message = $"Course {id} not found" });
 
-            return Ok(new { courseId = id, isActive = dto.IsActive });
+            return Ok(new { courseId = id, isActive = dto.Status });
         }
 
         [HttpGet("search")]
