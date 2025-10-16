@@ -118,9 +118,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (!string.IsNullOrWhiteSpace(req.Level))
                 q = q.Where(c => c.Level == req.Level);
 
-            if (!string.IsNullOrWhiteSpace(req.Department))
-                q = q.Where(c => c.Department == req.Department);
-
             if (req.DurationFrom.HasValue)
                 q = q.Where(c => c.Duration >= req.DurationFrom.Value);
 
@@ -151,7 +148,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     CourseCategoryName = c.CourseCategory.CategoryName,
                     Duration = c.Duration,
                     Level = c.Level,
-                    Department = c.Department,
                     IsActive = c.IsActive,
                     CreatedDate = c.CreatedDate
                 })
@@ -199,7 +195,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Description = c.Description,
                     Duration = c.Duration,
                     Level = c.Level,
-                    Department = c.Department,
                     CategoryName = c.CourseCategory.CategoryName,
                     IsActive = c.IsActive,
                     CreatedDate = c.CreatedDate
@@ -241,7 +236,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Description = c.Description,
                     Duration = c.Duration,
                     Level = c.Level,
-                    Department = c.Department,
                     CategoryName = c.CourseCategory.CategoryName,
                     IsActive = c.IsActive,
                     CreatedDate = c.CreatedDate
@@ -275,7 +269,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Description = course.Description,
                 Duration = course.Duration,
                 Level = course.Level,
-                Department = course.Department,
                 CategoryName = course.CourseCategory?.CategoryName ?? "Unknown",
                 CategoryId = course.CourseCategoryId,
                 IsActive = course.IsActive,

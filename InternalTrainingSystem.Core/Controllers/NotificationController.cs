@@ -40,16 +40,30 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 string confirmPageUrl = $"{_baseUrl}/courses/confirm?courseId={courseId}&userId={user.Id}";
 
-                Hangfire.BackgroundJob.Enqueue(() => _mailService.SendEmailAsync(
-                    user.Email!,
-                    "Thông báo mở lớp học " + course.CourseName,
-                    $@"
+                string emailContent = $@"
                     Xin chào {user.UserName},<br/><br/>
                     Lớp học <b>{course.CourseName}</b> đã được mở.<br/>
+                ";
+
+                if (course.IsMandatory)
+                {
+                    emailContent += "<span style='color:red;font-weight:bold'> Đây là khóa học BẮT BUỘC. Vui lòng xác nhận và tham gia đúng hạn.</span><br/><br/>";
+                }
+                else
+                {
+                    emailContent += "Bạn có thể xác nhận tham gia nếu phù hợp.<br/><br/>";
+                }
+
+                emailContent += $@"
                     Vui lòng truy cập liên kết sau để xác nhận tham gia:<br/><br/>
                     <a href='{confirmPageUrl}'>➡ Vào trang xác nhận tham gia khóa học</a><br/><br/>
                     Cảm ơn!
-                    "
+                ";
+
+                Hangfire.BackgroundJob.Enqueue(() => _mailService.SendEmailAsync(
+                    user.Email!,
+                    "Thông báo mở lớp học " + course.CourseName,
+                    emailContent
                 ));
             }
 
