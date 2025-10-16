@@ -23,9 +23,6 @@ namespace InternalTrainingSystem.Core.Models
         [StringLength(20)]
         public string Level { get; set; } = "Beginner"; // Beginner, Intermediate, Advanced
 
-        [StringLength(100)]
-        public string? Department { get; set; }
-
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
