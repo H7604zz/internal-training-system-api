@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InternalTrainingSystem.Core.DB.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251014142811_AddCourseModulesAndLessons")]
+    partial class AddCourseModulesAndLessons
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,21 +24,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("DepartmentCourse", b =>
-                {
-                    b.Property<int>("DepartmentId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.HasKey("DepartmentId", "CourseId");
-
-                    b.HasIndex("CourseId", "DepartmentId");
-
-                    b.ToTable("DepartmentCourse");
-                });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Answer", b =>
                 {
@@ -83,6 +71,10 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Department")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -399,12 +391,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsMandatory")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsOnline")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Level")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -617,38 +603,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .IsUnique();
 
                     b.ToTable("CourseNotifications");
-                });
-
-            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Department", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL");
-
-                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Lesson", b =>
@@ -1182,21 +1136,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("DepartmentCourse", b =>
-                {
-                    b.HasOne("InternalTrainingSystem.Core.Models.Course", null)
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("InternalTrainingSystem.Core.Models.Department", null)
-                        .WithMany()
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Answer", b =>
                 {
                     b.HasOne("InternalTrainingSystem.Core.Models.Question", "Question")
@@ -1378,16 +1317,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .IsRequired();
 
                     b.Navigation("Course");
-                });
-
-            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Department", b =>
-                {
-                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
-                        .WithOne("Department")
-                        .HasForeignKey("InternalTrainingSystem.Core.Models.Department", "UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Lesson", b =>
@@ -1602,8 +1531,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("CreatedClasses");
 
                     b.Navigation("CreatedCourses");
-
-                    b.Navigation("Department");
 
                     b.Navigation("MentoredClasses");
 

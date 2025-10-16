@@ -29,6 +29,10 @@ namespace InternalTrainingSystem.Core.Models
 
         public DateTime? UpdatedDate { get; set; }
 
+        public bool IsOnline { get; set; } = true;
+
+        public bool IsMandatory { get; set; } = false;
+
         // Foreign Keys
         [Required]
         public string CreatedById { get; set; } = string.Empty;
@@ -47,5 +51,6 @@ namespace InternalTrainingSystem.Core.Models
         public virtual ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
         public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
         public ICollection<Department> Departments { get; set; } = new List<Department>();
+        public virtual ICollection<CourseModule> Modules { get; set; } = new List<CourseModule>();
     }
 }
