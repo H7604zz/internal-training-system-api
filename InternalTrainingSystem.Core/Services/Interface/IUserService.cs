@@ -1,12 +1,12 @@
-﻿using InternalTrainingSystem.Core.Models;
+﻿using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Models;
 
 namespace InternalTrainingSystem.Core.Services.Interface
 {
     public interface IUserService
     {
-        public List<ApplicationUser> GetUserRoleEligibleStaff(int courseId);
-        public List<ApplicationUser> GetUserRoleStaffConfirmCourse(int courseId);
-        public List<ApplicationUser> GetMentors();
-        public List<ApplicationUser> GetAllStaff();
+        public PagedResultDto<EligibleStaffResponse> GetUserRoleEligibleStaff(int courseId, int page, int pageSize);
+        public PagedResultDto<StaffConfirmCourseResponse> GetUserRoleStaffConfirmCourse(int courseId, int page, int pageSize);
+        public List<ApplicationUser> GetUsersByRole(string role);
     }
 }

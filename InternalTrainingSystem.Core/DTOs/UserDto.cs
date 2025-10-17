@@ -29,7 +29,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Status { get; set; }
     }
 
-    public class MentorResponse
+    public class UserDetailResponse
     {
         public string Id { get; set; } = string.Empty;
         public string? EmployeeId { get; set; }
@@ -38,14 +38,112 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Department { get; set; }
         public string? Position { get; set; }
     }
-
-    public class StaffResponse
+    public class CreateUserDto
     {
-        public string Id { get; set; } = string.Empty;
-        public string? EmployeeId { get; set; }
+        [Required]
+        [StringLength(100)]
         public string FullName { get; set; } = string.Empty;
+
+        [Required]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100, MinimumLength = 6)]
+        public string Password { get; set; } = string.Empty;
+
+        [StringLength(20)]
+        public string? EmployeeId { get; set; }
+
+        [StringLength(100)]
+        public string? Department { get; set; }
+
+        [StringLength(100)]
+        public string? Position { get; set; }
+
+        public DateTime? HireDate { get; set; }
+
+        public List<string> Roles { get; set; } = new List<string>();
+    }
+
+    public class UpdateUserDto
+    {
+        [Required]
+        [StringLength(100)]
+        public string FullName { get; set; } = string.Empty;
+
+        [StringLength(20)]
+        public string? EmployeeId { get; set; }
+
+        [StringLength(100)]
+        public string? Department { get; set; }
+
+        [StringLength(100)]
+        public string? Position { get; set; }
+
+        public DateTime? HireDate { get; set; }
+
+        public bool IsActive { get; set; } = true;
+
+        public List<string> Roles { get; set; } = new List<string>();
+    }
+
+    public class AdminResetPasswordDto
+    {
+        [Required]
+        [StringLength(100, MinimumLength = 6)]
+        public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public class UserSearchDto
+    {
+        public string? SearchTerm { get; set; }
         public string? Department { get; set; }
         public string? Position { get; set; }
+        public bool? IsActive { get; set; }
+        public List<string>? Roles { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public string? SortBy { get; set; } = "CreatedDate";
+        public bool SortDescending { get; set; } = true;
+    }
+
+    public class PagedResultDto<T>
+    {
+        public List<T> Items { get; set; } = new List<T>();
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+        public bool HasPreviousPage => Page > 1;
+        public bool HasNextPage => Page < TotalPages;
+    }
+
+    public class ApiResponseDto<T>
+    {
+        public bool Success { get; set; }
+        public T? Data { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public List<string> Errors { get; set; } = new List<string>();
+
+        public static ApiResponseDto<T> SuccessResult(T data, string message = "")
+        {
+            return new ApiResponseDto<T>
+            {
+                Success = true,
+                Data = data,
+                Message = message
+            };
+        }
+
+        public static ApiResponseDto<T> ErrorResult(string message, List<string>? errors = null)
+        {
+            return new ApiResponseDto<T>
+            {
+                Success = false,
+                Message = message,
+                Errors = errors ?? new List<string>()
+            };
+        }
     }
 }
