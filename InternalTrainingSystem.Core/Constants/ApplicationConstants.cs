@@ -16,6 +16,7 @@
             public const string Pending = "Pending";
             public const string Apporove = "Apporove";
             public const string Reject = "Reject";
+            public const string Deleted = "Deleted";
         }
     }
 
