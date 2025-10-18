@@ -148,5 +148,48 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
+        /// <summary>Hiển thị các course có status = Pending (Ban giám đốc duyệt).</summary>
+        [HttpGet("pending")]
+        [ProducesResponseType(typeof(IEnumerable<CourseListDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<CourseListDto>>> GetPendingCourses()
+        {
+            var items = await _courseService.GetPendingCoursesAsync();
+            return Ok(items);
+        }
+
+        public class UpdateCourseStatusRequest
+        {
+            public string NewStatus { get; set; } = default!;
+        }
+
+        /// <summary>Duyệt/ Từ chối 1 course đang Pending: newStatus = "Apporove" | "Reject".</summary>
+        [HttpPut("{courseId:int}/status")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdateCourseStatusRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.NewStatus))
+                return BadRequest("newStatus không được rỗng.");
+
+            var ok = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus);
+            if (!ok)
+                return BadRequest("Chỉ có thể cập nhật trạng thái các khóa học đang ở Pending hoặc khóa học không tồn tại.");
+
+            return Ok(new { message = $"Cập nhật trạng thái thành công: {request.NewStatus}" });
+        }
+
+        /// <summary>Chuyển 1 course từ Active -> Deleted (xóa mềm theo status).</summary>
+        [HttpPut("{courseId:int}/delete")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> DeleteActiveCourse(int courseId)
+        {
+            var ok = await _courseService.DeleteActiveCourseAsync(courseId);
+            if (!ok)
+                return BadRequest("Chỉ có thể chuyển trạng thái các khóa học đang ở Active hoặc khóa học không tồn tại.");
+
+            return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted." });
+        }
+
     }
 }
