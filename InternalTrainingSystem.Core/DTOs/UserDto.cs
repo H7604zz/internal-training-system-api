@@ -18,7 +18,6 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class StaffConfirmCourseResponse
     {
-        public string Id { get; set; } = string.Empty;
         public string? EmployeeId { get; set; }
         public required string FullName { get; set; }
         public required string Email { get; set; }
@@ -106,17 +105,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public int PageSize { get; set; } = 10;
         public string? SortBy { get; set; } = "CreatedDate";
         public bool SortDescending { get; set; } = true;
-    }
-
-    public class PagedResultDto<T>
-    {
-        public List<T> Items { get; set; } = new List<T>();
-        public int TotalCount { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
-        public bool HasPreviousPage => Page > 1;
-        public bool HasNextPage => Page < TotalPages;
     }
 
     public class ApiResponseDto<T>

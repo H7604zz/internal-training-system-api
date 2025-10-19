@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Constants;
+﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
@@ -16,7 +17,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _context = context;
         }
 
-        public PagedResultDto<StaffConfirmCourseResponse> GetUserRoleStaffConfirmCourse(int courseId, int page, int pageSize)
+        public PagedResult<StaffConfirmCourseResponse> GetUserRoleStaffConfirmCourse(int courseId, int page, int pageSize)
         {
             var query = _context.Users
                 .Include(u => u.CourseEnrollments)
@@ -38,7 +39,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .Take(pageSize)
                 .Select(u => new StaffConfirmCourseResponse
                 {
-                    Id = u.Id,
                     EmployeeId = u.EmployeeId,
                     FullName = u.FullName,
                     Email = u.Email!,
@@ -48,7 +48,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 })
                 .ToList();
 
-            return new PagedResultDto<StaffConfirmCourseResponse>
+            return new PagedResult<StaffConfirmCourseResponse>
             {
                 Items = items,
                 TotalCount = totalCount,
@@ -57,7 +57,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
         }
 
-        public PagedResultDto<EligibleStaffResponse> GetUserRoleEligibleStaff(int courseId, int page, int pageSize)
+        public PagedResult<EligibleStaffResponse> GetUserRoleEligibleStaff(int courseId, int page, int pageSize)
         {
             var departmentIds = _context.Courses
                 .Where(c => c.CourseId == courseId)
@@ -93,7 +93,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 })
                 .ToList();
 
-            return new PagedResultDto<EligibleStaffResponse>
+            return new PagedResult<EligibleStaffResponse>
             {
                 Items = users,
                 TotalCount = totalCount,

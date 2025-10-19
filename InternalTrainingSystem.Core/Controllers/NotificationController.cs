@@ -28,20 +28,21 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPost("{courseId}/notify-eligible-users")]
         public IActionResult NotifyEligibleUsers(int courseId)
         {
-            var EligibleStaff = _userService.GetUserRoleEligibleStaff(courseId);
+            var eligiblePaged = _userService.GetUserRoleEligibleStaff(courseId, 1, int.MaxValue);
 
-            if (!EligibleStaff.Any())
+            if (eligiblePaged.TotalCount == 0)
                 return NotFound("Không có nhân viên nào cần học khóa này.");
+            var EligibleStaff = eligiblePaged.Items;
             var course = _couseService.GetCourseByCourseID(courseId);
             if (course == null)
                 return NotFound("Không tìm thấy khóa học tương ứng.");
 
             foreach (var user in EligibleStaff)
             {
-                string confirmPageUrl = $"{_baseUrl}/courses/confirm?courseId={courseId}&userId={user.Id}";
+                string confirmPageUrl = $"{_baseUrl}/courses/confirm?courseId={courseId}&userId={user.EmployeeId}";
 
                 string emailContent = $@"
-                    Xin chào {user.UserName},<br/><br/>
+                    Xin chào {user.FullName},<br/><br/>
                     Lớp học <b>{course.CourseName}</b> đã được mở.<br/>
                 ";
 
