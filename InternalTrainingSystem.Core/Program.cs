@@ -130,6 +130,10 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IClassService, ClassService>();
 builder.Services.AddScoped<ICourseMaterialService, CourseMaterialService>();
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -155,5 +159,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseStaticFiles();
 
 app.Run();
