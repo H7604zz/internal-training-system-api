@@ -15,6 +15,8 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSignalR();
+
 // Load environment variables from .env file
 builder.Configuration.LoadEnvironmentVariables();
 
@@ -136,6 +138,7 @@ builder.Services.AddScoped<ICourseMaterialService, CourseMaterialService>();
 
 var app = builder.Build();
 
+app.MapHub<EnrollmentHub>("/hubs/enrollment");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
