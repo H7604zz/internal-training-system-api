@@ -12,6 +12,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
     public class CourseService : ICourseService
     {
         private readonly ApplicationDbContext _context;
+        private const double AverageRatingPass = 4.5;
 
         public CourseService(ApplicationDbContext context)
         {
@@ -53,7 +54,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 var existing = _context.Courses.Find(course.CourseId);
                 if (existing == null)
                 {
-                    return false; 
+                    return false;
                 }
                 _context.Entry(existing).CurrentValues.SetValues(course);
                 _context.SaveChanges();
@@ -159,7 +160,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return new PagedResult<CourseListItemDto>
             {
                 Items = items,
-                Total = total,
+                TotalCount = total,
                 Page = page,
                 PageSize = pageSize
             };
@@ -179,7 +180,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 _ => q.OrderByDescending(c => c.CreatedDate) // default
             };
         }
-        
+
         public Course? GetCourseByCourseID(int? couseId)
         {
             return _context.Courses.FirstOrDefault(c => c.CourseId == couseId);
@@ -263,7 +264,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             // For now, we'll use a default rating of 4.5. 
             // In the future, this should be calculated from actual ratings
-            var averageRating = 4.5;
 
             return new CourseDetailDto
             {
@@ -281,7 +281,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Objectives = null, // Not available in current model
                 Price = null, // Not available in current model
                 EnrollmentCount = enrollmentCount,
-                AverageRating = averageRating
+                AverageRating = AverageRatingPass
             };
         }
     }

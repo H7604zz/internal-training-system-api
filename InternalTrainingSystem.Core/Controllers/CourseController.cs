@@ -1,11 +1,12 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using InternalTrainingSystem.Core.Constants;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -20,25 +21,9 @@ namespace InternalTrainingSystem.Core.Controllers
             _courseService = courseService;
         }
 
-        // GET: /api/courses
-        //[HttpGet]
-        //public ActionResult<IEnumerable<Course>> GetAll()
-        //{
-        //    var items = _courseService.GetAllCoursesAsync();
-        //    return Ok(items);
-        //}
-
-        // GET: /api/courses/5
-        [HttpGet("{id:int}")]
-        public ActionResult<Course> GetById(int courseId)
-        {
-            var item = _courseService.GetCourseByCourseID(courseId);
-            if (item == null) return NotFound(new { message = $"Course {courseId} not found" });
-            return Ok(item);
-        }
-
         // POST: /api/courses
         [HttpPost]
+        [Authorize(Roles = UserRoles.TrainingDepartment)]
         public ActionResult<Course> Create([FromBody] CreateCourseDto dto)
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -64,12 +49,12 @@ namespace InternalTrainingSystem.Core.Controllers
             var created = _courseService.CreateCourses(entity);
             if (created == null) return BadRequest(new { message = "Create course failed" });
 
-            return CreatedAtAction(nameof(GetById), new { id = created.CourseId }, created);
+            return CreatedAtAction(nameof(GetCourseDetail), new { id = created.CourseId }, created);
         }
-
 
         // PUT: /api/courses/5
         [HttpPut("{id:int}")]
+        [Authorize(Roles = UserRoles.TrainingDepartment)]
         public IActionResult Update(int id, [FromBody] Course course)
         {
             if (id != course.CourseId)
@@ -83,6 +68,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
         // DELETE: /api/courses/5
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = UserRoles.TrainingDepartment)]
         public IActionResult Delete(int id)
         {
             var ok = _courseService.DeleteCoursesByCourseId(id);
@@ -92,6 +78,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpPatch("{id:int}/status")]
+        [Authorize(Roles = UserRoles.TrainingDepartment)]
         public IActionResult ToggleStatus(int id, [FromBody] ToggleStatusDto dto)
         {
             var ok = _courseService.ToggleStatus(id, dto.Status);

@@ -1,5 +1,7 @@
-﻿using InternalTrainingSystem.Core.Constants;
+﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
+using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -15,42 +17,104 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _context = context;
         }
 
-        public List<ApplicationUser> GetUserRoleStaffConfirmCourse(int courseId)
+        public PagedResult<StaffConfirmCourseResponse> GetUserRoleStaffConfirmCourse(int courseId, int page, int pageSize)
         {
-            var users = _context.Users
-               .Include(u => u.CourseEnrollments)
-               .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
-               .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
-               .Where(x => x.r.Name == UserRoles.Staff
-                           && _context.CourseEnrollments.Any(c => c.UserId == x.u.Id && c.CourseId == courseId && c.Status == EnrollmentConstants.Status.Enrolled))
-               .Select(x => x.u)
-               .Distinct()
-               .ToList();
-
-            return users;
-        }
-
-        public List<ApplicationUser> GetUserRoleEligibleStaff(int courseId)
-        {
-            var users = _context.Users
+            var query = _context.Users
                 .Include(u => u.CourseEnrollments)
+                .Include(u => u.Department)
                 .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
                 .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
                 .Where(x => x.r.Name == UserRoles.Staff
-                            && !_context.Certificates.Any(c => c.UserId == x.u.Id && c.CourseId == courseId))
+                            && _context.CourseEnrollments.Any(c => c.UserId == x.u.Id
+                                                                   && c.CourseId == courseId
+                                                                   && c.Status == EnrollmentConstants.Status.Enrolled))
                 .Select(x => x.u)
                 .Distinct()
+                .AsQueryable();
+
+            int totalCount = query.Count();
+
+            var items = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(u => new StaffConfirmCourseResponse
+                {
+                    EmployeeId = u.EmployeeId,
+                    FullName = u.FullName,
+                    Email = u.Email!,
+                    Department = u.Department!.Name,
+                    Position = u.Position,
+                    Status = EnrollmentConstants.Status.Enrolled,
+                })
                 .ToList();
 
-            return users;
+            return new PagedResult<StaffConfirmCourseResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
-        public List<ApplicationUser> GetMentors()
+        public PagedResult<EligibleStaffResponse> GetUserRoleEligibleStaff(int courseId, int page, int pageSize)
+        {
+            var departmentIds = _context.Courses
+                .Where(c => c.CourseId == courseId)
+                .SelectMany(c => c.Departments.Select(d => d.Id))
+                .ToList();
+
+            var query = _context.Users
+                .Include(u => u.CourseEnrollments)
+                .Include(u => u.Department)
+                .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
+                .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
+                .Where(x => x.r.Name == UserRoles.Staff
+                    && !_context.Certificates.Any(c => c.UserId == x.u.Id && c.CourseId == courseId)
+                    && departmentIds.Contains(x.u.Department!.Id)
+                )
+                .Select(x => x.u)
+                .Distinct();
+
+            int totalCount = query.Count();
+
+            var usersData = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Include(u => u.CourseEnrollments)
+                .ToList();
+
+            var users = usersData.Select(u =>
+            {
+                var enrollment = u.CourseEnrollments.FirstOrDefault(e => e.CourseId == courseId);
+
+                return new EligibleStaffResponse
+                {
+                    EmployeeId = u.EmployeeId,
+                    FullName = u.FullName,
+                    Email = u.Email!,
+                    Department = u.Department!.Name,
+                    Position = u.Position,
+                    Status = enrollment?.Status ?? EnrollmentConstants.Status.NotEnrolled,
+                    Reason = enrollment?.RejectionReason ?? "Chưa có phản hồi"
+                };
+            }).ToList();
+
+            return new PagedResult<EligibleStaffResponse>
+            {
+                Items = users,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        public List<ApplicationUser> GetUsersByRole(string role)
         {
             var mentors = _context.Users
                 .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
                 .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
-                .Where(x => x.r.Name == UserRoles.Mentor && x.u.IsActive)
+                .Where(x => x.r.Name == role && x.u.IsActive)
                 .Select(x => x.u)
                 .Distinct()
                 .ToList();
@@ -58,17 +122,5 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return mentors;
         }
 
-        public List<ApplicationUser> GetAllStaff()
-        {
-            var staff = _context.Users
-                .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
-                .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
-                .Where(x => x.r.Name == UserRoles.Staff && x.u.IsActive)
-                .Select(x => x.u)
-                .Distinct()
-                .ToList();
-
-            return staff;
-        }
     }
 }
