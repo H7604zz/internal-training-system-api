@@ -5,6 +5,8 @@ using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using InternalTrainingSystem.Core.Constants;
+using System.Security.Claims;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -38,13 +40,12 @@ namespace InternalTrainingSystem.Core.Controllers
 
         // POST: /api/courses
         [HttpPost]
-        public ActionResult<Course> Create([FromBody] CreateCourseDto dto)
+        public async Task<ActionResult<Course>> Create([FromBody] CreateCourseDto dto)
         {
-            if (!ModelState.IsValid) return ValidationProblem(ModelState);
+            if (!ModelState.IsValid)
+                return ValidationProblem(ModelState);
 
-            var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                         ?? "system";
-
+            var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
             var now = DateTime.UtcNow;
 
             var entity = new Course
@@ -53,52 +54,57 @@ namespace InternalTrainingSystem.Core.Controllers
                 Description = dto.Description,
                 CourseCategoryId = dto.CourseCategoryId,
                 Duration = dto.Duration,
-                Level = dto.Level,
-                IsActive = true,
+                Level = dto.Level, // đã có validation mặc định ở DTO
+                Status = CourseConstants.Status.Pending,
                 CreatedDate = now,
                 UpdatedDate = null,
                 CreatedById = userId
             };
 
-            var created = _courseService.CreateCourses(entity);
-            if (created == null) return BadRequest(new { message = "Create course failed" });
+            var created = await _courseService.CreateCourseAsync(entity, dto.Departments);
+            if (created is null)
+                return BadRequest(new { message = "Create course failed" });
 
+            // 201 + Location header tới GET /api/courses/{id}
             return CreatedAtAction(nameof(GetById), new { id = created.CourseId }, created);
         }
 
 
-        // PUT: /api/courses/5
+
         [HttpPut("{id:int}")]
-        public IActionResult Update(int id, [FromBody] Course course)
+        public async Task<ActionResult<Course>> Update(int id, [FromBody] UpdateCourseDto dto)
         {
-            if (id != course.CourseId)
-                return BadRequest(new { message = "Id in route and body must match" });
+            if (id != dto.CourseId)
+                return BadRequest(new { message = "Course ID mismatch" });
 
-            var ok = _courseService.UpdateCourses(course);
-            if (!ok) return NotFound(new { message = $"Course {id} not found or update failed" });
+            if (!ModelState.IsValid)
+                return ValidationProblem(ModelState);
 
-            return NoContent();
+            var updated = await _courseService.UpdateCourseAsync(dto);
+            if (updated is null)
+                return NotFound(new { message = $"Course {id} not found" });
+
+            return Ok(updated);
         }
+
 
         // DELETE: /api/courses/5
-        [HttpDelete("{id:int}")]
-        public IActionResult Delete(int id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCourse(int id)
         {
-            var ok = _courseService.DeleteCoursesByCourseId(id);
-            if (!ok) return NotFound(new { message = $"Course {id} not found or delete failed" });
-
-            return NoContent();
+            var success = await _courseService.DeleteCourseAsync(id);
+            return success ? Ok(new { message = "Xóa thành công!" })
+                           : NotFound(new { message = "Không tìm thấy course!" });
         }
 
-        public record ToggleStatusDto(bool IsActive);
 
         [HttpPatch("{id:int}/status")]
         public IActionResult ToggleStatus(int id, [FromBody] ToggleStatusDto dto)
         {
-            var ok = _courseService.ToggleStatus(id, dto.IsActive);
+            var ok = _courseService.ToggleStatus(id, dto.Status);
             if (!ok) return NotFound(new { message = $"Course {id} not found" });
 
-            return Ok(new { courseId = id, isActive = dto.IsActive });
+            return Ok(new { courseId = id, isActive = dto.Status });
         }
 
         [HttpGet("search")]
@@ -160,6 +166,49 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
+        }
+
+        /// <summary>Hiển thị các course có status = Pending (Ban giám đốc duyệt).</summary>
+        [HttpGet("pending")]
+        [ProducesResponseType(typeof(IEnumerable<CourseListDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<CourseListDto>>> GetPendingCourses()
+        {
+            var items = await _courseService.GetPendingCoursesAsync();
+            return Ok(items);
+        }
+
+        public class UpdateCourseStatusRequest
+        {
+            public string NewStatus { get; set; } = default!;
+        }
+
+        /// <summary>Duyệt/ Từ chối 1 course đang Pending: newStatus = "Apporove" | "Reject".</summary>
+        [HttpPut("{courseId:int}/status")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdateCourseStatusRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.NewStatus))
+                return BadRequest("newStatus không được rỗng.");
+
+            var ok = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus);
+            if (!ok)
+                return BadRequest("Chỉ có thể cập nhật trạng thái các khóa học đang ở Pending hoặc khóa học không tồn tại.");
+
+            return Ok(new { message = $"Cập nhật trạng thái thành công: {request.NewStatus}" });
+        }
+
+        /// <summary>Chuyển 1 course từ Active -> Deleted (xóa mềm theo status).</summary>
+        [HttpPut("{courseId:int}/delete")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> DeleteActiveCourse(int courseId)
+        {
+            var ok = await _courseService.DeleteActiveCourseAsync(courseId);
+            if (!ok)
+                return BadRequest("Chỉ có thể chuyển trạng thái các khóa học đang ở Active hoặc khóa học không tồn tại.");
+
+            return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted." });
         }
 
     }
