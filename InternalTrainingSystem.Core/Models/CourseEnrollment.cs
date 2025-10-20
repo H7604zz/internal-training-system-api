@@ -13,7 +13,7 @@ namespace InternalTrainingSystem.Core.Models
         public DateTime? CompletionDate { get; set; }
 
         [StringLength(20)]
-        public string Status { get; set; } = "Enrolled"; // Enrolled, InProgress, Completed, Dropped
+        public string Status { get; set; } = Constants.EnrollmentConstants.Status.NotEnrolled;
 
         public int? Score { get; set; }
 

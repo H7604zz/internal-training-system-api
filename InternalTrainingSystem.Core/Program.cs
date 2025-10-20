@@ -1,18 +1,21 @@
+﻿using Hangfire;
 using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Extensions;
 using InternalTrainingSystem.Core.DB;
-using Microsoft.EntityFrameworkCore;
+using InternalTrainingSystem.Core.Extensions;
+using InternalTrainingSystem.Core.Middleware;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using InternalTrainingSystem.Core.Middleware;
-using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSignalR();
 
 // Load environment variables from .env file
 builder.Configuration.LoadEnvironmentVariables();
@@ -30,9 +33,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString);
 });
 
+builder.Services.AddHangfire(x =>
+    x.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHangfireServer();
+
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
-
 
 // Configure Identity
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
@@ -136,6 +142,7 @@ builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
 
 var app = builder.Build();
 
+app.MapHub<EnrollmentHub>("/hubs/enrollment");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -147,6 +154,8 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = string.Empty;
     });
 }
+
+app.UseHangfireDashboard();
 
 app.UseHttpsRedirection();
 
