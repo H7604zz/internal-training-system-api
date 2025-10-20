@@ -1,8 +1,12 @@
-﻿using InternalTrainingSystem.Core.Models;
+﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -15,6 +19,7 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly ICourseService _couseService;
         private readonly INotificationService _notificationService;
         private readonly string _baseUrl;
+        
         public NotificationController(IUserService userServices, IEmailSender mailService,
             ICourseService couseService, INotificationService notificationService, IConfiguration config)
         {
@@ -26,6 +31,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpPost("{courseId}/notify-eligible-users")]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult NotifyEligibleUsers(int courseId)
         {
             var eligiblePaged = _userService.GetUserRoleEligibleStaff(courseId, 1, int.MaxValue);
@@ -68,17 +74,11 @@ namespace InternalTrainingSystem.Core.Controllers
                 ));
             }
 
-            _notificationService.SaveNotificationAsync(new CourseNotification
-            {
-                CourseId = courseId,
-                Type = NotificationType.StaffConfirm,
-                SentAt = DateTime.UtcNow,
-            });
-
-            return Ok(new { Message = "Đã gửi mail cho danh sách nhân viên cần học." });
+            return Ok();
         }
 
         [HttpGet("{courseId}/notification-status/{type}")]
+        [Authorize]
         public IActionResult CheckNotificationStatus(int courseId, NotificationType type)
         {
             var notification = _notificationService.GetNotificationByCourseAndType(courseId, type);
@@ -86,6 +86,24 @@ namespace InternalTrainingSystem.Core.Controllers
                 return Ok(new { sent = false });
 
             return Ok(new { sent = true, sentAt = notification.SentAt });
+        }
+
+        [HttpPost("{courseId}/notify-staff")]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult NotifyEligibleStaff(int courseId)
+        {
+            var course = _couseService.GetCourseByCourseID(courseId);
+            if (course == null)
+                return NotFound("Khóa học không tồn tại.");
+
+            _notificationService.SaveNotificationAsync(new CourseNotification
+            {
+                CourseId = courseId,
+                Type = NotificationType.StaffConfirm,
+                SentAt = DateTime.UtcNow,
+            });
+
+            return Ok();
         }
     }
 }

@@ -78,20 +78,27 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             int totalCount = query.Count();
 
-            var users = query
+            var usersData = query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(u => new EligibleStaffResponse
+                .Include(u => u.CourseEnrollments)
+                .ToList();
+
+            var users = usersData.Select(u =>
+            {
+                var enrollment = u.CourseEnrollments.FirstOrDefault(e => e.CourseId == courseId);
+
+                return new EligibleStaffResponse
                 {
                     EmployeeId = u.EmployeeId,
                     FullName = u.FullName,
                     Email = u.Email!,
                     Department = u.Department!.Name,
                     Position = u.Position,
-                    Status = u.CourseEnrollments.FirstOrDefault(e => e.CourseId == courseId)!.Status,
-                    Reason = u.CourseEnrollments.FirstOrDefault(e => e.CourseId == courseId)!.RejectionReason ?? "Không lý do"
-                })
-                .ToList();
+                    Status = enrollment?.Status ?? EnrollmentConstants.Status.NotEnrolled,
+                    Reason = enrollment?.RejectionReason ?? "Chưa có phản hồi"
+                };
+            }).ToList();
 
             return new PagedResult<EligibleStaffResponse>
             {

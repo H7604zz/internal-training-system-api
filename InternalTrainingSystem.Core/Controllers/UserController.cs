@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,22 +22,23 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet("{courseId}/eligible-staff")]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetEligibleUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var result = _userService.GetUserRoleEligibleStaff(courseId, page, pageSize);
             return Ok(result);
         }
 
-
         [HttpGet("{courseId}/confirmed-staff")]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var confirmedUsers = _userService.GetUserRoleStaffConfirmCourse(courseId, page, pageSize);
             return Ok(confirmedUsers);
         }
 
-
         [HttpGet("by-role")]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetUsersByRole([FromQuery] string role)
         {
             if (!AllowedRoles.Any(r => r.Equals(role, StringComparison.OrdinalIgnoreCase)))
