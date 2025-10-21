@@ -59,50 +59,43 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public PagedResult<EligibleStaffResponse> GetUserRoleEligibleStaff(int courseId, int page, int pageSize)
         {
-            var departmentIds = _context.Courses
-                .Where(c => c.CourseId == courseId)
-                .SelectMany(c => c.Departments.Select(d => d.Id))
-                .ToList();
-
-            var query = _context.Users
-                .Include(u => u.CourseEnrollments)
-                .Include(u => u.Department)
-                .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
-                .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
-                .Where(x => x.r.Name == UserRoles.Staff
-                    && !_context.Certificates.Any(c => c.UserId == x.u.Id && c.CourseId == courseId)
-                    && departmentIds.Contains(x.u.Department!.Id)
-                )
-                .Select(x => x.u)
-                .Distinct();
+            var query = from u in _context.Users
+                        join ur in _context.UserRoles on u.Id equals ur.UserId
+                        join r in _context.Roles on ur.RoleId equals r.Id
+                        join d in _context.Departments on u.DepartmentId equals d.Id
+                        join e in _context.CourseEnrollments
+                            .Where(x => x.CourseId == courseId)
+                            on u.Id equals e.UserId into ue
+                        from e in ue.DefaultIfEmpty()
+                        where r.Name == UserRoles.Staff
+                              && _context.Courses
+                                  .Where(c => c.CourseId == courseId)
+                                  .SelectMany(c => c.Departments)
+                                  .Any(dep => dep.Id == d.Id)
+                              && !_context.Certificates
+                                  .Any(c => c.UserId == u.Id && c.CourseId == courseId)
+                        orderby u.FullName
+                        select new EligibleStaffResponse
+                        {
+                            EmployeeId = u.EmployeeId,
+                            FullName = u.FullName,
+                            Email = u.Email!,
+                            Department = d.Name,
+                            Position = u.Position,
+                            Status = e.Status ?? EnrollmentConstants.Status.NotEnrolled,
+                            Reason = e.RejectionReason ?? "Chưa có phản hồi"
+                        };
 
             int totalCount = query.Count();
 
-            var usersData = query
+            var items = query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Include(u => u.CourseEnrollments)
                 .ToList();
-
-            var users = usersData.Select(u =>
-            {
-                var enrollment = u.CourseEnrollments.FirstOrDefault(e => e.CourseId == courseId);
-
-                return new EligibleStaffResponse
-                {
-                    EmployeeId = u.EmployeeId,
-                    FullName = u.FullName,
-                    Email = u.Email!,
-                    Department = u.Department!.Name,
-                    Position = u.Position,
-                    Status = enrollment?.Status ?? EnrollmentConstants.Status.NotEnrolled,
-                    Reason = enrollment?.RejectionReason ?? "Chưa có phản hồi"
-                };
-            }).ToList();
 
             return new PagedResult<EligibleStaffResponse>
             {
-                Items = users,
+                Items = items,
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize
