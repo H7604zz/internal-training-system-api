@@ -32,6 +32,7 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<CourseModule> CourseModules { get; set; }
         public DbSet<Lesson> Lessons { get; set; }
         public DbSet<Department> Departments { get; set; }
+        public DbSet<LessonProgress> LessonProgresses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -401,6 +402,25 @@ namespace InternalTrainingSystem.Core.DB
             
             builder.Entity<Lesson>()
                 .HasIndex(l => l.Type);
+
+            //LessonProgress
+            builder.Entity<LessonProgress>()
+        .HasKey(lp => new { lp.UserId, lp.LessonId }); // composite PK
+
+            builder.Entity<LessonProgress>()
+                .HasOne(lp => lp.User)
+                .WithMany(u => u.LessonProgresses)
+                .HasForeignKey(lp => lp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<LessonProgress>()
+                .HasOne(lp => lp.Lesson)
+                .WithMany()
+                .HasForeignKey(lp => lp.LessonId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<LessonProgress>()
+                .HasIndex(lp => lp.IsDone);
         }
     }
 }

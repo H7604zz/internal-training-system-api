@@ -115,4 +115,43 @@
         public const string HR = "HR"; // Phòng nhân sự
         public const string System = "System"; // Hệ thống/AI chatbot
     }
+
+    public static class LessonContentConstraints
+    {
+        // Docs
+        public static readonly ISet<string> AllowedDocExtensions =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".pdf", ".doc", ".docx" };
+
+        public static readonly ISet<string> AllowedDocContentTypes =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            };
+
+        // Videos
+        public static readonly ISet<string> AllowedVideoExtensions =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".mp4", ".mov", ".m4v", ".webm" };
+
+        public static readonly ISet<string> AllowedVideoContentTypes =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "video/mp4",
+                "video/quicktime",
+                "video/x-m4v",
+                "video/webm"
+            };
+
+        // Size limits
+        public const long MaxDocBytes = 20L * 1024 * 1024;  // 20MB
+        public const long MaxVideoBytes = 500L * 1024 * 1024;  // 500MB
+
+        // Helper checks (tiện dùng trong service)
+        public static bool IsAllowedDoc(string ext, string contentType) =>
+            AllowedDocExtensions.Contains(ext) && AllowedDocContentTypes.Contains(contentType);
+
+        public static bool IsAllowedVideo(string ext, string contentType) =>
+            AllowedVideoExtensions.Contains(ext) && AllowedVideoContentTypes.Contains(contentType);
+    }
 }
