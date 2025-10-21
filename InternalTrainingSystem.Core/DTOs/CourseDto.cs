@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using InternalTrainingSystem.Core.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace InternalTrainingSystem.Core.DTOs
 {
@@ -9,9 +10,9 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Description { get; set; }
         public int Duration { get; set; }
         public string Level { get; set; } = string.Empty;
-        public string? Department { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public string? Status { get; set; }
+        public List<DepartmentDto> Departments { get; set; } = new();
         public DateTime CreatedDate { get; set; }
     }
 
@@ -22,7 +23,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Description { get; set; }
         public int Duration { get; set; }
         public string Level { get; set; } = string.Empty;
-        public string? Department { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public string? Status { get; set; }
         public DateTime CreatedDate { get; set; }
@@ -33,6 +33,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public decimal? Price { get; set; }
         public int EnrollmentCount { get; set; }
         public double AverageRating { get; set; }
+        public List<DepartmentDto> Departments { get; set; } = new();
     }
 
     public class GetCoursesByIdentifiersRequest
@@ -42,6 +43,34 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class CreateCourseDto
     {
+        [Required(ErrorMessage = "Tên khóa học là bắt buộc.")]
+        [StringLength(200, ErrorMessage = "Tên khóa học không được vượt quá 200 ký tự.")]
+        public string CourseName { get; set; } = string.Empty;
+
+        [StringLength(1000, ErrorMessage = "Mô tả không được vượt quá 1000 ký tự.")]
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "Danh mục khóa học là bắt buộc.")]
+        public int CourseCategoryId { get; set; }
+
+        [Required(ErrorMessage = "Thời lượng là bắt buộc.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Thời lượng phải lớn hơn 0.")]
+        public int Duration { get; set; }
+
+        [RegularExpression("Beginner|Intermediate|Advanced",
+            ErrorMessage = "Cấp độ chỉ được phép là 'Beginner', 'Intermediate' hoặc 'Advanced'.")]
+        public string Level { get; set; } = "Beginner";
+
+        public String Status { get; set; } = "Pending";
+
+        public List<int>? Departments { get; set; } // Danh sách ID phòng ban
+    }
+
+    public class UpdateCourseDto
+    {
+        [Required]
+        public int CourseId { get; set; }
+
         [Required, StringLength(200)]
         public string CourseName { get; set; } = string.Empty;
 
@@ -51,14 +80,15 @@ namespace InternalTrainingSystem.Core.DTOs
         [Required]
         public int CourseCategoryId { get; set; }
 
-        [Range(0, int.MaxValue)]
+        [Range(1, int.MaxValue)]
         public int Duration { get; set; }
 
         [Required, RegularExpression("Beginner|Intermediate|Advanced")]
         public string Level { get; set; } = "Beginner";
 
-        [StringLength(100)]
-        public string? Department { get; set; }
+        public string? Status { get; set; } = null;
+
+        public List<int>? Departments { get; set; } // danh sách ID phòng ban
     }
 
     public class CourseSearchRequest
@@ -73,7 +103,6 @@ namespace InternalTrainingSystem.Core.DTOs
 
         public bool? IsActive { get; set; }
         public string? Level { get; set; }
-        public string? Department { get; set; }
         public int? DurationFrom { get; set; }
         public int? DurationTo { get; set; }
         public DateTime? CreatedFrom { get; set; }
@@ -82,7 +111,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
     }
-
+    
     public class CourseListItemDto
     {
         public int CourseId { get; set; }
@@ -94,6 +123,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Level { get; set; } = "Beginner";
         public string? Status { get; set; }
         public DateTime CreatedDate { get; set; }
+        public List<DepartmentDto> Departments { get; set; } = new();
     }
 
     public record ToggleStatusDto(string Status);
