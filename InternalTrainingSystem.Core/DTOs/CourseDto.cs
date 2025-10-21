@@ -91,6 +91,16 @@ namespace InternalTrainingSystem.Core.DTOs
         public List<int>? Departments { get; set; } // danh sách ID phòng ban
     }
 
+    public sealed class UpdateCourseRejectDto
+    {
+        public string CourseName { get; set; } = default!;
+        public string? Description { get; set; }
+        public int Duration { get; set; }
+        public string Level { get; set; } = default!;
+        public int CourseCategoryId { get; set; }
+        public List<int> DepartmentIds { get; set; } = new();
+    }
+
     public class CourseSearchRequest
     {
         public string? Q { get; set; }
