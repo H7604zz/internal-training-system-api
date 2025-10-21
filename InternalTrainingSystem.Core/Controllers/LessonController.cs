@@ -68,28 +68,21 @@ namespace InternalTrainingSystem.Core.Controllers
             var ok = await _courseMaterialService.DeleteLessonAsync(lessonId, ct);
             return ok ? NoContent() : NotFound(new { message = "Delete failed" });
         }
-        [HttpPost("{lessonId:int}/file")]
-        [RequestSizeLimit(20 * 1024 * 1024)] // 20 MB
-        public async Task<IActionResult> UploadLessonFile(int moduleId, int lessonId, IFormFile file, CancellationToken ct)
+        [HttpPost("{lessonId:int}/upload")]
+        [RequestSizeLimit(600 * 1024 * 1024)] // 600MB trần request (>= MaxVideoBytes)
+        public async Task<IActionResult> UploadBinary(int moduleId, int lessonId, IFormFile file, CancellationToken ct)
         {
-            // exist check
             var l = await _courseMaterialService.GetLessonAsync(lessonId, ct);
             if (l == null || l.ModuleId != moduleId)
                 return NotFound(new { message = "Lesson not found" });
 
             try
             {
-                var (url, _) = await _courseMaterialService.UploadLessonFileAsync(lessonId, file, ct);
-                return Ok(new { lessonId, fileUrl = url });
+                var (url, _) = await _courseMaterialService.UploadLessonBinaryAsync(lessonId, file, ct);
+                return Ok(new { lessonId, contentUrl = url });
             }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
         }
 
         [HttpDelete("{lessonId:int}/file")]

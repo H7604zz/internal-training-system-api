@@ -18,7 +18,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<Lesson> CreateLessonAsync(CreateLessonDto dto, CancellationToken ct = default);
         Task<bool> UpdateLessonAsync(int lessonId, UpdateLessonDto dto, CancellationToken ct = default);
         Task<bool> DeleteLessonAsync(int lessonId, CancellationToken ct = default);
-        Task<(string url, string relativePath)> UploadLessonFileAsync(int lessonId, IFormFile file, CancellationToken ct = default);
+        Task<(string url, string relativePath)> UploadLessonBinaryAsync(int lessonId, IFormFile file, CancellationToken ct = default);
         Task<bool> ClearLessonFileAsync(int lessonId, CancellationToken ct = default);
     }
 }
