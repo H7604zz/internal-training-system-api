@@ -71,7 +71,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             var course = _context.Courses.Find(id);
             if (course == null) return false;
-            if (course.Status.ToLower().Equals(CourseConstants.Status.Apporove.ToLower())){
+            if (course.Status.ToLower().Equals(CourseConstants.Status.Apporove.ToLower()))
+            {
                 course.Status = status;
                 course.UpdatedDate = DateTime.UtcNow;
                 return _context.SaveChanges() > 0;
@@ -190,7 +191,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _context.Courses
                 .Include(c => c.CourseCategory)
-                .Where(c => c.Status==CourseConstants.Status.Active)
+                .Where(c => c.Status == CourseConstants.Status.Active)
                 .OrderByDescending(c => c.CreatedDate)
                 .Select(c => new CourseListDto
                 {
@@ -284,110 +285,5 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 AverageRating = AverageRatingPass
             };
         }
-
-        //Hiển thị các course có status là Pending-ban giám đốc
-        public async Task<IEnumerable<CourseListDto>> GetPendingCoursesAsync()
-        {
-            return await _context.Courses
-                .Include(c => c.CourseCategory)
-                .Include(c => c.Departments)
-                .Where(c => c.Status == CourseConstants.Status.Pending)
-                .OrderByDescending(c => c.CreatedDate)
-                .Select(c => new CourseListDto
-                {
-                    CourseId = c.CourseId,
-                    CourseName = c.CourseName,
-                    Description = c.Description,
-                    Duration = c.Duration,
-                    Level = c.Level,
-                    CategoryName = c.CourseCategory.CategoryName,
-                    Status = c.Status,
-                    CreatedDate = c.CreatedDate,
-                    Departments = c.Departments.Select(d => new DepartmentDto
-                    {
-                        DepartmentId = d.Id,
-                        DepartmentName = d.Name
-                    }).ToList()
-                })
-                .ToListAsync();
-        }
-
-        // Duyệt khóa học - ban giám đốc
-        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus)
-        {
-            if (string.IsNullOrWhiteSpace(newStatus))
-                throw new ArgumentException("Trạng thái mới không hợp lệ.", nameof(newStatus));
-
-            var allowedStatuses = new[]
-            {
-                CourseConstants.Status.Apporove,
-                CourseConstants.Status.Reject
-                };
-
-            if (!allowedStatuses.Contains(newStatus, StringComparer.OrdinalIgnoreCase))
-                throw new ArgumentException($"Trạng thái '{newStatus}' không hợp lệ. Chỉ chấp nhận Approve hoặc Reject.");
-
-            var course = await _context.Courses
-                .Include(c => c.Departments)
-                .FirstOrDefaultAsync(c => c.CourseId == courseId);
-
-            if (course == null)
-                return false;
-
-            // Chỉ cho phép xử lý khi đang Pending
-            if (!course.Status.Equals(CourseConstants.Status.Pending, StringComparison.OrdinalIgnoreCase))
-                return false;
-
-            if (newStatus.Equals(CourseConstants.Status.Apporove, StringComparison.OrdinalIgnoreCase))
-            {
-                // ✅ Duyệt khóa học
-                course.Status = CourseConstants.Status.Apporove;
-                course.UpdatedDate = DateTime.UtcNow;
-            }
-            else if (newStatus.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase))
-            {
-                // ❌ Từ chối khóa học hiện tại
-                course.Status = CourseConstants.Status.Reject;
-                course.UpdatedDate = DateTime.UtcNow;
-
-                // 🔄 Tạo lại yêu cầu mới (bản sao của course cũ, trạng thái Pending)
-                var newCourse = new Course
-                {
-                    CourseName = course.CourseName,
-                    Description = course.Description,
-                    Duration = course.Duration,
-                    Level = course.Level,
-                    CourseCategoryId = course.CourseCategoryId,
-                    CreatedDate = DateTime.UtcNow,
-                    UpdatedDate = DateTime.UtcNow,
-                    Status = CourseConstants.Status.Pending,
-                    Departments = course.Departments?.ToList() ?? new List<Department>()
-                };
-
-                await _context.Courses.AddAsync(newCourse);
-            }
-
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        // Ban giám đốc xóa khóa học đã duyệt
-        public async Task<bool> DeleteActiveCourseAsync(int courseId)
-        {
-            var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
-            if (course == null)
-                return false;
-
-            // Chỉ cho phép cập nhật nếu course đang Active
-            if (!course.Status.Equals(CourseConstants.Status.Active, StringComparison.OrdinalIgnoreCase))
-                return false;
-
-            course.Status = CourseConstants.Status.Deleted;
-            course.UpdatedDate = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
     }
 }
