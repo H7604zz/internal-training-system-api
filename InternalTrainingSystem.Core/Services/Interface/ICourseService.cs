@@ -11,14 +11,11 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<IEnumerable<CourseListDto>> GetAllCoursesAsync();
         Task<IEnumerable<CourseListDto>> GetCoursesByIdentifiersAsync(List<string> identifiers);
         Task<CourseDetailDto?> GetCourseDetailAsync(int courseId);
-        Task<bool> DeleteCourseAsync(int id);
-        Task<Course?> CreateCourseAsync(Course course, List<int>? departmentIds);
-        Task<Course?> UpdateCourseAsync(UpdateCourseDto dto);
+        public bool UpdateCourses(Course course);
+        public bool DeleteCoursesByCourseId(int id);
+        public Course? CreateCourses(Course course);
         public bool ToggleStatus(int id, string status);
         Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default);
-        Task<IEnumerable<CourseListDto>> GetPendingCoursesAsync();
-        Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus);
-        Task<bool> DeleteActiveCourseAsync(int courseId);
 
     }
 }
