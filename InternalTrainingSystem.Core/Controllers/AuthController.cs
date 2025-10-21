@@ -148,50 +148,6 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>
-        /// Get current user profile
-        /// </summary>
-        [HttpGet("profile")]
-        [Authorize]
-        public async Task<ActionResult<ApiResponseDto>> GetProfile()
-        {
-            try
-            {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized(ApiResponseDto.ErrorResult("User not found"));
-                }
-
-                var user = await _userManager.FindByIdAsync(userId);
-                if (user == null)
-                {
-                    return NotFound(ApiResponseDto.ErrorResult("User not found"));
-                }
-
-                var roles = await _userManager.GetRolesAsync(user);
-
-                var userProfile = new UserProfileDto
-                {
-                    Id = user.Id,
-                    FullName = user.FullName,
-                    Email = user.Email!,
-                    EmployeeId = user.EmployeeId,
-                    Department = user.Department?.Name,
-                    Position = user.Position,
-                    Roles = roles.ToList(),
-                    IsActive = user.IsActive,
-                    LastLoginDate = user.LastLoginDate
-                };
-
-                return Ok(ApiResponseDto.SuccessResult(new { user = userProfile }));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ApiResponseDto.ErrorResult($"Error retrieving profile: {ex.Message}"));
-            }
-        }
-
-        /// <summary>
         /// Change password for current user
         /// </summary>
         [HttpPost("change-password")]

@@ -1,3 +1,4 @@
+using InternalTrainingSystem.Core.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -19,7 +20,7 @@ namespace InternalTrainingSystem.Core.Models
         public double Percentage { get; set; } = 0;
 
         [StringLength(20)]
-        public string Status { get; set; } = "InProgress"; // InProgress, Completed, TimedOut
+        public string Status { get; set; } = QuizConstants.Status.InProgress; // InProgress, Completed, TimedOut
 
         public bool IsPassed { get; set; } = false;
 

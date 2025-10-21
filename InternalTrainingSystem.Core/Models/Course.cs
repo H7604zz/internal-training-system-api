@@ -1,3 +1,4 @@
+using InternalTrainingSystem.Core.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -21,9 +22,9 @@ namespace InternalTrainingSystem.Core.Models
         public int Duration { get; set; } // in hours
 
         [StringLength(20)]
-        public string Level { get; set; } = "Beginner"; // Beginner, Intermediate, Advanced
+        public string Level { get; set; } = CourseConstants.Levels.Beginner; // Beginner, Intermediate, Advanced
 
-        public string Status { get; set; } = "Pending";
+        public string Status { get; set; } = CourseConstants.Status.Pending;
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
