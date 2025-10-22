@@ -35,14 +35,29 @@ namespace InternalTrainingSystem.Core.Controllers
         public IActionResult NotifyEligibleUsers(int courseId)
         {
             var eligiblePaged = _userService.GetUserRoleEligibleStaff(courseId, 1, int.MaxValue);
-
             if (eligiblePaged.TotalCount == 0)
                 return NotFound("Không có nhân viên nào cần học khóa này.");
-            var EligibleStaff = eligiblePaged.Items;
+
             var course = _couseService.GetCourseByCourseID(courseId);
             if (course == null)
                 return NotFound("Không tìm thấy khóa học tương ứng.");
 
+            var now = DateTime.UtcNow;
+            var sevenDaysAgo = now.AddDays(-7);
+
+            if (_notificationService.HasRecentNotification(NotificationType.Start, courseId))
+            {
+                return BadRequest("Thông báo mở lớp đã được gửi trong vòng 7 ngày qua. Vui lòng thử lại sau.");
+            }
+
+            if (!course.IsOnline)
+            {
+                bool allClassesEnded = course.Classes.All(c => c.EndDate < now);
+                if (!allClassesEnded)
+                    return BadRequest("Không thể gửi lại thông báo vì vẫn còn lớp học đang diễn ra.");
+            }
+
+            var EligibleStaff = eligiblePaged.Items;
             foreach (var user in EligibleStaff)
             {
                 string confirmPageUrl = $"{_baseUrl}/courses/confirm?courseId={courseId}&userId={user.EmployeeId}";
@@ -74,6 +89,15 @@ namespace InternalTrainingSystem.Core.Controllers
                 ));
             }
 
+            _notificationService.DeleteOldNotifications(courseId, NotificationType.Start);
+
+            _notificationService.SaveNotificationAsync(new Notification
+            {
+                CourseId = courseId,
+                Type = NotificationType.Start,
+                SentAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+            });
             return Ok();
         }
 
@@ -86,24 +110,6 @@ namespace InternalTrainingSystem.Core.Controllers
                 return Ok(new { sent = false });
 
             return Ok(new { sent = true, sentAt = notification.SentAt });
-        }
-
-        [HttpPost("{courseId}/notify-staff")]
-        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
-        public IActionResult NotifyEligibleStaff(int courseId)
-        {
-            var course = _couseService.GetCourseByCourseID(courseId);
-            if (course == null)
-                return NotFound("Khóa học không tồn tại.");
-
-            _notificationService.SaveNotificationAsync(new CourseNotification
-            {
-                CourseId = courseId,
-                Type = NotificationType.StaffConfirm,
-                SentAt = DateTime.UtcNow,
-            });
-
-            return Ok();
         }
     }
 }
