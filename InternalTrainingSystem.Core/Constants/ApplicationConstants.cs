@@ -19,6 +19,17 @@
         }
     }
 
+    public static class ClassConstants
+    {
+        public static class Status
+        {
+            public const string Active = "Active";
+            public const string Completed = "Completed";
+            public const string Cancelled = "Cancelled";
+            public const string Scheduled = "Scheduled";
+        }
+    }
+
     public static class EnrollmentConstants
     {
         public static class Status

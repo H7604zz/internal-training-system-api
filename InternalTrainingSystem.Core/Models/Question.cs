@@ -1,3 +1,4 @@
+using InternalTrainingSystem.Core.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -13,7 +14,7 @@ namespace InternalTrainingSystem.Core.Models
         public string QuestionText { get; set; } = string.Empty;
 
         [StringLength(20)]
-        public string QuestionType { get; set; } = "MultipleChoice"; // MultipleChoice, TrueFalse, Essay
+        public string QuestionType { get; set; } = QuizConstants.QuestionTypes.MultipleChoice; // MultipleChoice, TrueFalse, Essay
 
         public int Points { get; set; } = 1;
 
