@@ -71,7 +71,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             var course = _context.Courses.Find(id);
             if (course == null) return false;
-            if (course.Status.ToLower().Equals(CourseConstants.Status.Apporove.ToLower())){
+            if (course.Status.ToLower().Equals(CourseConstants.Status.Approve.ToLower())){
                 course.Status = status;
                 course.UpdatedDate = DateTime.UtcNow;
                 return _context.SaveChanges() > 0;

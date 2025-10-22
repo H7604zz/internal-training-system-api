@@ -14,7 +14,7 @@
             public const string Active = "Active";
             public const string Inactive = "Inactive";
             public const string Pending = "Pending";
-            public const string Apporove = "Apporove";
+            public const string Approve = "Approve";
             public const string Reject = "Reject";
         }
     }

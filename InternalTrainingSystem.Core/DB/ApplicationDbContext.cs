@@ -28,7 +28,8 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<Certificate> Certificates { get; set; }
         public DbSet<Class> Classes { get; set; }
         public DbSet<ClassEnrollment> ClassEnrollments { get; set; }
-        public DbSet<CourseNotification> CourseNotifications { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+
         public DbSet<CourseModule> CourseModules { get; set; }
         public DbSet<Lesson> Lessons { get; set; }
         public DbSet<Department> Departments { get; set; }
@@ -215,7 +216,7 @@ namespace InternalTrainingSystem.Core.DB
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Certificate>()
-                .HasOne(c => c.Course)
+                .HasOne(c => c.Course) 
                 .WithMany(course => course.Certificates)
                 .HasForeignKey(c => c.CourseId);
 
@@ -223,6 +224,11 @@ namespace InternalTrainingSystem.Core.DB
                 .HasOne(c => c.User)
                 .WithMany(u => u.Certificates)
                 .HasForeignKey(c => c.UserId);
+
+            // Indexes for Course
+            builder.Entity<Course>()
+                .HasIndex(c => new { c.Code })
+                .IsUnique();
 
             // Indexes for CourseCategory
             builder.Entity<CourseCategory>()
@@ -341,9 +347,10 @@ namespace InternalTrainingSystem.Core.DB
                 .Property(ce => ce.FinalGrade)
                 .HasPrecision(5, 2);
 
-            builder.Entity<CourseNotification>()
-                .HasIndex(c => new { c.CourseId, c.Type })
-                .IsUnique();
+            builder.Entity<Notification>()
+                  .HasIndex(n => new { n.Type, n.CourseId, n.UserId, n.ClassId})
+                  .IsUnique(false);
+
             // Department relationships
             builder.Entity<Department>(e =>
             {
