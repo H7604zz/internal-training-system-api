@@ -1,15 +1,15 @@
-﻿using InternalTrainingSystem.Core.Models;
+﻿
+using InternalTrainingSystem.Core.Models;
 
 namespace InternalTrainingSystem.Core.DTOs
 {
+    // ===== Module DTOs =====
     public class CreateModuleDto
     {
         public int CourseId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int OrderIndex { get; set; } = 1;
-        public int? EstimatedMinutes { get; set; }
-        public bool IsActive { get; set; } = true;
     }
 
     public class UpdateModuleDto
@@ -17,8 +17,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int OrderIndex { get; set; } = 1;
-        public int? EstimatedMinutes { get; set; }
-        public bool IsActive { get; set; } = true;
     }
 
     public class ModuleDetailDto
@@ -28,28 +26,19 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int OrderIndex { get; set; }
-        public int? EstimatedMinutes { get; set; }
-        public bool IsActive { get; set; }
-
         public List<LessonListItemDto> Lessons { get; set; } = new();
     }
 
-    // Models/DTOs/Lesson DTOs
+    // ===== Lesson DTOs =====
     public class CreateLessonDto
     {
         public int ModuleId { get; set; }
         public string Title { get; set; } = string.Empty;
         public LessonType Type { get; set; }
         public int OrderIndex { get; set; } = 1;
-        public int? DurationMinutes { get; set; }
-        public bool IsPreview { get; set; } = false;
-        public bool IsRequired { get; set; } = true;
-
-        public string? VideoUrl { get; set; }
-        public string? ContentHtml { get; set; }
-        public string? FileUrl { get; set; }
-        public string? ExternalUrl { get; set; }
-        public int? QuizId { get; set; }
+        public string? ContentUrl { get; set; }   // Video/File/Link
+        public string? ContentHtml { get; set; }  // Reading
+        public int? QuizId { get; set; }          // Quiz
     }
 
     public class UpdateLessonDto
@@ -57,14 +46,9 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Title { get; set; } = string.Empty;
         public LessonType Type { get; set; }
         public int OrderIndex { get; set; } = 1;
-        public int? DurationMinutes { get; set; }
-        public bool IsPreview { get; set; } = false;
-        public bool IsRequired { get; set; } = true;
 
-        public string? VideoUrl { get; set; }
+        public string? ContentUrl { get; set; }
         public string? ContentHtml { get; set; }
-        public string? FileUrl { get; set; }
-        public string? ExternalUrl { get; set; }
         public int? QuizId { get; set; }
     }
 
@@ -75,9 +59,8 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Title { get; set; } = string.Empty;
         public LessonType Type { get; set; }
         public int OrderIndex { get; set; }
-        public int? DurationMinutes { get; set; }
-        public bool IsPreview { get; set; }
-        public bool IsRequired { get; set; }
+
+        public string? ContentUrl { get; set; }
     }
 
 }

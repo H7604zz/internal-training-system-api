@@ -196,6 +196,5 @@ namespace InternalTrainingSystem.Core.Controllers
 
             return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted." });
         }
-
     }
 }

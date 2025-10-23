@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InternalTrainingSystem.Core.DB.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251021110659_updateCourseModule,Lesson,addLessonProgress")]
+    partial class updateCourseModuleLessonaddLessonProgress
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -83,10 +86,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("DepartmentId")
-                        .IsRequired()
-                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -378,13 +377,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourseId"));
 
-                    b.Property<string>("ApproveById")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<int>("CourseCategoryId")
                         .HasColumnType("int");
 
@@ -418,10 +410,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("RejectionReason")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -430,11 +418,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("CourseId");
-
-                    b.HasIndex("ApproveById");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
 
                     b.HasIndex("CourseCategoryId");
 
@@ -609,6 +592,31 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.ToTable("CourseModules");
                 });
 
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId", "Type")
+                        .IsUnique();
+
+                    b.ToTable("CourseNotifications");
+                });
+
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Department", b =>
                 {
                     b.Property<int>("Id")
@@ -688,52 +696,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.HasIndex("ModuleId", "OrderIndex");
 
                     b.ToTable("Lessons");
-                });
-
-            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("ClassId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("EntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EntityType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("SentAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Type", "CourseId", "UserId", "ClassId");
-
-                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.LessonProgress", b =>
@@ -1349,10 +1311,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Course", b =>
                 {
-                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "ApproveBy")
-                        .WithMany()
-                        .HasForeignKey("ApproveById");
-
                     b.HasOne("InternalTrainingSystem.Core.Models.CourseCategory", "CourseCategory")
                         .WithMany("Courses")
                         .HasForeignKey("CourseCategoryId")
@@ -1364,8 +1322,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("ApproveBy");
 
                     b.Navigation("CourseCategory");
 
