@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace InternalTrainingSystem.Core.Models
 {
@@ -23,6 +24,10 @@ namespace InternalTrainingSystem.Core.Models
 
         public DateTime? LastLoginDate { get; set; }
 
+        [Required]
+        public int? DepartmentId { get; set; }
+
+        [ForeignKey(nameof(DepartmentId))]
         // Navigation properties
         public Department? Department { get; set; }
         public virtual ICollection<CourseEnrollment> CourseEnrollments { get; set; } = new List<CourseEnrollment>();

@@ -1,3 +1,4 @@
+using InternalTrainingSystem.Core.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -9,21 +10,24 @@ namespace InternalTrainingSystem.Core.Models
         public int CourseId { get; set; }
 
         [Required]
+        public string? Code { get; set; }    
+
+        [Required]
         [StringLength(200)]
         public string CourseName { get; set; } = string.Empty;
 
         [StringLength(1000)]
         public string? Description { get; set; }
 
-        [Required]
+        [Required] 
         public int CourseCategoryId { get; set; }
 
         public int Duration { get; set; } // in hours
 
         [StringLength(20)]
-        public string Level { get; set; } = "Beginner"; // Beginner, Intermediate, Advanced
+        public string Level { get; set; } = CourseConstants.Levels.Beginner; // Beginner, Intermediate, Advanced
 
-        public string Status { get; set; } = "Pending";
+        public string Status { get; set; } = CourseConstants.Status.Pending;
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
@@ -33,6 +37,11 @@ namespace InternalTrainingSystem.Core.Models
 
         public bool IsMandatory { get; set; } = false;
 
+        [StringLength(255)]
+        public string? RejectionReason { get; set; }
+
+        public string? ApproveById { get; set; }
+
         // Foreign Keys
         [Required]
         public string CreatedById { get; set; } = string.Empty;
@@ -40,6 +49,9 @@ namespace InternalTrainingSystem.Core.Models
         // Navigation Properties
         [ForeignKey("CreatedById")]
         public virtual ApplicationUser CreatedBy { get; set; } = null!;
+
+        [ForeignKey("ApproveById")]
+        public virtual ApplicationUser ApproveBy { get; set; } = null!;
 
         [ForeignKey("CourseCategoryId")]
         public virtual CourseCategory CourseCategory { get; set; } = null!;

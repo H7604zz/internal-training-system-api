@@ -14,9 +14,20 @@
             public const string Active = "Active";
             public const string Inactive = "Inactive";
             public const string Pending = "Pending";
-            public const string Apporove = "Apporove";
+            public const string Approve = "Approve";
             public const string Reject = "Reject";
             public const string Deleted = "Deleted";
+        }
+    }
+
+    public static class ClassConstants
+    {
+        public static class Status
+        {
+            public const string Active = "Active";
+            public const string Completed = "Completed";
+            public const string Cancelled = "Cancelled";
+            public const string Scheduled = "Scheduled";
         }
     }
 
