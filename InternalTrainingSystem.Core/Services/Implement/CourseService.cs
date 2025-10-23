@@ -403,7 +403,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             var allowedStatuses = new[]
             {
-                CourseConstants.Status.Apporove,
+                CourseConstants.Status.Approve,
                 CourseConstants.Status.Reject
                 };
 
@@ -421,10 +421,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (!course.Status.Equals(CourseConstants.Status.Pending, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            if (newStatus.Equals(CourseConstants.Status.Apporove, StringComparison.OrdinalIgnoreCase))
+            if (newStatus.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase))
             {
                 // ✅ Duyệt khóa học
-                course.Status = CourseConstants.Status.Apporove;
+                course.Status = CourseConstants.Status.Approve;
                 course.UpdatedDate = DateTime.UtcNow;
             }
 
