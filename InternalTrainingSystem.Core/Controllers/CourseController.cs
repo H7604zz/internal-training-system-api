@@ -185,7 +185,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>Chuyển 1 course từ Active -> Deleted (xóa mềm theo status).</summary>
-        [HttpPut("{courseId:int}/delete")]
+        [HttpPatch("{courseId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DeleteActiveCourse(int courseId)
