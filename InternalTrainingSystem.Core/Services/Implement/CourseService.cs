@@ -480,22 +480,28 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         // Ban giám đốc xóa khóa học đã duyệt
-        public async Task<bool> DeleteActiveCourseAsync(int courseId)
+        public async Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason)
         {
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
             if (course == null)
                 return false;
 
-            // Chỉ cho phép cập nhật nếu course đang Active
+            // Chỉ cho phép xóa nếu khóa học đang Active
             if (!course.Status.Equals(CourseConstants.Status.Active, StringComparison.OrdinalIgnoreCase))
                 return false;
 
+            // Cập nhật trạng thái và lý do từ chối
             course.Status = CourseConstants.Status.Deleted;
+            course.RejectionReason = string.IsNullOrWhiteSpace(rejectReason)
+                ? "Khóa học bị xóa bởi Ban giám đốc."
+                : rejectReason.Trim();
+
             course.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;
         }
+
 
     }
 }

@@ -18,7 +18,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default);
         Task<IEnumerable<CourseListDto>> GetPendingCoursesAsync();
         Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus);
-        Task<bool> DeleteActiveCourseAsync(int courseId);
+        Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason);
 
     }
 }

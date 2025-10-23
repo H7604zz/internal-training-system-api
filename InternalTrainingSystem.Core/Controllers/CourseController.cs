@@ -188,13 +188,17 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPatch("{courseId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> DeleteActiveCourse(int courseId)
+        public async Task<IActionResult> DeleteActiveCourse(int courseId, [FromBody] string? rejectReason)
         {
-            var ok = await _courseService.DeleteActiveCourseAsync(courseId);
-            if (!ok)
-                return BadRequest("Chỉ có thể chuyển trạng thái các khóa học đang ở Active hoặc khóa học không tồn tại.");
+            if (string.IsNullOrWhiteSpace(rejectReason))
+                rejectReason = "Khóa học bị xóa bởi Ban giám đốc.";
 
-            return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted." });
+            var ok = await _courseService.DeleteActiveCourseAsync(courseId, rejectReason);
+
+            if (!ok)
+                return BadRequest("Chỉ có thể xóa các khóa học đang ở trạng thái Active hoặc khóa học không tồn tại.");
+
+            return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted.", reason = rejectReason });
         }
     }
 }
