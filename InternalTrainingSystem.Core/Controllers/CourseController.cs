@@ -30,27 +30,51 @@ namespace InternalTrainingSystem.Core.Controllers
             if (!ModelState.IsValid)
                 return ValidationProblem(ModelState);
 
+            // Chuẩn hóa dữ liệu đầu vào
+            var code = (dto.CourseCode ?? string.Empty).Trim();
+            var name = (dto.CourseName ?? string.Empty).Trim();
+
+            // Kiểm tra mã khóa học trùng (case-insensitive)
+            if (await _courseService.GetCourseByCourseCodeAsync(code) != null)
+                return Conflict(new { message = $"Mã khóa học '{code}' đã tồn tại. Vui lòng chọn mã khác." });
+
             var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
             var now = DateTime.UtcNow;
 
             var entity = new Course
             {
-                CourseName = dto.CourseName.Trim(),
+                Code = code,
+                CourseName = name,
                 Description = dto.Description,
                 CourseCategoryId = dto.CourseCategoryId,
                 Duration = dto.Duration,
-                Level = dto.Level, // đã có validation mặc định ở DTO
-                Status = CourseConstants.Status.Pending,
+                Level = dto.Level, // đã được DTO validate
+                Status = CourseConstants.Status.Pending, // server kiểm soát trạng thái ban đầu
                 CreatedDate = now,
                 UpdatedDate = null,
                 CreatedById = userId
             };
 
-            var created = await _courseService.CreateCourseAsync(entity, dto.Departments);
-            if (created is null)
-                return BadRequest(new { message = "Create course failed" });
+            try
+            {
+                var created = await _courseService.CreateCourseAsync(entity, dto.Departments);
 
-            return CreatedAtAction(nameof(GetCourseDetail), new { id = created.CourseId }, created);
+                // Phòng hờ service trả null (không mong đợi)
+                if (created is null)
+                    return BadRequest(new { message = "Tạo khóa học thất bại." });
+
+                return CreatedAtAction(nameof(GetCourseDetail), new { id = created.CourseId }, created);
+            }
+            catch (ArgumentException ex)
+            {
+                // Ví dụ: Department ID không tồn tại, hoặc các lỗi business hợp lệ
+                return BadRequest(new { message = ex.Message });
+            }
+            catch
+            {
+                // Lỗi không xác định
+                return StatusCode(500, new { message = "Đã xảy ra lỗi máy chủ khi tạo khóa học." });
+            }
         }
 
         // PUT: /api/courses/5
@@ -130,7 +154,7 @@ namespace InternalTrainingSystem.Core.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+                return BadRequest( new { message = "Internal server error", error = ex.Message });
             }
         }
 
@@ -207,13 +231,17 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPatch("{courseId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> DeleteActiveCourse(int courseId)
+        public async Task<IActionResult> DeleteActiveCourse(int courseId, [FromBody] string? rejectReason)
         {
-            var ok = await _courseService.DeleteActiveCourseAsync(courseId);
-            if (!ok)
-                return BadRequest("Chỉ có thể chuyển trạng thái các khóa học đang ở Active hoặc khóa học không tồn tại.");
+            if (string.IsNullOrWhiteSpace(rejectReason))
+                rejectReason = "Khóa học bị xóa bởi Ban giám đốc.";
 
-            return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted." });
+            var ok = await _courseService.DeleteActiveCourseAsync(courseId, rejectReason);
+
+            if (!ok)
+                return BadRequest("Chỉ có thể xóa các khóa học đang ở trạng thái Active hoặc khóa học không tồn tại.");
+
+            return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted.", reason = rejectReason });
         }
     }
 }

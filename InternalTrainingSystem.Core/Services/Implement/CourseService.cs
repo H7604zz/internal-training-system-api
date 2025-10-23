@@ -19,6 +19,23 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _context = context;
         }
 
+        // Hàm lấy ra Course theo code
+        public async Task<Course?> GetCourseByCourseCodeAsync(string courseCode)
+        {
+            if (string.IsNullOrWhiteSpace(courseCode))
+                throw new ArgumentException("Mã khóa học không hợp lệ.", nameof(courseCode));
+
+            // Chuẩn hóa mã trước khi tìm (tránh lỗi khoảng trắng / hoa thường)
+            var normalizedCode = courseCode.Trim().ToLower();
+
+            return await _context.Courses
+                .Include(c => c.CourseCategory)
+                .Include(c => c.Departments)
+                .Include(c => c.CreatedBy)
+                .FirstOrDefaultAsync(c => c.Code.ToLower() == normalizedCode);
+        }
+
+
         public async Task<Course?> CreateCourseAsync(Course course, List<int>? departmentIds)
         {
             if (course == null) throw new ArgumentNullException(nameof(course));
@@ -558,22 +575,28 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         // Ban giám đốc xóa khóa học đã duyệt
-        public async Task<bool> DeleteActiveCourseAsync(int courseId)
+        public async Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason)
         {
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
             if (course == null)
                 return false;
 
-            // Chỉ cho phép cập nhật nếu course đang Active
+            // Chỉ cho phép xóa nếu khóa học đang Active
             if (!course.Status.Equals(CourseConstants.Status.Active, StringComparison.OrdinalIgnoreCase))
                 return false;
 
+            // Cập nhật trạng thái và lý do từ chối
             course.Status = CourseConstants.Status.Deleted;
+            course.RejectionReason = string.IsNullOrWhiteSpace(rejectReason)
+                ? "Khóa học bị xóa bởi Ban giám đốc."
+                : rejectReason.Trim();
+
             course.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;
         }
+
 
     }
 }
