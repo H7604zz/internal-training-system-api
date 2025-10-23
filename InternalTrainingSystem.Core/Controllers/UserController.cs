@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,57 +14,41 @@ namespace InternalTrainingSystem.Core.Controllers
     {
         private readonly IUserService _userService;
 
+        private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR};
+
         public UserController(IUserService userServices)
         {
             _userService = userServices;
         }
 
         [HttpGet("{courseId}/eligible-staff")]
-        public IActionResult GetEligibleUsers(int courseId)
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult GetEligibleUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var staffWithoutCertificate = _userService.GetUserRoleEligibleStaff(courseId);
-
-            var response = staffWithoutCertificate.Select(u => new EligibleStaffResponse
-            {
-                EmployeeId = u.EmployeeId,
-                FullName = u.FullName,
-                Email = u.Email!,
-                Department = u.Department?.Name,
-                Position = u.Position,
-                Status = u.CourseEnrollments
-                .FirstOrDefault(e => e.CourseId == courseId)?.Status ?? EnrollmentConstants.Status.NotEnrolled,
-                Reason = u.CourseEnrollments
-                .FirstOrDefault(e => e.CourseId == courseId)?.RejectionReason ?? "Không lí do!",
-            }).ToList();
-
-            return Ok(response);
+            var result = _userService.GetUserRoleEligibleStaff(courseId, page, pageSize);
+            return Ok(result);
         }
 
         [HttpGet("{courseId}/confirmed-staff")]
-        public IActionResult GetConfirmedUsers(int courseId)
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var confirmedUsers = _userService.GetUserRoleStaffConfirmCourse(courseId);
-
-            var response = confirmedUsers.Select(u => new StaffConfirmCourseResponse
-            {
-                Id = u.Id,
-                EmployeeId = u.EmployeeId,
-                FullName = u.FullName,
-                Email = u.Email!,
-                Department = u.Department?.Name,
-                Position = u.Position,
-                Status = EnrollmentConstants.Status.Enrolled,
-            }).ToList();
-
-            return Ok(response);
+            var confirmedUsers = _userService.GetUserRoleStaffConfirmCourse(courseId, page, pageSize);
+            return Ok(confirmedUsers);
         }
 
-        [HttpGet("mentors")]
-        public IActionResult GetMentors()
+        [HttpGet("by-role")]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult GetUsersByRole([FromQuery] string role)
         {
-            var mentors = _userService.GetMentors();
+            if (!AllowedRoles.Any(r => r.Equals(role, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new UnauthorizedAccessException("You are not allowed to query this role");
+            }
 
-            var response = mentors.Select(m => new MentorResponse
+            var users = _userService.GetUsersByRole(role);
+
+            var response = users.Select(m => new UserDetailResponse
             {
                 Id = m.Id,
                 EmployeeId = m.EmployeeId,
@@ -71,24 +56,6 @@ namespace InternalTrainingSystem.Core.Controllers
                 Email = m.Email!,
                 Department = m.Department?.Name,
                 Position = m.Position
-            }).ToList();
-
-            return Ok(response);
-        }
-
-        [HttpGet("staff")]
-        public IActionResult GetAllStaff()
-        {
-            var staff = _userService.GetAllStaff();
-
-            var response = staff.Select(s => new StaffResponse
-            {
-                Id = s.Id,
-                EmployeeId = s.EmployeeId,
-                FullName = s.FullName,
-                Email = s.Email!,
-                Department = s.Department?.Name,
-                Position = s.Position
             }).ToList();
 
             return Ok(response);
