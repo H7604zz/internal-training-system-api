@@ -1,7 +1,6 @@
 ﻿using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
-using InternalTrainingSystem.Core.Enums;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +15,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public CourseMaterialService(ApplicationDbContext context, IFileStorage storage)
         {
+            _storage = storage;
             _context = context;
             _storage = storage;
         }

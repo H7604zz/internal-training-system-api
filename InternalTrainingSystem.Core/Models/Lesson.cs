@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using InternalTrainingSystem.Core.Enums;
 
 namespace InternalTrainingSystem.Core.Models
 {
@@ -18,5 +17,14 @@ namespace InternalTrainingSystem.Core.Models
         public long? SizeBytes { get; set; }
         public int? QuizId { get; set; }            // Type = Quiz
         public CourseModule Module { get; set; } = null!;
+    }
+
+    public enum LessonType
+    {
+        Video = 1,
+        Reading = 2,
+        File = 3,
+        Link = 4,
+        Quiz = 5
     }
 }

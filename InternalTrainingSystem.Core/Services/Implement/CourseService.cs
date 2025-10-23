@@ -19,53 +19,117 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _context = context;
         }
 
-        public Course? CreateCourses(Course course)
+        public async Task<Course?> CreateCourseAsync(Course course, List<int>? departmentIds)
         {
-            _context.Courses.Add(course);
-            _context.SaveChanges();
+            if (course == null) throw new ArgumentNullException(nameof(course));
+
+            // Nạp Departments theo danh sách ID (nếu có)
+            if (departmentIds is { Count: > 0 })
+            {
+                var departments = await _context.Departments
+                    .Where(d => departmentIds.Contains(d.Id))
+                    .ToListAsync();
+
+                // (tùy chọn) Kiểm tra ID không hợp lệ
+                var foundIds = departments.Select(d => d.Id).ToHashSet();
+                var missing = departmentIds.Where(id => !foundIds.Contains(id)).ToList();
+                if (missing.Count > 0)
+                {
+                    // Có thể throw, return null, hoặc logging rồi bỏ qua
+                    throw new ArgumentException($"Department ID không tồn tại: {string.Join(", ", missing)}");
+                }
+
+                // Gán navigation collection
+                course.Departments = departments;
+            }
+
+            await _context.Courses.AddAsync(course);
+            await _context.SaveChangesAsync();
             return course;
         }
 
-        public bool DeleteCoursesByCourseId(int id)
+
+        public async Task<bool> DeleteCourseAsync(int id)
         {
+            // Nạp quan hệ nếu cần (nếu có ràng buộc FK hoặc nhiều bảng con)
+            var course = await _context.Courses
+                .Include(c => c.Departments)        // many-to-many
+                .Include(c => c.CourseEnrollments)  // one-to-many
+                .FirstOrDefaultAsync(c => c.CourseId == id);
+
+            if (course == null)
+                return false;
+
+            // Nếu chưa cấu hình cascade delete, phải xử lý quan hệ thủ công
+            if (course.Departments != null && course.Departments.Count > 0)
+                course.Departments.Clear();
+
+            if (course.CourseEnrollments != null && course.CourseEnrollments.Count > 0)
+                _context.CourseEnrollments.RemoveRange(course.CourseEnrollments);
+
+            _context.Courses.Remove(course);
+
             try
             {
-                var deleteCourse = _context.Courses.SingleOrDefault(m => m.CourseId == id);
-                if (deleteCourse == null) return false;
-                _context.Courses.Remove(deleteCourse);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (DbUpdateException ex)
             {
+                // TODO: log lại nếu cần
+                Console.WriteLine($"Lỗi khi xóa course: {ex.Message}");
                 return false;
             }
         }
 
-        public List<Course> GetCourses()
+        public async Task<Course?> UpdateCourseAsync(UpdateCourseDto dto)
         {
-            return _context.Courses.ToList();
-        }
+            var course = await _context.Courses
+                .Include(c => c.Departments)
+                .FirstOrDefaultAsync(c => c.CourseId == dto.CourseId);
 
-        public bool UpdateCourses(Course course)
-        {
-            try
+            if (course == null)
+                return null;
+
+            // ✅ Cập nhật các thuộc tính cơ bản
+            course.CourseName = dto.CourseName.Trim();
+            course.Description = dto.Description;
+            course.CourseCategoryId = dto.CourseCategoryId;
+            course.Duration = dto.Duration;
+            course.Level = dto.Level;
+            course.Status = dto.Status ?? course.Status;
+            course.UpdatedDate = DateTime.UtcNow;
+
+            // ✅ Cập nhật Departments (nếu có)
+            if (dto.Departments != null)
             {
-                var existing = _context.Courses.Find(course.CourseId);
-                if (existing == null)
+                // Lấy danh sách phòng ban hiện có
+                var existingDepartments = course.Departments.ToList();
+
+                // Nạp lại danh sách phòng ban mới từ DB
+                var newDepartments = await _context.Departments
+                    .Where(d => dto.Departments.Contains(d.Id))
+                    .ToListAsync();
+
+                // Xóa phòng ban cũ không còn được chọn
+                foreach (var oldDept in existingDepartments)
                 {
-                    return false;
+                    if (!newDepartments.Any(nd => nd.Id == oldDept.Id))
+                        course.Departments.Remove(oldDept);
                 }
-                _context.Entry(existing).CurrentValues.SetValues(course);
-                _context.SaveChanges();
-                return true;
+
+                // Thêm phòng ban mới chưa có
+                foreach (var newDept in newDepartments)
+                {
+                    if (!course.Departments.Any(d => d.Id == newDept.Id))
+                        course.Departments.Add(newDept);
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating course {course.CourseId}: {ex.Message}");
-                return false;
-            }
+
+            await _context.SaveChangesAsync();
+            return course;
         }
+
 
         public bool ToggleStatus(int id, string status)
         {
@@ -153,7 +217,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Duration = c.Duration,
                     Level = c.Level,
                     Status = c.Status,
-                    CreatedDate = c.CreatedDate
+                    CreatedDate = c.CreatedDate,
+                    Departments = c.Departments.Select(d => new DepartmentDto
+                    {
+                        DepartmentId = d.Id,
+                        DepartmentName = d.Name
+                    }).ToList()
                 })
                 .ToListAsync(ct);
 
@@ -190,6 +259,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _context.Courses
                 .Include(c => c.CourseCategory)
+                .Include(c=>c.Departments)
                 .Where(c => c.Status==CourseConstants.Status.Active)
                 .OrderByDescending(c => c.CreatedDate)
                 .Select(c => new CourseListDto
@@ -201,8 +271,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = c.Level,
                     CategoryName = c.CourseCategory.CategoryName,
                     Status = CourseConstants.Status.Active,
-                    CreatedDate = c.CreatedDate
-                })
+                    CreatedDate = c.CreatedDate,
+                    Departments = c.Departments.Select(d => new DepartmentDto{
+                        DepartmentId = d.Id,
+                        DepartmentName = d.Name }).ToList()})
                 .ToListAsync();
         }
 
@@ -242,7 +314,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = c.Level,
                     CategoryName = c.CourseCategory.CategoryName,
                     Status = c.Status,
-                    CreatedDate = c.CreatedDate
+                    CreatedDate = c.CreatedDate,
+                    Departments = c.Departments.Select(d => new DepartmentDto
+                    {
+                        DepartmentId = d.Id,
+                        DepartmentName = d.Name
+                    }).ToList()
                 })
                 .ToListAsync();
         }
@@ -251,6 +328,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             var course = await _context.Courses
                 .Include(c => c.CourseCategory)
+                .Include(c => c.Departments)
                 .Include(c => c.CourseEnrollments)
                 .FirstOrDefaultAsync(c => c.CourseId == courseId);
 
@@ -281,7 +359,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Objectives = null, // Not available in current model
                 Price = null, // Not available in current model
                 EnrollmentCount = enrollmentCount,
-                AverageRating = AverageRatingPass
+                AverageRating = AverageRatingPass,
+                Departments = course.Departments.Select(d => new DepartmentDto
+                {
+                    DepartmentId = d.Id,
+                    DepartmentName = d.Name
+                }).ToList()
             };
         }
 
@@ -320,7 +403,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             var allowedStatuses = new[]
             {
-                CourseConstants.Status.Apporove,
+                CourseConstants.Status.Approve,
                 CourseConstants.Status.Reject
                 };
 
@@ -338,34 +421,59 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (!course.Status.Equals(CourseConstants.Status.Pending, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            if (newStatus.Equals(CourseConstants.Status.Apporove, StringComparison.OrdinalIgnoreCase))
+            if (newStatus.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase))
             {
                 // ✅ Duyệt khóa học
-                course.Status = CourseConstants.Status.Apporove;
+                course.Status = CourseConstants.Status.Approve;
                 course.UpdatedDate = DateTime.UtcNow;
             }
-            else if (newStatus.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase))
-            {
-                // ❌ Từ chối khóa học hiện tại
-                course.Status = CourseConstants.Status.Reject;
-                course.UpdatedDate = DateTime.UtcNow;
 
-                // 🔄 Tạo lại yêu cầu mới (bản sao của course cũ, trạng thái Pending)
-                var newCourse = new Course
-                {
-                    CourseName = course.CourseName,
-                    Description = course.Description,
-                    Duration = course.Duration,
-                    Level = course.Level,
-                    CourseCategoryId = course.CourseCategoryId,
-                    CreatedDate = DateTime.UtcNow,
-                    UpdatedDate = DateTime.UtcNow,
-                    Status = CourseConstants.Status.Pending,
-                    Departments = course.Departments?.ToList() ?? new List<Department>()
-                };
+            await _context.SaveChangesAsync();
+            return true;
+        }
 
-                await _context.Courses.AddAsync(newCourse);
-            }
+        //Update reject conmeback
+        public async Task<bool> UpdateDraftAndResubmitAsync(int courseId, UpdateCourseRejectDto dto)
+        {
+            // 1) Validate input cơ bản
+            if (dto is null) throw new ArgumentNullException(nameof(dto));
+            if (string.IsNullOrWhiteSpace(dto.CourseName))
+                throw new ArgumentException("Tên khóa học không được để trống.", nameof(dto.CourseName));
+
+            // 2) Tải course + Departments
+            var course = await _context.Courses
+                .Include(c => c.Departments)
+                .FirstOrDefaultAsync(c => c.CourseId == courseId);
+
+            if (course == null) return false;
+
+            // 3) Chỉ cho phép sửa và "gửi lại" khi đang Pending (bản nháp) hoặc Reject
+            var canResubmit =
+                course.Status.Equals(CourseConstants.Status.Pending, StringComparison.OrdinalIgnoreCase) ||
+                course.Status.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase);
+
+            if (!canResubmit) return false;
+
+            // 4) Cập nhật field nội dung
+            course.CourseName = dto.CourseName.Trim();
+            course.Description = dto.Description?.Trim();
+            course.Duration = dto.Duration;
+            course.Level = dto.Level.Trim();
+            course.CourseCategoryId = dto.CourseCategoryId;
+
+            // 5) Đồng bộ Departments (many-to-many) theo danh sách ID được gửi lên
+            //    - Lấy các Department hiện hữu
+            var deps = dto.DepartmentIds?.Distinct().ToList() ?? new List<int>();
+            var existingDepartments = deps.Count == 0
+                ? new List<Department>()
+                : await _context.Departments.Where(d => deps.Contains(d.Id)).ToListAsync();
+
+            //    - Gán lại tập Departments để EF Core tự sync (add/remove join rows)
+            course.Departments = existingDepartments;
+
+            // 6) Đưa trạng thái về Pending để "gửi lại", cập nhật thời gian
+            course.Status = CourseConstants.Status.Pending;
+            course.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;

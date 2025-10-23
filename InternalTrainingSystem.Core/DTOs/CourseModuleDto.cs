@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Enums;
+﻿
+using InternalTrainingSystem.Core.Models;
 
 namespace InternalTrainingSystem.Core.DTOs
 {
