@@ -19,6 +19,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<IEnumerable<CourseListDto>> GetPendingCoursesAsync();
         Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus);
         Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason);
+        Task<Course> GetCourseByCourseCodeAsync(string courseCode);
 
     }
 }
