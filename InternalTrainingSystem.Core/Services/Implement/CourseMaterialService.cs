@@ -3,15 +3,19 @@ using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client.Extensions.Msal;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
     public class CourseMaterialService : ICourseMaterialService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IFileStorage _storage;
 
-        public CourseMaterialService(ApplicationDbContext context)
+
+        public CourseMaterialService(ApplicationDbContext context, IFileStorage storage)
         {
+            _storage = storage;
             _context = context;
         }
 
@@ -302,6 +306,73 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var entity = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId, ct);
             if (entity == null) return false;
             _context.Lessons.Remove(entity);
+            await _context.SaveChangesAsync(ct);
+            return true;
+        }
+        private static readonly HashSet<string> AllowedDocContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    };
+
+        private static readonly HashSet<string> AllowedDocExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".pdf", ".doc", ".docx"
+    };
+
+        private const long MaxFileBytes = 20 * 1024 * 1024; // 20 MB
+
+        public async Task<(string url, string relativePath)> UploadLessonFileAsync(
+            int lessonId, IFormFile file, CancellationToken ct = default)
+        {
+            var lesson = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId, ct);
+            if (lesson == null) throw new ArgumentException("Lesson not found.");
+            if (lesson.Type != LessonType.File)
+                throw new InvalidOperationException("Only lessons with Type=File can have a file uploaded.");
+
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("Empty file.");
+
+            if (file.Length > MaxFileBytes)
+                throw new ArgumentException($"File too large. Max {MaxFileBytes / (1024 * 1024)} MB.");
+
+            // Validate content type & extension
+            var ext = Path.GetExtension(file.FileName);
+            if (!AllowedDocExtensions.Contains(ext))
+                throw new ArgumentException("Only .pdf, .doc, .docx are allowed.");
+
+            var contentType = file.ContentType ?? "";
+            if (!AllowedDocContentTypes.Contains(contentType))
+                throw new ArgumentException("Invalid MIME type. Only PDF/DOC/DOCX are allowed.");
+
+            // Save to /wwwroot/uploads/lessons/{lessonId}/
+            var subFolder = $"uploads/lessons/{lessonId}";
+            var (url, relativePath) = await _storage.SaveAsync(file, subFolder, ct);
+
+            // If previously had a file, delete old (optional)
+            if (!string.IsNullOrWhiteSpace(lesson.FileUrl))
+            {
+                // FileUrl là URL, cần tự lưu thêm relativePath vào DB để delete chuẩn.
+                // Ở đây tối giản: nếu bạn muốn delete chính xác, hãy thêm trường Lesson.FilePath (relativePath) trong DB.
+            }
+
+            lesson.FileUrl = url; // lưu public URL; khuyến nghị thêm Lesson.FilePath để delete chính xác
+            await _context.SaveChangesAsync(ct);
+
+            return (url, relativePath);
+        }
+
+        public async Task<bool> ClearLessonFileAsync(int lessonId, CancellationToken ct = default)
+        {
+            var lesson = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId, ct);
+            if (lesson == null) return false;
+
+            // Nếu bạn thêm cột Lesson.FilePath để delete chính xác:
+            // if (!string.IsNullOrEmpty(lesson.FilePath))
+            //     await _storage.DeleteAsync(lesson.FilePath, ct);
+
+            lesson.FileUrl = null;
             await _context.SaveChangesAsync(ct);
             return true;
         }
