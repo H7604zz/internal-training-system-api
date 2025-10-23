@@ -9,6 +9,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
     {
         public Course? GetCourseByCourseID(int? couseId);
         Task<IEnumerable<CourseListDto>> GetAllCoursesAsync();
+        Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request);
         Task<IEnumerable<CourseListDto>> GetCoursesByIdentifiersAsync(List<string> identifiers);
         Task<CourseDetailDto?> GetCourseDetailAsync(int courseId);
         Task<bool> DeleteCourseAsync(int id);

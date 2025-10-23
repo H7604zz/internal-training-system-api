@@ -101,13 +101,32 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<CourseListDto>>> GetAllCourses()
+        [HttpGet("")]
+        public async Task<ActionResult<PagedResult<CourseListItemDto>>> GetAllCoursesPaged([FromQuery] GetAllCoursesRequest request)
         {
             try
             {
-                var courses = await _courseService.GetAllCoursesAsync();
-                return Ok(courses);
+                // Validate status if provided
+                if (!string.IsNullOrWhiteSpace(request.Status))
+                {
+                    var validStatuses = new[] 
+                    {
+                        CourseConstants.Status.Active,
+                        CourseConstants.Status.Inactive,
+                        CourseConstants.Status.Pending,
+                        CourseConstants.Status.Approve,
+                        CourseConstants.Status.Reject,
+                        CourseConstants.Status.Deleted
+                    };
+
+                    if (!validStatuses.Contains(request.Status))
+                    {
+                        return BadRequest(new { message = $"Invalid status. Valid values are: {string.Join(", ", validStatuses)}" });
+                    }
+                }
+
+                var result = await _courseService.GetAllCoursesPagedAsync(request);
+                return Ok(result);
             }
             catch (Exception ex)
             {

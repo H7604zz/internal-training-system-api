@@ -149,6 +149,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             IQueryable<Course> q = _context.Courses
                 .Include(c => c.CourseCategory)
+                .Include(c => c.Departments)
+                .Include(c => c.CreatedBy)
                 .AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(req.Q))
@@ -209,20 +211,28 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .Take(pageSize)
                 .Select(c => new CourseListItemDto
                 {
+                    Id = c.CourseId,
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
+                    Code = c.Code,
                     Description = c.Description,
-                    CourseCategoryId = c.CourseCategoryId,
-                    CourseCategoryName = c.CourseCategory.CategoryName,
                     Duration = c.Duration,
                     Level = c.Level,
-                    Status = c.Status,
+                    Category = c.CourseCategory.CategoryName,
+                    CategoryName = c.CourseCategory.CategoryName,
+                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsOnline = c.IsOnline,
+                    IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
+                    Status = c.Status,
                     Departments = c.Departments.Select(d => new DepartmentDto
                     {
                         DepartmentId = d.Id,
                         DepartmentName = d.Name
-                    }).ToList()
+                    }).ToList(),
+                    CreatedBy = c.CreatedBy != null ? c.CreatedBy.UserName : string.Empty,
+                    UpdatedDate = c.UpdatedDate,
+                    UpdatedBy = string.Empty // Có thể thêm logic để lấy thông tin người cập nhật nếu cần
                 })
                 .ToListAsync(ct);
 
@@ -276,6 +286,74 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         DepartmentId = d.Id,
                         DepartmentName = d.Name }).ToList()})
                 .ToListAsync();
+        }
+
+        public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)
+        {
+            var query = _context.Courses
+                .Include(c => c.CourseCategory)
+                .Include(c => c.Departments)
+                .Include(c => c.CreatedBy)
+                .AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                var searchTerm = request.Search.Trim().ToLower();
+                query = query.Where(c => 
+                    c.CourseName.ToLower().Contains(searchTerm) ||
+                    (c.Description != null && c.Description.ToLower().Contains(searchTerm)) ||
+                    c.CourseCategory.CategoryName.ToLower().Contains(searchTerm));
+            }
+
+            // Apply status filter
+            if (!string.IsNullOrWhiteSpace(request.Status))
+            {
+                query = query.Where(c => c.Status == request.Status);
+            }
+
+            // Get total count
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination and ordering
+            var items = await query
+                .OrderByDescending(c => c.CreatedDate)
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .Select(c => new CourseListItemDto
+                {
+                    Id = c.CourseId,
+                    CourseId = c.CourseId,
+                    CourseName = c.CourseName,
+                    Code = c.Code,
+                    Description = c.Description,
+                    Duration = c.Duration,
+                    Level = c.Level,
+                    Category = c.CourseCategory.CategoryName,
+                    CategoryName = c.CourseCategory.CategoryName,
+                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsOnline = c.IsOnline,
+                    IsMandatory = c.IsMandatory,
+                    CreatedDate = c.CreatedDate,
+                    Status = c.Status,
+                    Departments = c.Departments.Select(d => new DepartmentDto
+                    {
+                        DepartmentId = d.Id,
+                        DepartmentName = d.Name
+                    }).ToList(),
+                    CreatedBy = c.CreatedBy != null ? c.CreatedBy.UserName : string.Empty,
+                    UpdatedDate = c.UpdatedDate,
+                    UpdatedBy = string.Empty // Có thể thêm logic để lấy thông tin người cập nhật nếu cần
+                })
+                .ToListAsync();
+
+            return new PagedResult<CourseListItemDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
         }
 
         public async Task<IEnumerable<CourseListDto>> GetCoursesByIdentifiersAsync(List<string> identifiers)

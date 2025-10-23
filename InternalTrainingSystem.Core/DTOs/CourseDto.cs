@@ -1,4 +1,5 @@
 ﻿using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Constants;
 using System.ComponentModel.DataAnnotations;
 
 namespace InternalTrainingSystem.Core.DTOs
@@ -10,7 +11,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Description { get; set; }
         public int Duration { get; set; }
         public string Level { get; set; } = string.Empty;
-        public string? Department { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public string? Status { get; set; }
         public List<DepartmentDto> Departments { get; set; } = new();
@@ -127,17 +127,33 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class CourseListItemDto
     {
+        public int Id { get; set; }
         public int CourseId { get; set; }
         public string CourseName { get; set; } = string.Empty;
+        public string? Code { get; set; }
         public string? Description { get; set; }
-        public int CourseCategoryId { get; set; }
-        public string CourseCategoryName { get; set; } = string.Empty;
         public int Duration { get; set; }
-        public string Level { get; set; } = "Beginner";
-        public string? Status { get; set; }
+        public string Level { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public bool IsOnline { get; set; }
+        public bool IsMandatory { get; set; }
         public DateTime CreatedDate { get; set; }
+        public string? Status { get; set; } = CourseConstants.Status.Pending; // Course approval status: Pending, Approved, Rejected, Draft
         public List<DepartmentDto> Departments { get; set; } = new();
+        public string? CreatedBy { get; set; } = string.Empty;
+        public DateTime? UpdatedDate { get; set; }
+        public string? UpdatedBy { get; set; } = string.Empty;
     }
 
     public record ToggleStatusDto(string Status);
+
+    public class GetAllCoursesRequest
+    {
+        public string? Search { get; set; }
+        public string? Status { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 20;
+    }
 }
