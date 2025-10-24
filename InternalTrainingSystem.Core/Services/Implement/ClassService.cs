@@ -2,6 +2,7 @@ using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
+using InternalTrainingSystem.Core.Configuration;
 using Microsoft.EntityFrameworkCore;
 
 namespace InternalTrainingSystem.Core.Services.Implement
@@ -17,38 +18,64 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _logger = logger;
         }
 
-        public async Task<IEnumerable<ClassDto>> GetClassesAsync()
+        public async Task<PagedResult<ClassDto>> GetClassesAsync(GetAllClassesRequest request)
         {
             try
             {
-                var classes = await _context.Classes
+                var query = _context.Classes
                     .Include(c => c.Course)
                     .Include(c => c.Mentor)
-                    .Include(c => c.ClassEnrollments)
-                        .ThenInclude(ce => ce.Student)
+                    .Include(c => c.Students)
                     .Where(c => c.IsActive)
+                    .AsQueryable();
+
+                // Lọc theo từ khóa (tìm theo tên lớp, tên khóa học, tên mentor)
+                if (!string.IsNullOrWhiteSpace(request.Search))
+                {
+                    string keyword = request.Search.Trim().ToLower();
+                    query = query.Where(c =>
+                        c.ClassName.ToLower().Contains(keyword) ||
+                        (c.Course != null && c.Course.CourseName.ToLower().Contains(keyword)) ||
+                        (c.Mentor != null && c.Mentor.FullName.ToLower().Contains(keyword))
+                    );
+                }
+
+                // Tổng số bản ghi
+                int totalCount = await query.CountAsync();
+
+                // Phân trang và ánh xạ sang DTO trong một query
+                var items = await query
                     .OrderByDescending(c => c.CreatedDate)
+                    .Skip((request.Page - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .Select(c => new ClassDto
+                    {
+                        ClassId = c.ClassId,
+                        ClassName = c.ClassName,
+                        CourseId = c.CourseId,
+                        CourseName = c.Course != null ? c.Course.CourseName : null,
+                        MentorId = c.MentorId,
+                        MentorName = c.Mentor != null ? c.Mentor.FullName : null,
+                        Students = c.Students
+                            .Select(s => new ClassStudentDto
+                            {
+                                StudentId = s.Id,
+                                StudentName = s.FullName,
+                                StudentEmail = s.Email
+                            }).ToList(),
+                        CreatedDate = c.CreatedDate,
+                        IsActive = c.IsActive
+                    })
                     .ToListAsync();
 
-                var classesDto = classes.Select(c => new ClassDto
+                // Trả về kết quả phân trang
+                return new PagedResult<ClassDto>
                 {
-                    ClassId = c.ClassId,
-                    ClassName = c.ClassName,
-                    CourseId = c.CourseId,
-                    CourseName = c.Course?.CourseName,
-                    MentorId = c.MentorId,
-                    MentorName = c.Mentor?.FullName,
-                    Students = c.ClassEnrollments?.Where(ce => ce.IsActive).Select(ce => new ClassStudentDto
-                    {
-                        StudentId = ce.StudentId,
-                        StudentName = ce.Student?.FullName,
-                        StudentEmail = ce.Student?.Email
-                    }).ToList() ?? new List<ClassStudentDto>(),
-                    CreatedDate = c.CreatedDate,
-                    IsActive = c.IsActive
-                }).ToList();
-
-                return classesDto;
+                    Items = items,
+                    TotalCount = totalCount,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                };
             }
             catch (Exception ex)
             {
@@ -123,20 +150,14 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         _context.Classes.Add(classEntity);
                         await _context.SaveChangesAsync();
 
-                        // Enroll all staff members
-                        foreach (var staffId in classRequest.StaffIds)
-                        {
-                            var enrollment = new ClassEnrollment
-                            {
-                                ClassId = classEntity.ClassId,
-                                StudentId = staffId,
-                                Status = "Enrolled",
-                                EnrollmentDate = DateTime.UtcNow,
-                                CreatedDate = DateTime.UtcNow,
-                                IsActive = true
-                            };
+                        // Add all staff members to the class using many-to-many relationship
+                        var staffUsers = await _context.Users
+                            .Where(u => classRequest.StaffIds.Contains(u.Id) && u.IsActive)
+                            .ToListAsync();
 
-                            _context.ClassEnrollments.Add(enrollment);
+                        foreach (var staff in staffUsers)
+                        {
+                            classEntity.Students.Add(staff);
                         }
 
                         await _context.SaveChangesAsync();
@@ -145,8 +166,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         var createdClass = await _context.Classes
                             .Include(c => c.Course)
                             .Include(c => c.Mentor)
-                            .Include(c => c.ClassEnrollments)
-                                .ThenInclude(ce => ce.Student)
+                            .Include(c => c.Students)
                             .FirstOrDefaultAsync(c => c.ClassId == classEntity.ClassId);
 
                         var classDto = new ClassDto
@@ -157,11 +177,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
                             CourseName = createdClass.Course?.CourseName,
                             MentorId = createdClass.MentorId,
                             MentorName = createdClass.Mentor?.FullName,
-                            Students = createdClass.ClassEnrollments?.Where(ce => ce.IsActive).Select(ce => new ClassStudentDto
+                            Students = createdClass.Students?.Select(s => new ClassStudentDto
                             {
-                                StudentId = ce.StudentId,
-                                StudentName = ce.Student?.FullName,
-                                StudentEmail = ce.Student?.Email
+                                StudentId = s.Id,
+                                StudentName = s.FullName,
+                                StudentEmail = s.Email
                             }).ToList() ?? new List<ClassStudentDto>(),
                             CreatedDate = createdClass.CreatedDate,
                             IsActive = createdClass.IsActive
