@@ -135,6 +135,7 @@ builder.Services.AddScoped<ICourseEnrollmentService, CourseEnrollmentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IClassService, ClassService>();
 builder.Services.AddScoped<ICourseMaterialService, CourseMaterialService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
