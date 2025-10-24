@@ -351,9 +351,9 @@ namespace InternalTrainingSystem.Core.DB
 
                 e.HasIndex(d => d.Name).IsUnique();
 
-                e.HasOne(d => d.User)
+                e.HasMany(d => d.Users)
                  .WithOne(u => u.Department)
-                 .HasForeignKey<Department>(d => d.UserId)
+                 .HasForeignKey(u => u.DepartmentId)
                  .OnDelete(DeleteBehavior.SetNull);
             });
             

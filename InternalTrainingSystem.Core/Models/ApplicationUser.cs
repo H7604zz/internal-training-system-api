@@ -24,7 +24,6 @@ namespace InternalTrainingSystem.Core.Models
 
         public DateTime? LastLoginDate { get; set; }
 
-        [Required]
         public int? DepartmentId { get; set; }
 
         [ForeignKey(nameof(DepartmentId))]
