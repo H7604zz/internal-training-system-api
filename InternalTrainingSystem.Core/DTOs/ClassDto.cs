@@ -39,4 +39,11 @@ namespace InternalTrainingSystem.Core.DTOs
         [Required]
         public List<CreateClassRequestDto> Classes { get; set; } = new List<CreateClassRequestDto>();
     }
+
+    public class GetAllClassesRequest
+    {
+        public string? Search { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+    }
 }

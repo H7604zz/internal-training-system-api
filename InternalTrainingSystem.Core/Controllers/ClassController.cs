@@ -1,5 +1,6 @@
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Services.Interface;
+using InternalTrainingSystem.Core.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -21,12 +22,12 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ClassDto>>> GetClasses()
+        public async Task<ActionResult<PagedResult<ClassDto>>> GetClasses([FromQuery] GetAllClassesRequest request)
         {
             try
             {
-                var classes = await _classService.GetClassesAsync();
-                return Ok(classes);
+                var result = await _classService.GetClassesAsync(request);
+                return Ok(result);
             }
             catch (Exception ex)
             {
