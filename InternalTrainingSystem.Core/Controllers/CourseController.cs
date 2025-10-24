@@ -6,6 +6,7 @@ using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -16,10 +17,14 @@ namespace InternalTrainingSystem.Core.Controllers
     public class CourseController : ControllerBase
     {
         private readonly ICourseService _courseService;
+        private readonly ICourseEnrollmentService _courseEnrollmentService;
+        private readonly IHubContext<EnrollmentHub> _hub;
 
-        public CourseController(ICourseService courseService)
+        public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService, IHubContext<EnrollmentHub> hub)
         {
             _courseService = courseService;
+            _hub = hub;
+            _courseEnrollmentService = courseEnrollmentService;
         }
 
         // POST: /api/courses
@@ -30,27 +35,51 @@ namespace InternalTrainingSystem.Core.Controllers
             if (!ModelState.IsValid)
                 return ValidationProblem(ModelState);
 
+            // Chuẩn hóa dữ liệu đầu vào
+            var code = (dto.CourseCode ?? string.Empty).Trim();
+            var name = (dto.CourseName ?? string.Empty).Trim();
+
+            // Kiểm tra mã khóa học trùng (case-insensitive)
+            if (await _courseService.GetCourseByCourseCodeAsync(code) != null)
+                return Conflict(new { message = $"Mã khóa học '{code}' đã tồn tại. Vui lòng chọn mã khác." });
+
             var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
             var now = DateTime.UtcNow;
 
             var entity = new Course
             {
-                CourseName = dto.CourseName.Trim(),
+                Code = code,
+                CourseName = name,
                 Description = dto.Description,
                 CourseCategoryId = dto.CourseCategoryId,
                 Duration = dto.Duration,
-                Level = dto.Level, // đã có validation mặc định ở DTO
-                Status = CourseConstants.Status.Pending,
+                Level = dto.Level, // đã được DTO validate
+                Status = CourseConstants.Status.Pending, // server kiểm soát trạng thái ban đầu
                 CreatedDate = now,
                 UpdatedDate = null,
                 CreatedById = userId
             };
 
-            var created = await _courseService.CreateCourseAsync(entity, dto.Departments);
-            if (created is null)
-                return BadRequest(new { message = "Create course failed" });
+            try
+            {
+                var created = await _courseService.CreateCourseAsync(entity, dto.Departments);
 
-            return CreatedAtAction(nameof(GetCourseDetail), new { id = created.CourseId }, created);
+                // Phòng hờ service trả null (không mong đợi)
+                if (created is null)
+                    return BadRequest(new { message = "Tạo khóa học thất bại." });
+
+                return CreatedAtAction(nameof(GetCourseDetail), new { id = created.CourseId }, created);
+            }
+            catch (ArgumentException ex)
+            {
+                // Ví dụ: Department ID không tồn tại, hoặc các lỗi business hợp lệ
+                return BadRequest(new { message = ex.Message });
+            }
+            catch
+            {
+                // Lỗi không xác định
+                return StatusCode(500, new { message = "Đã xảy ra lỗi máy chủ khi tạo khóa học." });
+            }
         }
 
         // PUT: /api/courses/5
@@ -101,22 +130,22 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<CourseListDto>>> GetAllCourses()
+        [HttpGet("")]
+        public async Task<ActionResult<PagedResult<CourseListItemDto>>> GetAllCoursesPaged([FromQuery] GetAllCoursesRequest request)
         {
             try
             {
-                var courses = await _courseService.GetAllCoursesAsync();
-                return Ok(courses);
+                var result = await _courseService.GetAllCoursesPagedAsync(request);
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+                return BadRequest( new { message = "Internal server error", error = ex.Message });
             }
         }
 
         [HttpPost("by-identifiers")]
-        public async Task<ActionResult<IEnumerable<CourseListDto>>> GetCoursesByIdentifiers(
+        public async Task<ActionResult<IEnumerable<CourseListItemDto>>> GetCoursesByIdentifiers(
             [FromBody] GetCoursesByIdentifiersRequest request)
         {
             try
@@ -156,8 +185,8 @@ namespace InternalTrainingSystem.Core.Controllers
 
         /// <summary>Hiển thị các course có status = Pending (Ban giám đốc duyệt).</summary>
         [HttpGet("pending")]
-        [ProducesResponseType(typeof(IEnumerable<CourseListDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<CourseListDto>>> GetPendingCourses()
+        [ProducesResponseType(typeof(IEnumerable<CourseListItemDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<CourseListItemDto>>> GetPendingCourses()
         {
             var items = await _courseService.GetPendingCoursesAsync();
             return Ok(items);
@@ -188,13 +217,109 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPatch("{courseId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> DeleteActiveCourse(int courseId)
+        public async Task<IActionResult> DeleteActiveCourse(int courseId, [FromBody] string? rejectReason)
         {
-            var ok = await _courseService.DeleteActiveCourseAsync(courseId);
-            if (!ok)
-                return BadRequest("Chỉ có thể chuyển trạng thái các khóa học đang ở Active hoặc khóa học không tồn tại.");
+            if (string.IsNullOrWhiteSpace(rejectReason))
+                rejectReason = "Khóa học bị xóa bởi Ban giám đốc.";
 
-            return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted." });
+            var ok = await _courseService.DeleteActiveCourseAsync(courseId, rejectReason);
+
+            if (!ok)
+                return BadRequest("Chỉ có thể xóa các khóa học đang ở trạng thái Active hoặc khóa học không tồn tại.");
+
+            return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted.", reason = rejectReason });
+        }
+
+        [HttpPost("{courseId}/enrollments/{userId}/confirm")]
+        [Authorize(Roles = UserRoles.DirectManager)]
+        public async Task<IActionResult> ConfirmEnrollment(int courseId, string userId, [FromQuery] bool isConfirmed)
+        {
+            var enrollment = _courseEnrollmentService.GetCourseEnrollment(courseId, userId);
+
+            if (enrollment == null)
+            {
+                return NotFound();
+            }
+            if (isConfirmed)
+            {
+                var deleted = _courseEnrollmentService.DeleteCourseEnrollment(courseId, userId);
+                if (!deleted)
+                    return BadRequest();
+
+                await _hub.Clients.Group($"course-{courseId}")
+                    .SendAsync("StaffListUpdated");
+
+                return Ok(new { message = "Xác nhận xóa thành công! Đã xóa học viên." });
+            }
+            else
+            {
+                enrollment.Status = EnrollmentConstants.Status.Enrolled;
+                var updated = _courseEnrollmentService.UpdateCourseEnrollment(enrollment);
+
+                if (!updated)
+                    return BadRequest();
+
+                await _hub.Clients.Group($"course-{courseId}")
+                    .SendAsync("StaffListUpdated");
+
+                return Ok(new { message = "Trạng thái đã được cập nhật." });
+            }
+        }
+
+        [HttpPost("{courseId}/enrollments/{userId}/status")]
+        [Authorize(Roles = UserRoles.Staff)]
+        public async Task<IActionResult> UpdateEnrollmentStatus(int courseId, string userId, [FromBody] EnrollmentStatusUpdateRequest request)
+        {
+            var course = _courseService.GetCourseByCourseID(courseId);
+            if (course == null)
+                return NotFound();
+
+
+            var enrollment = new CourseEnrollment
+            {
+                CourseId = course.CourseId,
+                UserId = userId,
+                EnrollmentDate = DateTime.UtcNow,
+                LastAccessedDate = DateTime.UtcNow
+            };
+
+            if (course.IsOnline || course.IsMandatory)
+            {
+                enrollment.Status = EnrollmentConstants.Status.Enrolled;
+            }
+            else
+            {
+                if (request.IsConfirmed)
+                {
+                    enrollment.Status = EnrollmentConstants.Status.Enrolled;
+                }
+                else
+                {
+                    enrollment.Status = EnrollmentConstants.Status.Dropped;
+                    enrollment.RejectionReason = string.IsNullOrWhiteSpace(request.Reason) ? "Không cung cấp lý do" : request.Reason;
+                }
+            }
+
+            _courseEnrollmentService.AddCourseEnrollment(enrollment);
+
+            await _hub.Clients.Group($"course-{courseId}")
+            .SendAsync("EnrollmentStatusChanged", new
+            {
+                CourseId = courseId,
+                UserId = userId,
+                Status = enrollment.Status,
+                Reason = enrollment.RejectionReason
+            });
+
+            return Ok();
+        }
+
+        [HttpGet("user-courses")]
+        [Authorize(Roles = UserRoles.Staff)]
+        public async Task<IActionResult> GetUserCourses([FromQuery] GetAllCoursesRequest request)
+        {
+            var result = await _courseEnrollmentService.GetAllCoursesEnrollmentsByStaffAsync(request);
+            return Ok(result);
         }
     }
 }

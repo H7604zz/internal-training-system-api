@@ -62,7 +62,19 @@ namespace InternalTrainingSystem.Core.Extensions
                         case "FROM_NAME":
                             envVars["EmailSettings:FromName"] = value;
                             break;
-
+                        //AWS S3 settings
+                        case "STORAGE_PROVIDER": 
+                            envVars["STORAGE_PROVIDER"] = value; 
+                            break;
+                        case "AWS_S3_BUCKET": 
+                            envVars["AWS_S3_BUCKET"] = value; 
+                            break;
+                        case "AWS_S3_REGION": 
+                            envVars["AWS_S3_REGION"] = value; 
+                            break;
+                        case "AWS_S3_PUBLIC_BASE_URL": 
+                            envVars["AWS_S3_PUBLIC_BASE_URL"] = value; 
+                            break;
                         default:
                             envVars[key] = value;
                             break;
@@ -117,7 +129,7 @@ namespace InternalTrainingSystem.Core.Extensions
 
             // Override file upload settings
             OverrideIfNotEmpty("MAX_FILE_SIZE_MB", "FileUploadSettings:MaxFileSizeMB");
-            
+
             var allowedExtensions = Environment.GetEnvironmentVariable("ALLOWED_FILE_EXTENSIONS");
             if (!string.IsNullOrEmpty(allowedExtensions))
             {
@@ -140,6 +152,12 @@ namespace InternalTrainingSystem.Core.Extensions
                     configuration[$"ApplicationSettings:AllowedOrigins:{i}"] = origins[i].Trim();
                 }
             }
+            // Override AWS S3 settings
+            OverrideIfNotEmpty("STORAGE_PROVIDER", "STORAGE_PROVIDER");
+            OverrideIfNotEmpty("AWS_S3_BUCKET", "AWS_S3_BUCKET");
+            OverrideIfNotEmpty("AWS_S3_REGION", "AWS_S3_REGION");
+            OverrideIfNotEmpty("AWS_S3_PUBLIC_BASE_URL", "AWS_S3_PUBLIC_BASE_URL");
+
 
             void OverrideIfNotEmpty(string envKey, string configKey)
             {

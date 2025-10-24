@@ -24,7 +24,6 @@ namespace InternalTrainingSystem.Core.Models
 
         public DateTime? LastLoginDate { get; set; }
 
-        [Required]
         public int? DepartmentId { get; set; }
 
         [ForeignKey(nameof(DepartmentId))]
@@ -39,7 +38,10 @@ namespace InternalTrainingSystem.Core.Models
         public virtual ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
         public virtual ICollection<Class> MentoredClasses { get; set; } = new List<Class>();
         public virtual ICollection<Class> CreatedClasses { get; set; } = new List<Class>();
-        public virtual ICollection<ClassEnrollment> ClassEnrollments { get; set; } = new List<ClassEnrollment>();
+        
+        // Many-to-Many relationship with Class (as Student)
+        public virtual ICollection<Class> EnrolledClasses { get; set; } = new List<Class>();
+        
         public virtual ICollection<LessonProgress> LessonProgresses { get; set; } = new List<LessonProgress>();
 
     }

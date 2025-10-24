@@ -1,23 +1,40 @@
-﻿using InternalTrainingSystem.Core.DB;
+﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Constants;
+using System.Security.Claims;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
     public class CourseService : ICourseService
     {
         private readonly ApplicationDbContext _context;
-        private const double AverageRatingPass = 4.5;
 
         public CourseService(ApplicationDbContext context)
         {
             _context = context;
         }
+
+        // Hàm lấy ra Course theo code
+        public async Task<Course?> GetCourseByCourseCodeAsync(string courseCode)
+        {
+            if (string.IsNullOrWhiteSpace(courseCode))
+                throw new ArgumentException("Mã khóa học không hợp lệ.", nameof(courseCode));
+
+            // Chuẩn hóa mã trước khi tìm (tránh lỗi khoảng trắng / hoa thường)
+            var normalizedCode = courseCode.Trim().ToLower();
+
+            return await _context.Courses
+                .Include(c => c.CourseCategory)
+                .Include(c => c.Departments)
+                .Include(c => c.CreatedBy)
+                .FirstOrDefaultAsync(c => c.Code.ToLower() == normalizedCode);
+        }
+
 
         public async Task<Course?> CreateCourseAsync(Course course, List<int>? departmentIds)
         {
@@ -91,7 +108,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (course == null)
                 return null;
 
-            // ✅ Cập nhật các thuộc tính cơ bản
             course.CourseName = dto.CourseName.Trim();
             course.Description = dto.Description;
             course.CourseCategoryId = dto.CourseCategoryId;
@@ -100,25 +116,20 @@ namespace InternalTrainingSystem.Core.Services.Implement
             course.Status = dto.Status ?? course.Status;
             course.UpdatedDate = DateTime.UtcNow;
 
-            // ✅ Cập nhật Departments (nếu có)
             if (dto.Departments != null)
             {
-                // Lấy danh sách phòng ban hiện có
                 var existingDepartments = course.Departments.ToList();
 
-                // Nạp lại danh sách phòng ban mới từ DB
                 var newDepartments = await _context.Departments
                     .Where(d => dto.Departments.Contains(d.Id))
                     .ToListAsync();
 
-                // Xóa phòng ban cũ không còn được chọn
                 foreach (var oldDept in existingDepartments)
                 {
                     if (!newDepartments.Any(nd => nd.Id == oldDept.Id))
                         course.Departments.Remove(oldDept);
                 }
 
-                // Thêm phòng ban mới chưa có
                 foreach (var newDept in newDepartments)
                 {
                     if (!course.Departments.Any(d => d.Id == newDept.Id))
@@ -129,7 +140,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _context.SaveChangesAsync();
             return course;
         }
-
 
         public bool ToggleStatus(int id, string status)
         {
@@ -149,6 +159,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             IQueryable<Course> q = _context.Courses
                 .Include(c => c.CourseCategory)
+                .Include(c => c.Departments)
+                .Include(c => c.CreatedBy)
                 .AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(req.Q))
@@ -209,20 +221,28 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .Take(pageSize)
                 .Select(c => new CourseListItemDto
                 {
+                    Id = c.CourseId,
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
+                    Code = c.Code,
                     Description = c.Description,
-                    CourseCategoryId = c.CourseCategoryId,
-                    CourseCategoryName = c.CourseCategory.CategoryName,
                     Duration = c.Duration,
                     Level = c.Level,
-                    Status = c.Status,
+                    Category = c.CourseCategory.CategoryName,
+                    CategoryName = c.CourseCategory.CategoryName,
+                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsOnline = c.IsOnline,
+                    IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
+                    Status = c.Status,
                     Departments = c.Departments.Select(d => new DepartmentDto
                     {
                         DepartmentId = d.Id,
                         DepartmentName = d.Name
-                    }).ToList()
+                    }).ToList(),
+                    CreatedBy = c.CreatedBy != null ? c.CreatedBy.UserName : string.Empty,
+                    UpdatedDate = c.UpdatedDate,
+                    UpdatedBy = string.Empty // Có thể thêm logic để lấy thông tin người cập nhật nếu cần
                 })
                 .ToListAsync(ct);
 
@@ -255,34 +275,79 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return _context.Courses.FirstOrDefault(c => c.CourseId == couseId);
         }
 
-        public async Task<IEnumerable<CourseListDto>> GetAllCoursesAsync()
+        public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)
         {
-            return await _context.Courses
+            var query = _context.Courses
                 .Include(c => c.CourseCategory)
-                .Include(c=>c.Departments)
-                .Where(c => c.Status==CourseConstants.Status.Active)
+                .Include(c => c.Departments)
+                .Include(c => c.CreatedBy)
+                .AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                var searchTerm = request.Search.Trim().ToLower();
+                query = query.Where(c => 
+                    c.CourseName.ToLower().Contains(searchTerm) ||
+                    (c.Description != null && c.Description.ToLower().Contains(searchTerm)) ||
+                    c.CourseCategory.CategoryName.ToLower().Contains(searchTerm));
+            }
+
+            // Apply status filter
+            if (!string.IsNullOrWhiteSpace(request.Status))
+            {
+                query = query.Where(c => c.Status == request.Status);
+            }
+
+            // Get total count
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination and ordering
+            var items = await query
                 .OrderByDescending(c => c.CreatedDate)
-                .Select(c => new CourseListDto
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .Select(c => new CourseListItemDto
                 {
+                    Id = c.CourseId,
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
+                    Code = c.Code,
                     Description = c.Description,
                     Duration = c.Duration,
                     Level = c.Level,
+                    Category = c.CourseCategory.CategoryName,
                     CategoryName = c.CourseCategory.CategoryName,
-                    Status = CourseConstants.Status.Active,
+                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsOnline = c.IsOnline,
+                    IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
-                    Departments = c.Departments.Select(d => new DepartmentDto{
+                    Status = c.Status,
+                    Departments = c.Departments.Select(d => new DepartmentDto
+                    {
                         DepartmentId = d.Id,
-                        DepartmentName = d.Name }).ToList()})
+                        DepartmentName = d.Name
+                    }).ToList(),
+                    CreatedBy = c.CreatedBy != null ? c.CreatedBy.UserName : string.Empty,
+                    UpdatedDate = c.UpdatedDate,
+                    UpdatedBy = string.Empty // Có thể thêm logic để lấy thông tin người cập nhật nếu cần
+                })
                 .ToListAsync();
+
+            return new PagedResult<CourseListItemDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
         }
 
-        public async Task<IEnumerable<CourseListDto>> GetCoursesByIdentifiersAsync(List<string> identifiers)
+        public async Task<IEnumerable<CourseListItemDto>> GetCoursesByIdentifiersAsync(List<string> identifiers)
         {
             if (identifiers == null || !identifiers.Any())
             {
-                return new List<CourseListDto>();
+                return new List<CourseListItemDto>();
             }
 
             var courseIds = new List<int>();
@@ -305,7 +370,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .Where(c => courseIds.Contains(c.CourseId) ||
                            courseNames.Any(name => c.CourseName.ToLower().Contains(name.ToLower())))
                 .OrderByDescending(c => c.CreatedDate)
-                .Select(c => new CourseListDto
+                .Select(c => new CourseListItemDto
                 {
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
@@ -314,6 +379,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = c.Level,
                     CategoryName = c.CourseCategory.CategoryName,
                     Status = c.Status,
+                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsOnline = c.IsOnline,
+                    IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
                     Departments = c.Departments.Select(d => new DepartmentDto
                     {
@@ -347,6 +415,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 CourseId = course.CourseId,
                 CourseName = course.CourseName,
+                Code = course.Code,
                 Description = course.Description,
                 Duration = course.Duration,
                 Level = course.Level,
@@ -359,7 +428,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Objectives = null, // Not available in current model
                 Price = null, // Not available in current model
                 EnrollmentCount = enrollmentCount,
-                AverageRating = AverageRatingPass,
                 Departments = course.Departments.Select(d => new DepartmentDto
                 {
                     DepartmentId = d.Id,
@@ -369,14 +437,14 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         //Hiển thị các course có status là Pending-ban giám đốc
-        public async Task<IEnumerable<CourseListDto>> GetPendingCoursesAsync()
+        public async Task<IEnumerable<CourseListItemDto>> GetPendingCoursesAsync()
         {
             return await _context.Courses
                 .Include(c => c.CourseCategory)
                 .Include(c => c.Departments)
                 .Where(c => c.Status == CourseConstants.Status.Pending)
                 .OrderByDescending(c => c.CreatedDate)
-                .Select(c => new CourseListDto
+                .Select(c => new CourseListItemDto
                 {
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
@@ -385,6 +453,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = c.Level,
                     CategoryName = c.CourseCategory.CategoryName,
                     Status = c.Status,
+                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsOnline = c.IsOnline,
+                    IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
                     Departments = c.Departments.Select(d => new DepartmentDto
                     {
@@ -480,22 +551,28 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         // Ban giám đốc xóa khóa học đã duyệt
-        public async Task<bool> DeleteActiveCourseAsync(int courseId)
+        public async Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason)
         {
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
             if (course == null)
                 return false;
 
-            // Chỉ cho phép cập nhật nếu course đang Active
+            // Chỉ cho phép xóa nếu khóa học đang Active
             if (!course.Status.Equals(CourseConstants.Status.Active, StringComparison.OrdinalIgnoreCase))
                 return false;
 
+            // Cập nhật trạng thái và lý do từ chối
             course.Status = CourseConstants.Status.Deleted;
+            course.RejectionReason = string.IsNullOrWhiteSpace(rejectReason)
+                ? "Khóa học bị xóa bởi Ban giám đốc."
+                : rejectReason.Trim();
+
             course.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;
         }
 
+        
     }
 }

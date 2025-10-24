@@ -27,7 +27,6 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<UserRoleHistory> UserRoleHistories { get; set; }
         public DbSet<Certificate> Certificates { get; set; }
         public DbSet<Class> Classes { get; set; }
-        public DbSet<ClassEnrollment> ClassEnrollments { get; set; }
         public DbSet<Notification> Notifications { get; set; }
 
         public DbSet<CourseModule> CourseModules { get; set; }
@@ -306,18 +305,26 @@ namespace InternalTrainingSystem.Core.DB
                 .HasForeignKey(cl => cl.CreatedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ClassEnrollment relationships
-            builder.Entity<ClassEnrollment>()
-                .HasOne(ce => ce.Class)
-                .WithMany(cl => cl.ClassEnrollments)
-                .HasForeignKey(ce => ce.ClassId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Entity<ClassEnrollment>()
-                .HasOne(ce => ce.Student)
-                .WithMany(u => u.ClassEnrollments)
-                .HasForeignKey(ce => ce.StudentId)
-                .OnDelete(DeleteBehavior.Restrict);
+            // Many-to-Many relationship between Class and ApplicationUser (Students)
+            builder.Entity<Class>()
+                .HasMany(cl => cl.Students)
+                .WithMany(u => u.EnrolledClasses)
+                .UsingEntity<Dictionary<string, object>>(
+                    "ClassStudent",
+                    j => j.HasOne<ApplicationUser>()
+                          .WithMany()
+                          .HasForeignKey("StudentId")
+                          .OnDelete(DeleteBehavior.Restrict),
+                    j => j.HasOne<Class>()
+                          .WithMany()
+                          .HasForeignKey("ClassId")
+                          .OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.HasKey("ClassId", "StudentId");
+                        j.HasIndex("StudentId", "ClassId");
+                    }
+                );
 
             // Indexes for Class
             builder.Entity<Class>()
@@ -332,22 +339,6 @@ namespace InternalTrainingSystem.Core.DB
             builder.Entity<Class>()
                 .HasIndex(cl => new { cl.StartDate, cl.EndDate });
 
-            // Indexes for ClassEnrollment
-            builder.Entity<ClassEnrollment>()
-                .HasIndex(ce => new { ce.ClassId, ce.StudentId })
-                .IsUnique();
-
-            builder.Entity<ClassEnrollment>()
-                .HasIndex(ce => ce.Status);
-
-            builder.Entity<ClassEnrollment>()
-                .HasIndex(ce => ce.EnrollmentDate);
-
-            // Precision for decimal properties in ClassEnrollment
-            builder.Entity<ClassEnrollment>()
-                .Property(ce => ce.FinalGrade)
-                .HasPrecision(5, 2);
-
             builder.Entity<Notification>()
                   .HasIndex(n => new { n.Type, n.CourseId, n.UserId, n.ClassId})
                   .IsUnique(false);
@@ -360,9 +351,9 @@ namespace InternalTrainingSystem.Core.DB
 
                 e.HasIndex(d => d.Name).IsUnique();
 
-                e.HasOne(d => d.User)
+                e.HasMany(d => d.Users)
                  .WithOne(u => u.Department)
-                 .HasForeignKey<Department>(d => d.UserId)
+                 .HasForeignKey(u => u.DepartmentId)
                  .OnDelete(DeleteBehavior.SetNull);
             });
             

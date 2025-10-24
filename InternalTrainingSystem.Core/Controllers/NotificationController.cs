@@ -67,12 +67,12 @@ namespace InternalTrainingSystem.Core.Controllers
                     Lớp học <b>{course.CourseName}</b> đã được mở.<br/>
                 ";
 
-                if (course.IsMandatory)
+                if (course.IsMandatory || course.IsOnline)
                 {
-                    emailContent += "<span style='color:red;font-weight:bold'> Đây là khóa học BẮT BUỘC. Vui lòng xác nhận và tham gia đúng hạn.</span><br/><br/>";
+                    emailContent += "<span style='color:red;font-weight:bold'> Đây là khóa học BẮT BUỘC, dự kiến bắt đầu trong 3 ngày nữa. Vui lòng xác nhận và tham gia đúng hạn.</span><br/><br/>";
                 }
                 else
-                {
+                { 
                     emailContent += "Bạn có thể xác nhận tham gia nếu phù hợp.<br/><br/>";
                 }
 

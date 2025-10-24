@@ -1,4 +1,6 @@
-﻿using InternalTrainingSystem.Core.Models;
+﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Models;
 
 namespace InternalTrainingSystem.Core.Services.Interface
 {
@@ -11,5 +13,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         public bool DeleteCourseEnrollment(int courseId, string userId);
 
         public bool UpdateCourseEnrollment(CourseEnrollment courseEnrollment);
+
+        public Task<PagedResult<CourseListItemDto>> GetAllCoursesEnrollmentsByStaffAsync(GetAllCoursesRequest request);
     }
 }

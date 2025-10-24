@@ -1,25 +1,14 @@
 ﻿using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Constants;
 using System.ComponentModel.DataAnnotations;
 
 namespace InternalTrainingSystem.Core.DTOs
 {
-    public class CourseListDto
-    {
-        public int CourseId { get; set; }
-        public string CourseName { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public int Duration { get; set; }
-        public string Level { get; set; } = string.Empty;
-        public string? Department { get; set; }
-        public string CategoryName { get; set; } = string.Empty;
-        public string? Status { get; set; }
-        public List<DepartmentDto> Departments { get; set; } = new();
-        public DateTime CreatedDate { get; set; }
-    }
-
     public class CourseDetailDto
     {
         public int CourseId { get; set; }
+        public string? Code { get; set; }
+
         public string CourseName { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int Duration { get; set; }
@@ -34,7 +23,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Objectives { get; set; }
         public decimal? Price { get; set; }
         public int EnrollmentCount { get; set; }
-        public double AverageRating { get; set; }
+        
         public List<DepartmentDto> Departments { get; set; } = new();
     }
 
@@ -45,6 +34,10 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class CreateCourseDto
     {
+        [Required(ErrorMessage = "Mã khóa học là bắt buộc.")]
+        [StringLength(50, ErrorMessage = "Mã khóa học không được vượt quá 50 ký tự.")]
+        public string CourseCode { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Tên khóa học là bắt buộc.")]
         [StringLength(200, ErrorMessage = "Tên khóa học không được vượt quá 200 ký tự.")]
         public string CourseName { get; set; } = string.Empty;
@@ -127,17 +120,34 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class CourseListItemDto
     {
+        public int Id { get; set; }
         public int CourseId { get; set; }
         public string CourseName { get; set; } = string.Empty;
+        public string? Code { get; set; }
         public string? Description { get; set; }
-        public int CourseCategoryId { get; set; }
-        public string CourseCategoryName { get; set; } = string.Empty;
         public int Duration { get; set; }
-        public string Level { get; set; } = "Beginner";
-        public string? Status { get; set; }
+        public string Level { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public bool IsOnline { get; set; }
+        public bool IsMandatory { get; set; }
         public DateTime CreatedDate { get; set; }
+        public string? Status { get; set; } = CourseConstants.Status.Pending; // Course approval status: Pending, Approved, Rejected, Draft
         public List<DepartmentDto> Departments { get; set; } = new();
+        public string? CreatedBy { get; set; } = string.Empty;
+        public DateTime? UpdatedDate { get; set; }
+        public string? UpdatedBy { get; set; } = string.Empty;
     }
 
     public record ToggleStatusDto(string Status);
+
+    public class GetAllCoursesRequest
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string? Search { get; set; }
+        public string? Status { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 20;
+    }
 }
