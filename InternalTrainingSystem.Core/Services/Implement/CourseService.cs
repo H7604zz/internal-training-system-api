@@ -19,6 +19,23 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _context = context;
         }
 
+        // Hàm lấy ra Course theo code
+        public async Task<Course?> GetCourseByCourseCodeAsync(string courseCode)
+        {
+            if (string.IsNullOrWhiteSpace(courseCode))
+                throw new ArgumentException("Mã khóa học không hợp lệ.", nameof(courseCode));
+
+            // Chuẩn hóa mã trước khi tìm (tránh lỗi khoảng trắng / hoa thường)
+            var normalizedCode = courseCode.Trim().ToLower();
+
+            return await _context.Courses
+                .Include(c => c.CourseCategory)
+                .Include(c => c.Departments)
+                .Include(c => c.CreatedBy)
+                .FirstOrDefaultAsync(c => c.Code.ToLower() == normalizedCode);
+        }
+
+
         public async Task<Course?> CreateCourseAsync(Course course, List<int>? departmentIds)
         {
             if (course == null) throw new ArgumentNullException(nameof(course));
@@ -91,7 +108,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (course == null)
                 return null;
 
-            // ✅ Cập nhật các thuộc tính cơ bản
             course.CourseName = dto.CourseName.Trim();
             course.Description = dto.Description;
             course.CourseCategoryId = dto.CourseCategoryId;
@@ -100,25 +116,20 @@ namespace InternalTrainingSystem.Core.Services.Implement
             course.Status = dto.Status ?? course.Status;
             course.UpdatedDate = DateTime.UtcNow;
 
-            // ✅ Cập nhật Departments (nếu có)
             if (dto.Departments != null)
             {
-                // Lấy danh sách phòng ban hiện có
                 var existingDepartments = course.Departments.ToList();
 
-                // Nạp lại danh sách phòng ban mới từ DB
                 var newDepartments = await _context.Departments
                     .Where(d => dto.Departments.Contains(d.Id))
                     .ToListAsync();
 
-                // Xóa phòng ban cũ không còn được chọn
                 foreach (var oldDept in existingDepartments)
                 {
                     if (!newDepartments.Any(nd => nd.Id == oldDept.Id))
                         course.Departments.Remove(oldDept);
                 }
 
-                // Thêm phòng ban mới chưa có
                 foreach (var newDept in newDepartments)
                 {
                     if (!course.Departments.Any(d => d.Id == newDept.Id))
@@ -129,7 +140,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _context.SaveChangesAsync();
             return course;
         }
-
 
         public bool ToggleStatus(int id, string status)
         {
@@ -265,29 +275,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return _context.Courses.FirstOrDefault(c => c.CourseId == couseId);
         }
 
-        public async Task<IEnumerable<CourseListDto>> GetAllCoursesAsync()
-        {
-            return await _context.Courses
-                .Include(c => c.CourseCategory)
-                .Include(c=>c.Departments)
-                .Where(c => c.Status==CourseConstants.Status.Active)
-                .OrderByDescending(c => c.CreatedDate)
-                .Select(c => new CourseListDto
-                {
-                    CourseId = c.CourseId,
-                    CourseName = c.CourseName,
-                    Description = c.Description,
-                    Duration = c.Duration,
-                    Level = c.Level,
-                    CategoryName = c.CourseCategory.CategoryName,
-                    Status = CourseConstants.Status.Active,
-                    CreatedDate = c.CreatedDate,
-                    Departments = c.Departments.Select(d => new DepartmentDto{
-                        DepartmentId = d.Id,
-                        DepartmentName = d.Name }).ToList()})
-                .ToListAsync();
-        }
-
         public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)
         {
             var query = _context.Courses
@@ -356,11 +343,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
         }
 
-        public async Task<IEnumerable<CourseListDto>> GetCoursesByIdentifiersAsync(List<string> identifiers)
+        public async Task<IEnumerable<CourseListItemDto>> GetCoursesByIdentifiersAsync(List<string> identifiers)
         {
             if (identifiers == null || !identifiers.Any())
             {
-                return new List<CourseListDto>();
+                return new List<CourseListItemDto>();
             }
 
             var courseIds = new List<int>();
@@ -383,7 +370,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .Where(c => courseIds.Contains(c.CourseId) ||
                            courseNames.Any(name => c.CourseName.ToLower().Contains(name.ToLower())))
                 .OrderByDescending(c => c.CreatedDate)
-                .Select(c => new CourseListDto
+                .Select(c => new CourseListItemDto
                 {
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
@@ -392,6 +379,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = c.Level,
                     CategoryName = c.CourseCategory.CategoryName,
                     Status = c.Status,
+                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsOnline = c.IsOnline,
+                    IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
                     Departments = c.Departments.Select(d => new DepartmentDto
                     {
@@ -447,14 +437,14 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         //Hiển thị các course có status là Pending-ban giám đốc
-        public async Task<IEnumerable<CourseListDto>> GetPendingCoursesAsync()
+        public async Task<IEnumerable<CourseListItemDto>> GetPendingCoursesAsync()
         {
             return await _context.Courses
                 .Include(c => c.CourseCategory)
                 .Include(c => c.Departments)
                 .Where(c => c.Status == CourseConstants.Status.Pending)
                 .OrderByDescending(c => c.CreatedDate)
-                .Select(c => new CourseListDto
+                .Select(c => new CourseListItemDto
                 {
                     CourseId = c.CourseId,
                     CourseName = c.CourseName,
@@ -463,6 +453,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = c.Level,
                     CategoryName = c.CourseCategory.CategoryName,
                     Status = c.Status,
+                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsOnline = c.IsOnline,
+                    IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
                     Departments = c.Departments.Select(d => new DepartmentDto
                     {
@@ -558,22 +551,28 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         // Ban giám đốc xóa khóa học đã duyệt
-        public async Task<bool> DeleteActiveCourseAsync(int courseId)
+        public async Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason)
         {
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == courseId);
             if (course == null)
                 return false;
 
-            // Chỉ cho phép cập nhật nếu course đang Active
+            // Chỉ cho phép xóa nếu khóa học đang Active
             if (!course.Status.Equals(CourseConstants.Status.Active, StringComparison.OrdinalIgnoreCase))
                 return false;
 
+            // Cập nhật trạng thái và lý do từ chối
             course.Status = CourseConstants.Status.Deleted;
+            course.RejectionReason = string.IsNullOrWhiteSpace(rejectReason)
+                ? "Khóa học bị xóa bởi Ban giám đốc."
+                : rejectReason.Trim();
+
             course.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;
         }
+
 
     }
 }

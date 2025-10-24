@@ -4,19 +4,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace InternalTrainingSystem.Core.DTOs
 {
-    public class CourseListDto
-    {
-        public int CourseId { get; set; }
-        public string CourseName { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public int Duration { get; set; }
-        public string Level { get; set; } = string.Empty;
-        public string CategoryName { get; set; } = string.Empty;
-        public string? Status { get; set; }
-        public List<DepartmentDto> Departments { get; set; } = new();
-        public DateTime CreatedDate { get; set; }
-    }
-
     public class CourseDetailDto
     {
         public int CourseId { get; set; }
@@ -45,6 +32,10 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class CreateCourseDto
     {
+        [Required(ErrorMessage = "Mã khóa học là bắt buộc.")]
+        [StringLength(50, ErrorMessage = "Mã khóa học không được vượt quá 50 ký tự.")]
+        public string CourseCode { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Tên khóa học là bắt buộc.")]
         [StringLength(200, ErrorMessage = "Tên khóa học không được vượt quá 200 ký tự.")]
         public string CourseName { get; set; } = string.Empty;
