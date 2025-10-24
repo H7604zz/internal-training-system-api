@@ -125,6 +125,19 @@
         public const string TrainingDepartment = "TrainingDepartment"; // Phòng đào tạo
         public const string HR = "HR"; // Phòng nhân sự
         public const string System = "System"; // Hệ thống/AI chatbot
+
+        // ✅ Thêm mảng chứa tất cả role
+        public static readonly string[] All =
+    {
+        Staff,
+        DirectManager,
+        BoardOfDirectors,
+        Administrator,
+        Mentor,
+        TrainingDepartment,
+        HR,
+        System
+    };
     }
 
     public static class LessonContentConstraints

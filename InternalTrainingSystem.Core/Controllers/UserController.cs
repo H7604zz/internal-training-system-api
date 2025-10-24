@@ -109,5 +109,16 @@ namespace InternalTrainingSystem.Core.Controllers
 
             return Ok(response);
         }
+
+        /// <summary>
+        /// Tạo user/staff mới (UserName = Email, sinh mật khẩu tạm, gán 1 role, gửi email xác nhận).
+        /// </summary>
+        [HttpPost]
+        // [Authorize(Roles = UserRoles.Administrator)] // Bật nếu chỉ Admin được tạo user
+        public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
+        {
+            if (!ModelState.IsValid) return ValidationProblem(ModelState);
+            return await _userService.CreateUserAsync(dto);
+        }
     }
 }

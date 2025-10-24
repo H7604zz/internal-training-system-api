@@ -4,17 +4,31 @@ using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
     public class UserService : IUserService
     {
         private readonly ApplicationDbContext _context;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IEmailSender _emailSender;
+        private readonly IConfiguration _config;
 
-        public UserService(ApplicationDbContext context)
+        public UserService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IEmailSender emailSender, IConfiguration config)
         {
             _context = context;
+            _userManager = userManager;
+            _roleManager = roleManager;
+            _emailSender = emailSender;
+            _config = config;
         }
 
         public PagedResult<StaffConfirmCourseResponse> GetUserRoleStaffConfirmCourse(int courseId, int page, int pageSize)
@@ -115,5 +129,122 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return mentors;
         }
 
+        //Tạo mật khẩu ngẫu nhiên
+        public static string Generate(PasswordOptions opts)
+        {
+            int length = Math.Max(12, opts.RequiredLength);
+
+            string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            string lower = "abcdefghijkmnopqrstuvwxyz";
+            string digits = "0123456789";
+            string nonAlnum = "!@$?_-";
+            string all = upper + lower + digits + nonAlnum;
+
+            string Take(string src)
+            {
+                byte[] b = new byte[1];
+                RandomNumberGenerator.Fill(b);
+                return src[b[0] % src.Length].ToString();
+            }
+
+            var sb = new StringBuilder();
+
+            if (opts.RequireUppercase) sb.Append(Take(upper));
+            if (opts.RequireLowercase) sb.Append(Take(lower));
+            if (opts.RequireDigit) sb.Append(Take(digits));
+            if (opts.RequireNonAlphanumeric) sb.Append(Take(nonAlnum));
+
+            while (sb.Length < length) sb.Append(Take(all));
+            return sb.ToString();
+        }
+
+        public async Task<IActionResult> CreateUserAsync(CreateUserDto req)
+        {
+            // Validate
+            if (!await _context.Departments.AnyAsync(d => d.Id == req.DepartmentId))
+                return new BadRequestObjectResult("Department không tồn tại.");
+
+            if (await _context.Users.SingleOrDefaultAsync(m=>m.Email==req.Email) != null)
+                return new ConflictObjectResult("Email đã tồn tại.");
+
+            var roleName = string.IsNullOrWhiteSpace(req.RoleName) ? "Staff" : req.RoleName.Trim();
+            if (!UserRoles.All.Contains(roleName, StringComparer.OrdinalIgnoreCase))
+                return new BadRequestObjectResult($"Role '{roleName}' không hợp lệ.");
+
+            // Map sang ApplicationUser (UserName = Email)
+            var user = new ApplicationUser
+            {
+                UserName = req.Email,
+                Email = req.Email,
+                PhoneNumber = req.Phone,
+                FullName = req.FullName,
+                Position = req.Position,
+                DepartmentId = req.DepartmentId,
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            // Tạo user với mật khẩu tạm
+            var tempPassword = Generate(_userManager.Options.Password);
+            var createResult = await _userManager.CreateAsync(user, tempPassword);
+            if (!createResult.Succeeded)
+                return new BadRequestObjectResult(string.Join("; ",
+                    createResult.Errors.Select(e => $"{e.Code}: {e.Description}")));
+
+            // Bảo đảm chỉ 1 role
+            if (!await _roleManager.RoleExistsAsync(roleName))
+                await _roleManager.CreateAsync(new IdentityRole(roleName));
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (currentRoles.Any())
+                await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+            var addRoleResult = await _userManager.AddToRoleAsync(user, roleName);
+            if (!addRoleResult.Succeeded)
+                return new BadRequestObjectResult(string.Join("; ",
+                    addRoleResult.Errors.Select(e => e.Description)));
+
+            // Claim bắt đổi mật khẩu lần đầu (khuyến nghị)
+            await _userManager.AddClaimAsync(user, new Claim("MustChangePassword", "true"));
+
+            // Link xác nhận email
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var baseUrl = _config["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "";
+            var confirmUrl =
+                $"{baseUrl}/account/confirm-email?userId={Uri.EscapeDataString(user.Id)}&token={Uri.EscapeDataString(token)}";
+
+            // Gửi email
+            var subject = "Kích hoạt tài khoản hệ thống đào tạo";
+            var body = $@"
+Chào {user.FullName},
+
+Tài khoản của bạn đã được tạo trên hệ thống đào tạo nội bộ.
+
+Tên đăng nhập (Email): {user.Email}
+Mật khẩu tạm:          {tempPassword}
+
+Vui lòng xác nhận email và đăng nhập tại:
+{confirmUrl}
+
+Hãy đổi mật khẩu ngay sau khi đăng nhập.
+
+Trân trọng,
+Phòng IT
+";
+            await _emailSender.SendEmailAsync(user.Email!, subject, body);
+
+            // Trả về Ok
+            var result = new
+            {
+                user.Id,
+                user.Email,
+                user.FullName,
+                user.Position,
+                user.PhoneNumber,
+                user.DepartmentId,
+                Role = roleName
+            };
+            return new OkObjectResult(result);
+        }
     }
 }
