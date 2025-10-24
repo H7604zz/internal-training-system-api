@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -137,8 +138,15 @@ builder.Services.AddScoped<IClassService, ClassService>();
 builder.Services.AddScoped<ICourseMaterialService, CourseMaterialService>();
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
-
+var provider = builder.Configuration["STORAGE_PROVIDER"];
+if (string.Equals(provider, "S3", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddScoped<IFileStorage, S3FileStorage>();
+}
+else
+{
+    builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
+}
 
 var app = builder.Build();
 

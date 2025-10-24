@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="4.0.7.13" />
     <PackageReference Include="Hangfire" Version="1.8.21" />
     <PackageReference Include="Hangfire.SqlServer" Version="1.8.21" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
