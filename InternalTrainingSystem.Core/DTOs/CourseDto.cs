@@ -4,19 +4,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace InternalTrainingSystem.Core.DTOs
 {
-    public class CourseListDto
-    {
-        public int CourseId { get; set; }
-        public string CourseName { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public int Duration { get; set; }
-        public string Level { get; set; } = string.Empty;
-        public string CategoryName { get; set; } = string.Empty;
-        public string? Status { get; set; }
-        public List<DepartmentDto> Departments { get; set; } = new();
-        public DateTime CreatedDate { get; set; }
-    }
-
     public class CourseDetailDto
     {
         public int CourseId { get; set; }
