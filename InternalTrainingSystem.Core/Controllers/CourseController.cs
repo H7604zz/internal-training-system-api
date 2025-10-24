@@ -106,25 +106,6 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             try
             {
-                // Validate status if provided
-                if (!string.IsNullOrWhiteSpace(request.Status))
-                {
-                    var validStatuses = new[] 
-                    {
-                        CourseConstants.Status.Active,
-                        CourseConstants.Status.Inactive,
-                        CourseConstants.Status.Pending,
-                        CourseConstants.Status.Approve,
-                        CourseConstants.Status.Reject,
-                        CourseConstants.Status.Deleted
-                    };
-
-                    if (!validStatuses.Contains(request.Status))
-                    {
-                        return BadRequest(new { message = $"Invalid status. Valid values are: {string.Join(", ", validStatuses)}" });
-                    }
-                }
-
                 var result = await _courseService.GetAllCoursesPagedAsync(request);
                 return Ok(result);
             }
