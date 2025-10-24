@@ -13,7 +13,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
     public class CourseService : ICourseService
     {
         private readonly ApplicationDbContext _context;
-        private const double AverageRatingPass = 4.5;
 
         public CourseService(ApplicationDbContext context)
         {
@@ -416,6 +415,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 CourseId = course.CourseId,
                 CourseName = course.CourseName,
+                Code = course.Code,
                 Description = course.Description,
                 Duration = course.Duration,
                 Level = course.Level,
@@ -428,7 +428,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Objectives = null, // Not available in current model
                 Price = null, // Not available in current model
                 EnrollmentCount = enrollmentCount,
-                AverageRating = AverageRatingPass,
                 Departments = course.Departments.Select(d => new DepartmentDto
                 {
                     DepartmentId = d.Id,

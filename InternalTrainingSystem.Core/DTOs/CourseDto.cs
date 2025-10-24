@@ -7,6 +7,8 @@ namespace InternalTrainingSystem.Core.DTOs
     public class CourseDetailDto
     {
         public int CourseId { get; set; }
+        public string? Code { get; set; }
+
         public string CourseName { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int Duration { get; set; }
@@ -21,7 +23,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Objectives { get; set; }
         public decimal? Price { get; set; }
         public int EnrollmentCount { get; set; }
-        public double AverageRating { get; set; }
+        
         public List<DepartmentDto> Departments { get; set; } = new();
     }
 
