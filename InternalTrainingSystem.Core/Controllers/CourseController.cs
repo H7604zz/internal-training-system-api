@@ -249,7 +249,7 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted.", reason = rejectReason });
         }
 
-        [HttpPost("{courseId}/{userId}/confirm")]
+        [HttpPost("{courseId}/enrollments/{userId}/confirm")]
         [Authorize(Roles = UserRoles.DirectManager)]
         public async Task<IActionResult> ConfirmEnrollment(int courseId, string userId, [FromQuery] bool isConfirmed)
         {
@@ -285,23 +285,39 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
-        [HttpPost("{courseId}/{userId}/status")]
+        [HttpPost("{courseId}/enrollments/{userId}/status")]
         [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> UpdateEnrollmentStatus(int courseId, string userId, [FromBody] EnrollmentStatusUpdateRequest request)
         {
+            var course = _courseService.GetCourseByCourseID(courseId);
+            if (course == null)
+                return NotFound();
+
+
             var enrollment = new CourseEnrollment
             {
-                CourseId = courseId,
+                CourseId = course.CourseId,
                 UserId = userId,
                 EnrollmentDate = DateTime.UtcNow,
                 LastAccessedDate = DateTime.UtcNow
             };
 
-            if (request.IsConfirmed)
+            if (course.IsOnline || course.IsMandatory)
+            {
                 enrollment.Status = EnrollmentConstants.Status.Enrolled;
+            }
             else
-                enrollment.Status = EnrollmentConstants.Status.Dropped;
-            enrollment.RejectionReason = string.IsNullOrWhiteSpace(request.Reason) ? "Không cung cấp lý do" : request.Reason;
+            {
+                if (request.IsConfirmed)
+                {
+                    enrollment.Status = EnrollmentConstants.Status.Enrolled;
+                }
+                else
+                {
+                    enrollment.Status = EnrollmentConstants.Status.Dropped;
+                    enrollment.RejectionReason = string.IsNullOrWhiteSpace(request.Reason) ? "Không cung cấp lý do" : request.Reason;
+                }
+            }
 
             _courseEnrollmentService.AddCourseEnrollment(enrollment);
 
@@ -314,12 +330,15 @@ namespace InternalTrainingSystem.Core.Controllers
                 Reason = enrollment.RejectionReason
             });
 
-            return Ok(new
-            {
-                Message = request.IsConfirmed
-                     ? "Bạn đã xác nhận tham gia khóa học."
-                     : "Bạn đã hủy tham gia khóa học."
-            });
+            return Ok();
+        }
+
+        [HttpGet("user-courses")]
+        [Authorize(Roles = UserRoles.Staff)]
+        public async Task<IActionResult> GetUserCourses([FromQuery] GetAllCoursesRequest request)
+        {
+            var result = await _courseEnrollmentService.GetAllCoursesEnrollmentsByStaffAsync(request);
+            return Ok(result);
         }
     }
 }

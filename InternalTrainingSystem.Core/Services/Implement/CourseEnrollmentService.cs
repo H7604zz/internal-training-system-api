@@ -1,4 +1,7 @@
-﻿using InternalTrainingSystem.Core.DB;
+﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.DB;
+using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -66,6 +69,76 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 return false;
             }
+        }
+
+        public async Task<PagedResult<CourseListItemDto>> GetAllCoursesEnrollmentsByStaffAsync(GetAllCoursesRequest request)
+        {
+            // Query từ bảng CourseEnrollment
+            var query = _context.CourseEnrollments
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.CourseCategory)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.Departments)
+                .Include(e => e.Course)
+                    .ThenInclude(c => c.CreatedBy)
+                .Where(e => e.UserId == request.UserId)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(request.Status))
+            {
+                var status = request.Status.Trim();
+                query = query.Where(e => e.Status == status);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                var searchTerm = request.Search.Trim().ToLower();
+                query = query.Where(e =>
+                    e.Course.CourseName.ToLower().Contains(searchTerm) ||
+                    (e.Course.Description != null && e.Course.Description.ToLower().Contains(searchTerm)) ||
+                    e.Course.CourseCategory.CategoryName.ToLower().Contains(searchTerm));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(e => e.Course.CreatedDate)
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .Select(e => new CourseListItemDto
+                {
+                    Id = e.Course.CourseId,
+                    CourseId = e.Course.CourseId,
+                    CourseName = e.Course.CourseName,
+                    Code = e.Course.Code,
+                    Description = e.Course.Description,
+                    Duration = e.Course.Duration,
+                    Level = e.Course.Level,
+                    Category = e.Course.CourseCategory.CategoryName,
+                    CategoryName = e.Course.CourseCategory.CategoryName,
+                    IsActive = e.Course.Status == CourseConstants.Status.Active,
+                    IsOnline = e.Course.IsOnline,
+                    IsMandatory = e.Course.IsMandatory,
+                    CreatedDate = e.Course.CreatedDate,
+                    Status = e.Status,
+                    Departments = e.Course.Departments.Select(d => new DepartmentDto
+                    {
+                        DepartmentId = d.Id,
+                        DepartmentName = d.Name
+                    }).ToList(),
+                    CreatedBy = e.Course.CreatedBy != null ? e.Course.CreatedBy.UserName : string.Empty,
+                    UpdatedDate = e.Course.UpdatedDate,
+                    UpdatedBy = string.Empty
+                })
+                .ToListAsync();
+
+            return new PagedResult<CourseListItemDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
         }
     }
 }

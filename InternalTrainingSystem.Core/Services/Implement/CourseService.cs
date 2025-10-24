@@ -1,11 +1,12 @@
-﻿using InternalTrainingSystem.Core.DB;
+﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Constants;
+using System.Security.Claims;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -573,6 +574,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return true;
         }
 
-
+        
     }
 }
