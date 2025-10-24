@@ -24,10 +24,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 table: "Lessons");
 
             migrationBuilder.DropColumn(
-                name: "IsActive",
-                table: "Courses");
-
-            migrationBuilder.DropColumn(
                 name: "EstimatedMinutes",
                 table: "CourseModules");
 
@@ -55,13 +51,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 table: "Lessons",
                 type: "bigint",
                 nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Status",
-                table: "Courses",
-                type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "");
 
             migrationBuilder.CreateTable(
                 name: "LessonProgresses",
