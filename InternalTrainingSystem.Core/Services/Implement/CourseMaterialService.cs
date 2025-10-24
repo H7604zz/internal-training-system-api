@@ -32,8 +32,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     break;
 
                 case LessonType.Reading:
-                    if (string.IsNullOrWhiteSpace(dto.ContentHtml))
-                        throw new ArgumentException("ContentHtml is required for Reading lesson.");
+                    if (string.IsNullOrWhiteSpace(dto.ContentHtml) &&
+                string.IsNullOrWhiteSpace(dto.ContentUrl))
+                        throw new ArgumentException("Reading requires ContentHtml or an uploaded file (ContentUrl).");
                     break;
 
                 case LessonType.Quiz:
@@ -55,8 +56,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     break;
 
                 case LessonType.Reading:
-                    if (string.IsNullOrWhiteSpace(dto.ContentHtml))
-                        throw new ArgumentException("ContentHtml is required for Reading lesson.");
+                    if (string.IsNullOrWhiteSpace(dto.ContentHtml) &&
+                string.IsNullOrWhiteSpace(dto.ContentUrl))
+                throw new ArgumentException("Reading requires ContentHtml or an uploaded file (ContentUrl).");
                     break;
 
                 case LessonType.Quiz:
@@ -282,8 +284,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var lesson = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId, ct);
             if (lesson == null) throw new ArgumentException("Lesson not found.");
 
-            if (lesson.Type is not (LessonType.File or LessonType.Video))
-                throw new InvalidOperationException("Only lessons with Type=File or Type=Video can have a binary upload.");
+            if (lesson.Type is not (LessonType.File or LessonType.Video or LessonType.Reading))
+                throw new InvalidOperationException("Only lessons with Type=File, Video, or Reading can have a binary upload.");
 
             if (file == null || file.Length == 0)
                 throw new ArgumentException("Empty file.");
@@ -291,17 +293,19 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var ext = Path.GetExtension(file.FileName);
             var contentType = file.ContentType ?? "";
 
-            if (lesson.Type == LessonType.File)
+            if (lesson.Type == LessonType.File || lesson.Type == LessonType.Reading)
             {
                 if (file.Length > LessonContentConstraints.MaxDocBytes)
                     throw new ArgumentException($"File too large. Max {LessonContentConstraints.MaxDocBytes / (1024 * 1024)} MB.");
+
                 if (!LessonContentConstraints.IsAllowedDoc(ext, contentType))
                     throw new ArgumentException("Only PDF/DOC/DOCX are allowed.");
             }
-            else // Video
+            else if (lesson.Type == LessonType.Video)
             {
                 if (file.Length > LessonContentConstraints.MaxVideoBytes)
                     throw new ArgumentException($"Video too large. Max {LessonContentConstraints.MaxVideoBytes / (1024 * 1024)} MB.");
+
                 if (!LessonContentConstraints.IsAllowedVideo(ext, contentType))
                     throw new ArgumentException("Only MP4/MOV/M4V/WEBM are allowed.");
             }
