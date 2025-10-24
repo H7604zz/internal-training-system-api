@@ -50,7 +50,9 @@ namespace InternalTrainingSystem.Core.Models
         [ForeignKey("CreatedById")]
         public virtual ApplicationUser CreatedBy { get; set; } = null!;
 
-        public virtual ICollection<ClassEnrollment> ClassEnrollments { get; set; } = new List<ClassEnrollment>();
+        // Many-to-Many relationship with ApplicationUser (Students)
+        public virtual ICollection<ApplicationUser> Students { get; set; } = new List<ApplicationUser>();
+        
         public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
     }
 }
