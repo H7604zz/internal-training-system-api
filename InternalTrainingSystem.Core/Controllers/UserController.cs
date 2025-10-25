@@ -111,14 +111,45 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>
-        /// Tạo user/staff mới (UserName = Email, sinh mật khẩu tạm, gán 1 role, gửi email xác nhận).
+        /// API tạo mới người dùng và gửi email kích hoạt.
         /// </summary>
-        [HttpPost]
-        // [Authorize(Roles = UserRoles.Administrator)] // Bật nếu chỉ Admin được tạo user
-        public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto req)
         {
-            if (!ModelState.IsValid) return ValidationProblem(ModelState);
-            return await _userService.CreateUserAsync(dto);
+            if (req == null)
+                return BadRequest("Dữ liệu đầu vào không hợp lệ.");
+
+            var success = await _userService.CreateUserAsync(req);
+
+            if (!success)
+                return BadRequest("Không thể tạo người dùng. Vui lòng kiểm tra lại dữ liệu hoặc email.");
+
+            return Ok(new
+            {
+                Message = "Tạo người dùng thành công. Email kích hoạt đã được gửi.",
+                Email = req.Email
+            });
+        }
+
+        /// <summary>
+        /// API xác nhận email người dùng từ link gửi trong email.
+        /// </summary>
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+                return BadRequest("Thiếu thông tin xác nhận email.");
+
+            var success = await _userService.ConfirmEmailAsync(userId, token);
+
+            if (!success)
+                return BadRequest("Xác nhận email thất bại hoặc token không hợp lệ.");
+
+            return Ok(new
+            {
+                Message = "Xác nhận email thành công. Bạn có thể đăng nhập vào hệ thống."
+            });
         }
     }
 }
+                                                            

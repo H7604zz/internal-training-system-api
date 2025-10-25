@@ -7,6 +7,7 @@ using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -158,20 +159,22 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return sb.ToString();
         }
 
-        public async Task<IActionResult> CreateUserAsync(CreateUserDto req)
+        public async Task<bool> CreateUserAsync(CreateUserDto req)
         {
-            // Validate
+            // Validate department
             if (!await _context.Departments.AnyAsync(d => d.Id == req.DepartmentId))
-                return new BadRequestObjectResult("Department không tồn tại.");
+                return false;
 
-            if (await _context.Users.SingleOrDefaultAsync(m=>m.Email==req.Email) != null)
-                return new ConflictObjectResult("Email đã tồn tại.");
+            // Validate duplicate email
+            if (await _context.Users.AnyAsync(u => u.Email == req.Email))
+                return false;
 
+            // Validate role
             var roleName = string.IsNullOrWhiteSpace(req.RoleName) ? "Staff" : req.RoleName.Trim();
             if (!UserRoles.All.Contains(roleName, StringComparer.OrdinalIgnoreCase))
-                return new BadRequestObjectResult($"Role '{roleName}' không hợp lệ.");
+                return false;
 
-            // Map sang ApplicationUser (UserName = Email)
+            // Map sang ApplicationUser
             var user = new ApplicationUser
             {
                 UserName = req.Email,
@@ -188,10 +191,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var tempPassword = Generate(_userManager.Options.Password);
             var createResult = await _userManager.CreateAsync(user, tempPassword);
             if (!createResult.Succeeded)
-                return new BadRequestObjectResult(string.Join("; ",
-                    createResult.Errors.Select(e => $"{e.Code}: {e.Description}")));
+                return false;
 
-            // Bảo đảm chỉ 1 role
+            // Đảm bảo chỉ 1 role
             if (!await _roleManager.RoleExistsAsync(roleName))
                 await _roleManager.CreateAsync(new IdentityRole(roleName));
 
@@ -201,50 +203,94 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             var addRoleResult = await _userManager.AddToRoleAsync(user, roleName);
             if (!addRoleResult.Succeeded)
-                return new BadRequestObjectResult(string.Join("; ",
-                    addRoleResult.Errors.Select(e => e.Description)));
+                return false;
 
-            // Claim bắt đổi mật khẩu lần đầu (khuyến nghị)
+            // Bắt đổi mật khẩu lần đầu
             await _userManager.AddClaimAsync(user, new Claim("MustChangePassword", "true"));
 
             // Link xác nhận email
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var baseUrl = _config["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "";
+            var baseUrl = _config["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://localhost:7001";
             var confirmUrl =
                 $"{baseUrl}/account/confirm-email?userId={Uri.EscapeDataString(user.Id)}&token={Uri.EscapeDataString(token)}";
 
-            // Gửi email
+            // Gửi email HTML
             var subject = "Kích hoạt tài khoản hệ thống đào tạo";
             var body = $@"
-Chào {user.FullName},
+        <html>
+        <body style='font-family:Arial, sans-serif; line-height:1.6; color:#333'>
+            <p>Chào <strong>{user.FullName}</strong>,</p>
 
-Tài khoản của bạn đã được tạo trên hệ thống đào tạo nội bộ.
+            <p>Tài khoản của bạn đã được tạo trên <strong>hệ thống đào tạo nội bộ</strong>.</p>
 
-Tên đăng nhập (Email): {user.Email}
-Mật khẩu tạm:          {tempPassword}
+            <p>
+                <b>Tên đăng nhập (Email):</b> {user.Email}<br/>
+                <b>Mật khẩu tạm:</b> {tempPassword}
+            </p>
 
-Vui lòng xác nhận email và đăng nhập tại:
-{confirmUrl}
+            <p>
+                Vui lòng xác nhận email và đăng nhập tại liên kết bên dưới:<br/>
+                <a href='{confirmUrl}' style='color:#1a73e8;text-decoration:none;' target='_blank'>
+                    Xác nhận tài khoản của tôi
+                </a>
+            </p>
 
-Hãy đổi mật khẩu ngay sau khi đăng nhập.
+            <p><i>Hãy đổi mật khẩu ngay sau khi đăng nhập.</i></p>
 
-Trân trọng,
-Phòng IT
-";
+            <p>Trân trọng,<br/>
+            <b>Phòng IT</b></p>
+        </body>
+        </html>";
             await _emailSender.SendEmailAsync(user.Email!, subject, body);
 
-            // Trả về Ok
-            var result = new
-            {
-                user.Id,
-                user.Email,
-                user.FullName,
-                user.Position,
-                user.PhoneNumber,
-                user.DepartmentId,
-                Role = roleName
-            };
-            return new OkObjectResult(result);
+            return true;
         }
+
+        public async Task<bool> ConfirmEmailAsync(string userId, string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+                return false;
+
+            // 1️⃣ Tìm người dùng theo Id
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return false;
+
+            // 2️⃣ Nếu email đã xác nhận rồi
+            if (user.EmailConfirmed)
+                return true;
+
+            // 3️⃣ Giải mã token (Base64Url hoặc URL encode)
+            string usableToken;
+            try
+            {
+                // Decode từ Base64Url (được dùng khi tạo link)
+                var decodedBytes = WebEncoders.Base64UrlDecode(token);
+                usableToken = Encoding.UTF8.GetString(decodedBytes);
+            }
+            catch
+            {
+                // Nếu không phải Base64Url, decode URL thông thường
+                usableToken = Uri.UnescapeDataString(token)
+                                 .Replace(" ", "+"); // fix lỗi '+' bị thành space
+            }
+
+            // 4️⃣ Xác nhận email
+            var result = await _userManager.ConfirmEmailAsync(user, usableToken);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                Console.WriteLine($"❌ Xác nhận email thất bại: {errors}");
+                return false;
+            }
+
+            // 5️⃣ Kích hoạt user khi xác nhận thành công
+            user.IsActive = true;
+            await _userManager.UpdateAsync(user);
+
+            Console.WriteLine($"✅ Email xác nhận thành công cho user {user.Email}");
+            return true;
+        }
+
     }
 }
