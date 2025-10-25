@@ -10,16 +10,16 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? CourseName { get; set; }
         public string MentorId { get; set; } = string.Empty;
         public string? MentorName { get; set; }
-        public List<ClassStudentDto> Students { get; set; } = new List<ClassStudentDto>();
+        public List<ClassEmployeeDto> Employees { get; set; } = new List<ClassEmployeeDto>();
         public DateTime CreatedDate { get; set; }
         public bool IsActive { get; set; } = true;
     }
 
-    public class ClassStudentDto
+    public class ClassEmployeeDto
     {
-        public string StudentId { get; set; } = string.Empty;
-        public string? StudentName { get; set; }
-        public string? StudentEmail { get; set; }
+        public string EmployeeId { get; set; } = string.Empty;
+        public string? FullName { get; set; }
+        public string? Email { get; set; }
     }
 
     public class CreateClassRequestDto
@@ -28,7 +28,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public int CourseId { get; set; }
 
         [Required]
-        public List<string> StaffIds { get; set; } = new List<string>();
+        public List<string> EmployeeIds { get; set; } = new List<string>();
 
         [Required]
         public string MentorId { get; set; } = string.Empty;

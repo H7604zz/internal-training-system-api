@@ -305,15 +305,15 @@ namespace InternalTrainingSystem.Core.DB
                 .HasForeignKey(cl => cl.CreatedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Many-to-Many relationship between Class and ApplicationUser (Students)
+            // Many-to-Many relationship between Class and ApplicationUser (Employee)
             builder.Entity<Class>()
-                .HasMany(cl => cl.Students)
+                .HasMany(cl => cl.Employees)
                 .WithMany(u => u.EnrolledClasses)
                 .UsingEntity<Dictionary<string, object>>(
-                    "ClassStudent",
+                    "ClassEmployees",
                     j => j.HasOne<ApplicationUser>()
                           .WithMany()
-                          .HasForeignKey("StudentId")
+                          .HasForeignKey("EmployeeId")
                           .OnDelete(DeleteBehavior.Restrict),
                     j => j.HasOne<Class>()
                           .WithMany()
@@ -321,8 +321,8 @@ namespace InternalTrainingSystem.Core.DB
                           .OnDelete(DeleteBehavior.Cascade),
                     j =>
                     {
-                        j.HasKey("ClassId", "StudentId");
-                        j.HasIndex("StudentId", "ClassId");
+                        j.HasKey("ClassId", "EmployeeId");
+                        j.HasIndex("EmployeeId", "ClassId");
                     }
                 );
 

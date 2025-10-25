@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace InternalTrainingSystem.Core.Migrations
+namespace InternalTrainingSystem.Core.DB.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251024192009_Init")]
-    partial class Init
+    [Migration("20251025090753_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,19 +25,19 @@ namespace InternalTrainingSystem.Core.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("ClassStudent", b =>
+            modelBuilder.Entity("ClassEmployees", b =>
                 {
                     b.Property<int>("ClassId")
                         .HasColumnType("int");
 
-                    b.Property<string>("StudentId")
+                    b.Property<string>("EmployeeId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("ClassId", "StudentId");
+                    b.HasKey("ClassId", "EmployeeId");
 
-                    b.HasIndex("StudentId", "ClassId");
+                    b.HasIndex("EmployeeId", "ClassId");
 
-                    b.ToTable("ClassStudent");
+                    b.ToTable("ClassEmployees");
                 });
 
             modelBuilder.Entity("DepartmentCourse", b =>
@@ -277,6 +277,9 @@ namespace InternalTrainingSystem.Core.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClassId"));
 
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
                     b.Property<string>("ClassName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -300,9 +303,6 @@ namespace InternalTrainingSystem.Core.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
-
-                    b.Property<int>("MaxStudents")
-                        .HasColumnType("int");
 
                     b.Property<string>("MentorId")
                         .IsRequired()
@@ -1197,7 +1197,7 @@ namespace InternalTrainingSystem.Core.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("ClassStudent", b =>
+            modelBuilder.Entity("ClassEmployees", b =>
                 {
                     b.HasOne("InternalTrainingSystem.Core.Models.Class", null)
                         .WithMany()
@@ -1207,7 +1207,7 @@ namespace InternalTrainingSystem.Core.Migrations
 
                     b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", null)
                         .WithMany()
-                        .HasForeignKey("StudentId")
+                        .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
