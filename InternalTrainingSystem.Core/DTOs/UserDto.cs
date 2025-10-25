@@ -87,6 +87,16 @@ namespace InternalTrainingSystem.Core.DTOs
         public List<string> Roles { get; set; } = new List<string>();
     }
 
+    public class UpdateProfileDto
+    {
+        [Required]
+        [StringLength(100)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Phone]
+        public string? PhoneNumber { get; set; }
+    }
+
     public class AdminResetPasswordDto
     {
         [Required]

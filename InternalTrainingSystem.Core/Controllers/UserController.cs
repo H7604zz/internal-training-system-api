@@ -18,7 +18,7 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IUserService _userService;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR};
+        private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR };
 
         public UserController(IUserService userServices, UserManager<ApplicationUser> userManager)
         {
@@ -57,6 +57,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     EmployeeId = user.EmployeeId,
                     Department = user.Department?.Name,
                     Position = user.Position,
+                    PhoneNumber = user.PhoneNumber,
                     Roles = roles.ToList(),
                     IsActive = user.IsActive,
                     LastLoginDate = user.LastLoginDate
@@ -67,6 +68,62 @@ namespace InternalTrainingSystem.Core.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResponseDto.ErrorResult($"Error retrieving profile: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Update current user profile (FullName and PhoneNumber only)
+        /// </summary>
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponseDto>> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(ApiResponseDto.ErrorResult("User not found"));
+                }
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return NotFound(ApiResponseDto.ErrorResult("User not found"));
+                }
+
+                // Update only allowed fields
+                user.FullName = updateProfileDto.FullName.Trim();
+                user.PhoneNumber = string.IsNullOrWhiteSpace(updateProfileDto.PhoneNumber) ? null : updateProfileDto.PhoneNumber.Trim();
+
+                var result = await _userManager.UpdateAsync(user);
+                if (!result.Succeeded)
+                {
+                    var errors = result.Errors.Select(e => e.Description).ToList();
+                    return BadRequest(ApiResponseDto.ErrorResult("Failed to update profile", errors));
+                }
+
+                // Return updated profile
+                var roles = await _userManager.GetRolesAsync(user);
+                var updatedProfile = new UserProfileDto
+                {
+                    Id = user.Id,
+                    FullName = user.FullName,
+                    Email = user.Email!,
+                    EmployeeId = user.EmployeeId,
+                    Department = user.Department?.Name,
+                    Position = user.Position,
+                    PhoneNumber = user.PhoneNumber,
+                    Roles = roles.ToList(),
+                    IsActive = user.IsActive,
+                    LastLoginDate = user.LastLoginDate
+                };
+
+                return Ok(ApiResponseDto.SuccessResult(new { user = updatedProfile }, "Profile updated successfully"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponseDto.ErrorResult($"Error updating profile: {ex.Message}"));
             }
         }
 
