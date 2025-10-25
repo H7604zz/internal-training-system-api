@@ -17,13 +17,15 @@ namespace InternalTrainingSystem.Core.Controllers
     {
         private readonly IUserService _userService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ICourseEnrollmentService _courseEnrollmentService;
 
         private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR};
 
-        public UserController(IUserService userServices, UserManager<ApplicationUser> userManager)
+        public UserController(IUserService userServices, UserManager<ApplicationUser> userManager, ICourseEnrollmentService courseEnrollmentService)
         {
             _userService = userServices;
             _userManager = userManager;
+            _courseEnrollmentService = courseEnrollmentService;
         }
 
         /// <summary>
@@ -70,22 +72,6 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
-        [HttpGet("{courseId}/eligible-staff")]
-        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
-        public IActionResult GetEligibleUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-        {
-            var result = _userService.GetEligibleStaff(courseId, page, pageSize);
-            return Ok(result);
-        }
-
-        [HttpGet("{courseId}/confirmed-staff")]
-        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
-        public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-        {
-            var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, page, pageSize);
-            return Ok(confirmedUsers);
-        }
-
         [HttpGet("by-role")]
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetUsersByRole([FromQuery] string role)
@@ -108,6 +94,14 @@ namespace InternalTrainingSystem.Core.Controllers
             }).ToList();
 
             return Ok(response);
+        }
+
+        [HttpGet("courses")]
+        [Authorize(Roles = UserRoles.Staff)]
+        public async Task<IActionResult> GetUserCourses([FromQuery] GetAllCoursesRequest request)
+        {
+            var result = await _courseEnrollmentService.GetAllCoursesEnrollmentsByStaffAsync(request);
+            return Ok(result);
         }
     }
 }

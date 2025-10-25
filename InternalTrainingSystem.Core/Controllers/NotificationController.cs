@@ -34,7 +34,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult NotifyEligibleUsers(int courseId)
         {
-            var eligiblePaged = _userService.GetUserRoleEligibleStaff(courseId, 1, int.MaxValue);
+            var eligiblePaged = _userService.GetEligibleStaff(courseId, 1, int.MaxValue);
             if (eligiblePaged.TotalCount == 0)
                 return NotFound("Không có nhân viên nào cần học khóa này.");
 
