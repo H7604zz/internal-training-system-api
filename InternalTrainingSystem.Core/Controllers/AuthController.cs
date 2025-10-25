@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using InternalTrainingSystem.Core.Models;
@@ -18,17 +18,20 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IJwtService _jwtService;
         private readonly ITokenBlacklistService _tokenBlacklistService;
+        private readonly IUserService _userService;
 
         public AuthController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             IJwtService jwtService,
-            ITokenBlacklistService tokenBlacklistService)
+            ITokenBlacklistService tokenBlacklistService,
+            IUserService userService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _jwtService = jwtService;
             _tokenBlacklistService = tokenBlacklistService;
+            _userService = userService;
         }
 
         /// <summary>
@@ -297,6 +300,26 @@ namespace InternalTrainingSystem.Core.Controllers
                     Message = $"Error refreshing token: {ex.Message}"
                 });
             }
+        }
+
+        /// <summary>
+        /// API xác nhận email người dùng từ link gửi trong email.
+        /// </summary>
+        [HttpGet("verify-account")]
+        public async Task<IActionResult> VerifyAccount([FromQuery] string userId, [FromQuery] string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+                return BadRequest("Thiếu thông tin xác nhận email.");
+
+            var success = await _userService.VerifyAccountAsync(userId, token);
+
+            if (!success)
+                return BadRequest("Xác nhận email thất bại hoặc token không hợp lệ.");
+
+            return Ok(new
+            {
+                Message = "Xác nhận email thành công. Bạn có thể đăng nhập vào hệ thống."
+            });
         }
     }
 }
