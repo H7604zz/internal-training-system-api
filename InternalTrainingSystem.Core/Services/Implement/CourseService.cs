@@ -13,10 +13,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
     public class CourseService : ICourseService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IFileStorage _storage;
+        private readonly ICourseMaterialService _courseMaterialService;
+        private const double AverageRatingPass = 4.5;
 
-        public CourseService(ApplicationDbContext context)
+        public CourseService(ApplicationDbContext context, IFileStorage storage,
+        ICourseMaterialService courseMaterialService)
         {
             _context = context;
+            _storage = storage;
+            _courseMaterialService = courseMaterialService;
         }
 
         // Hàm lấy ra Course theo code
@@ -572,7 +578,128 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<Course> CreateFullCourseAsync(
+    CreateFullCourseMetadataDto meta,
+    IList<IFormFile> lessonFiles,
+    string createdByUserId,
+    CancellationToken ct = default)
+        {
+            await using var tx = await _context.Database.BeginTransactionAsync(ct);
 
-        
+            try
+            {
+                var course = new Course
+                {
+                    Code = meta.CourseCode.Trim(),
+                    CourseName = meta.CourseName.Trim(),
+                    Description = meta.Description,
+                    CourseCategoryId = meta.CourseCategoryId,
+                    Duration = meta.Duration,
+                    Level = meta.Level,
+                    Status = CourseConstants.Status.Pending,
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedById = createdByUserId,
+                };
+
+                if (meta.Departments?.Any() == true)
+                {
+                    var deps = await _context.Departments
+                        .Where(d => meta.Departments.Contains(d.Id))
+                        .ToListAsync(ct);
+
+                    if (deps.Count != meta.Departments.Count)
+                        throw new ArgumentException("Some DepartmentIds are invalid");
+
+                    foreach (var d in deps)
+                        course.Departments.Add(d);
+                }
+
+                await _context.Courses.AddAsync(course, ct);
+                await _context.SaveChangesAsync(ct);
+
+                var pendingUploads = new List<(int lessonId, IFormFile file)>(); // map lesson vs file
+                var fileCursor = 0;
+
+                foreach (var modSpec in meta.Modules.OrderBy(m => m.OrderIndex))
+                {
+                    var module = new CourseModule
+                    {
+                        CourseId = course.CourseId,
+                        Title = modSpec.Title.Trim(),
+                        Description = modSpec.Description,
+                        OrderIndex = modSpec.OrderIndex
+                    };
+
+                    await _context.CourseModules.AddAsync(module, ct);
+                    await _context.SaveChangesAsync(ct); 
+
+                    foreach (var lessonSpec in modSpec.Lessons.OrderBy(l => l.OrderIndex))
+                    {
+                        var lesson = new Lesson
+                        {
+                            ModuleId = module.Id,
+                            Title = lessonSpec.Title.Trim(),
+                            Type = lessonSpec.Type,
+                            OrderIndex = lessonSpec.OrderIndex,
+                            ContentUrl = lessonSpec.ContentUrl,
+                            ContentHtml = lessonSpec.ContentHtml
+                        };
+
+                        await _context.Lessons.AddAsync(lesson, ct);
+                        await _context.SaveChangesAsync(ct); 
+
+                        
+                        if (lessonSpec.UploadBinary &&
+                            (lessonSpec.Type == LessonType.File ||
+                             lessonSpec.Type == LessonType.Video ||
+                             lessonSpec.Type == LessonType.Reading))
+                        {
+                            if (fileCursor >= lessonFiles.Count)
+                                throw new ArgumentException("Thiếu file binary cho lesson UploadBinary=true.");
+
+                            var binFile = lessonFiles[fileCursor++];
+                            pendingUploads.Add((lesson.Id, binFile)); 
+                        }
+                    }
+                }
+
+                foreach (var job in pendingUploads)
+                {
+                    await _courseMaterialService.UploadLessonBinaryAsync(job.lessonId, job.file, ct);
+                }
+
+                await tx.CommitAsync(ct);
+                return course;
+            }
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
+            }
+        }
+        //bool ValidateRecursive(object obj, ICollection<ValidationResult> results)
+        //{
+        //    var ctx = new ValidationContext(obj, serviceProvider: HttpContext.RequestServices, items: null);
+        //    bool valid = Validator.TryValidateObject(obj, ctx, results, validateAllProperties: true);
+
+        //    var props = obj.GetType().GetProperties();
+        //    foreach (var p in props)
+        //    {
+        //        var val = p.GetValue(obj);
+        //        if (val is IEnumerable<object> list)
+        //        {
+        //            foreach (var child in list)
+        //            {
+        //                valid &= ValidateRecursive(child, results);
+        //            }
+        //        }
+        //        else if (val is object childObj && !(val is string))
+        //        {
+        //            valid &= ValidateRecursive(childObj, results);
+        //        }
+        //    }
+
+        //    return valid;
+        //}
     }
 }
