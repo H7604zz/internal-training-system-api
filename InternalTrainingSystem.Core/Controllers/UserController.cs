@@ -99,7 +99,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <summary>
         /// API tạo mới người dùng và gửi email kích hoạt.
         /// </summary>
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto req)
         {
             if (req == null)
@@ -120,7 +120,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <summary>
         /// API xác nhận email người dùng từ link gửi trong email.
         /// </summary>
-        [HttpGet("confirm-email")]
+        [HttpGet("verify-account")]
         public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
         {
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
@@ -135,6 +135,7 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 Message = "Xác nhận email thành công. Bạn có thể đăng nhập vào hệ thống."
             });
+        }
 
         [HttpGet("courses")]
         [Authorize(Roles = UserRoles.Staff)]

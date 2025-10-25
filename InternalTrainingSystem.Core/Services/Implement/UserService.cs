@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
+using InternalTrainingSystem.Core.Utils;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -136,34 +137,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return mentors;
         }
 
-        //Tạo mật khẩu ngẫu nhiên
-        public static string Generate(PasswordOptions opts)
-        {
-            int length = Math.Max(12, opts.RequiredLength);
-
-            string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-            string lower = "abcdefghijkmnopqrstuvwxyz";
-            string digits = "0123456789";
-            string nonAlnum = "!@$?_-";
-            string all = upper + lower + digits + nonAlnum;
-
-            string Take(string src)
-            {
-                byte[] b = new byte[1];
-                RandomNumberGenerator.Fill(b);
-                return src[b[0] % src.Length].ToString();
-            }
-
-            var sb = new StringBuilder();
-
-            if (opts.RequireUppercase) sb.Append(Take(upper));
-            if (opts.RequireLowercase) sb.Append(Take(lower));
-            if (opts.RequireDigit) sb.Append(Take(digits));
-            if (opts.RequireNonAlphanumeric) sb.Append(Take(nonAlnum));
-
-            while (sb.Length < length) sb.Append(Take(all));
-            return sb.ToString();
-        }
 
         public async Task<bool> CreateUserAsync(CreateUserDto req)
         {
@@ -189,12 +162,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 FullName = req.FullName,
                 Position = req.Position,
                 DepartmentId = req.DepartmentId,
-                IsActive = true,
+                IsActive = false,
                 CreatedDate = DateTime.UtcNow
             };
 
             // Tạo user với mật khẩu tạm
-            var tempPassword = Generate(_userManager.Options.Password);
+            var tempPassword = PasswordUtils.Generate(_userManager.Options.Password);
             var createResult = await _userManager.CreateAsync(user, tempPassword);
             if (!createResult.Succeeded)
                 return false;
@@ -223,30 +196,30 @@ namespace InternalTrainingSystem.Core.Services.Implement
             // Gửi email HTML
             var subject = "Kích hoạt tài khoản hệ thống đào tạo";
             var body = $@"
-        <html>
-        <body style='font-family:Arial, sans-serif; line-height:1.6; color:#333'>
-            <p>Chào <strong>{user.FullName}</strong>,</p>
+                <html>
+                <body style='font-family:Arial, sans-serif; line-height:1.6; color:#333'>
+                    <p>Chào <strong>{user.FullName}</strong>,</p>
 
-            <p>Tài khoản của bạn đã được tạo trên <strong>hệ thống đào tạo nội bộ</strong>.</p>
+                    <p>Tài khoản của bạn đã được tạo trên <strong>hệ thống đào tạo nội bộ</strong>.</p>
 
-            <p>
-                <b>Tên đăng nhập (Email):</b> {user.Email}<br/>
-                <b>Mật khẩu tạm:</b> {tempPassword}
-            </p>
+                    <p>
+                        <b>Tên đăng nhập (Email):</b> {user.Email}<br/>
+                        <b>Mật khẩu tạm:</b> {tempPassword}
+                    </p>
 
-            <p>
-                Vui lòng xác nhận email và đăng nhập tại liên kết bên dưới:<br/>
-                <a href='{confirmUrl}' style='color:#1a73e8;text-decoration:none;' target='_blank'>
-                    Xác nhận tài khoản của tôi
-                </a>
-            </p>
+                    <p>
+                        Vui lòng xác nhận email và đăng nhập tại liên kết bên dưới:<br/>
+                        <a href='{confirmUrl}' style='color:#1a73e8;text-decoration:none;' target='_blank'>
+                            Xác nhận tài khoản của tôi
+                        </a>
+                    </p>
 
-            <p><i>Hãy đổi mật khẩu ngay sau khi đăng nhập.</i></p>
+                    <p><i>Hãy đổi mật khẩu ngay sau khi đăng nhập.</i></p>
 
-            <p>Trân trọng,<br/>
-            <b>Phòng IT</b></p>
-        </body>
-        </html>";
+                    <p>Trân trọng,<br/>
+                    <b>Phòng IT</b></p>
+                </body>
+                </html>";
             await _emailSender.SendEmailAsync(user.Email!, subject, body);
 
             return true;
@@ -257,31 +230,25 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
                 return false;
 
-            // 1️⃣ Tìm người dùng theo Id
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
                 return false;
 
-            // 2️⃣ Nếu email đã xác nhận rồi
             if (user.EmailConfirmed)
                 return true;
 
-            // 3️⃣ Giải mã token (Base64Url hoặc URL encode)
             string usableToken;
             try
             {
-                // Decode từ Base64Url (được dùng khi tạo link)
                 var decodedBytes = WebEncoders.Base64UrlDecode(token);
                 usableToken = Encoding.UTF8.GetString(decodedBytes);
             }
             catch
             {
-                // Nếu không phải Base64Url, decode URL thông thường
                 usableToken = Uri.UnescapeDataString(token)
-                                 .Replace(" ", "+"); // fix lỗi '+' bị thành space
+                                 .Replace(" ", "+");
             }
 
-            // 4️⃣ Xác nhận email
             var result = await _userManager.ConfirmEmailAsync(user, usableToken);
             if (!result.Succeeded)
             {
@@ -290,7 +257,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 return false;
             }
 
-            // 5️⃣ Kích hoạt user khi xác nhận thành công
             user.IsActive = true;
             await _userManager.UpdateAsync(user);
 
