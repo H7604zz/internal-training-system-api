@@ -92,6 +92,7 @@ namespace InternalTrainingSystem.Core.Controllers
                                 EmployeeId = user.EmployeeId,
                                 Department = user.Department?.Name,
                                 Position = user.Position,
+                                PhoneNumber = user.PhoneNumber,
                                 Roles = roles.ToList(),
                                 IsActive = user.IsActive,
                                 LastLoginDate = user.LastLoginDate
@@ -158,7 +159,17 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ApiResponseDto.ErrorResult("Invalid input data"));
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return BadRequest(ApiResponseDto.ErrorResult("Invalid input data", errors));
+                }
+
+                // Additional validation for password confirmation
+                if (request.NewPassword != request.ConfirmPassword)
+                {
+                    return BadRequest(ApiResponseDto.ErrorResult("New password and confirm password do not match"));
                 }
 
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -173,14 +184,27 @@ namespace InternalTrainingSystem.Core.Controllers
                     return NotFound(ApiResponseDto.ErrorResult("User not found"));
                 }
 
+                // Verify current password
+                var isCurrentPasswordValid = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
+                if (!isCurrentPasswordValid)
+                {
+                    return BadRequest(ApiResponseDto.ErrorResult("Current password is incorrect"));
+                }
+
+                // Check if new password is same as current password
+                if (request.CurrentPassword == request.NewPassword)
+                {
+                    return BadRequest(ApiResponseDto.ErrorResult("New password must be different from current password"));
+                }
+
                 var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
                 if (result.Succeeded)
                 {
                     return Ok(ApiResponseDto.SuccessResult(null, "Password changed successfully"));
                 }
 
-                var errors = result.Errors.Select(e => e.Description).ToList();
-                return BadRequest(ApiResponseDto.ErrorResult("Failed to change password", errors));
+                var changePasswordErrors = result.Errors.Select(e => e.Description).ToList();
+                return BadRequest(ApiResponseDto.ErrorResult("Failed to change password", changePasswordErrors));
             }
             catch (Exception ex)
             {
@@ -243,7 +267,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
                 // Validate refresh token using JWT service
                 var tokenResponse = await _jwtService.RefreshTokenAsync(request.RefreshToken);
-                
+
                 if (tokenResponse == null || !tokenResponse.Success)
                 {
                     return Unauthorized(new LoginResponseDto
@@ -278,6 +302,7 @@ namespace InternalTrainingSystem.Core.Controllers
                         EmployeeId = user.EmployeeId,
                         Department = user.Department?.Name,
                         Position = user.Position,
+                        PhoneNumber = user.PhoneNumber,
                         Roles = roles.ToList(),
                         IsActive = user.IsActive,
                         LastLoginDate = user.LastLoginDate
