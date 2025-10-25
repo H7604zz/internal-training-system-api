@@ -18,17 +18,20 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IJwtService _jwtService;
         private readonly ITokenBlacklistService _tokenBlacklistService;
+        private readonly IPasswordResetService _passwordResetService;
 
         public AuthController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             IJwtService jwtService,
-            ITokenBlacklistService tokenBlacklistService)
+            ITokenBlacklistService tokenBlacklistService,
+            IPasswordResetService passwordResetService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _jwtService = jwtService;
             _tokenBlacklistService = tokenBlacklistService;
+            _passwordResetService = passwordResetService;
         }
 
         /// <summary>
@@ -320,6 +323,90 @@ namespace InternalTrainingSystem.Core.Controllers
                 {
                     Success = false,
                     Message = $"Error refreshing token: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Send password reset OTP to user's email
+        /// </summary>
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponseDto>> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return BadRequest(ApiResponseDto.ErrorResult("Invalid input data", errors));
+                }
+
+                var result = await _passwordResetService.SendPasswordResetOtpAsync(request.Email);
+
+                if (result)
+                {
+                    return Ok(ApiResponseDto.SuccessResult(null, "Password reset OTP has been sent to your email"));
+                }
+
+                // Don't reveal if email exists or not for security
+                return Ok(ApiResponseDto.SuccessResult(null, "If the email exists in our system, you will receive a password reset OTP"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponseDto.ErrorResult($"Error processing forgot password request: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Reset password using OTP and generate new random password
+        /// </summary>
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<ActionResult<PasswordResetResponseDto>> ResetPassword([FromBody] ResetPasswordRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return BadRequest(new PasswordResetResponseDto
+                    {
+                        Success = false,
+                        Message = $"Invalid input data: {string.Join(", ", errors)}"
+                    });
+                }
+
+                var (success, newPassword) = await _passwordResetService.ResetPasswordWithOtpAsync(request.Email, request.Otp);
+
+                if (success)
+                {
+                    return Ok(new PasswordResetResponseDto
+                    {
+                        Success = true,
+                        Message = "Password has been reset successfully. A new password has been sent to your email.",
+                        NewPassword = newPassword // You can remove this if you don't want to return password in response
+                    });
+                }
+
+                return BadRequest(new PasswordResetResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid or expired OTP. Please try again."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new PasswordResetResponseDto
+                {
+                    Success = false,
+                    Message = $"Error resetting password: {ex.Message}"
                 });
             }
         }
