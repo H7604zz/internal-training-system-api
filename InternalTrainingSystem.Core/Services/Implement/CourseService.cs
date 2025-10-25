@@ -193,7 +193,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 q = q.Where(c => c.CourseCategoryId == req.CategoryId.Value);
 
             if (req.IsActive.HasValue)
-                q = q.Where(c => c.Status == Constants.CourseConstants.Status.Active == req.IsActive.Value);
+                q = q.Where(c => c.Status == CourseConstants.Status.Approve);
 
             if (!string.IsNullOrWhiteSpace(req.Level))
                 q = q.Where(c => c.Level == req.Level);
@@ -230,7 +230,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = c.Level,
                     Category = c.CourseCategory.CategoryName,
                     CategoryName = c.CourseCategory.CategoryName,
-                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsActive = c.Status == CourseConstants.Status.Approve,
                     IsOnline = c.IsOnline,
                     IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
@@ -318,7 +318,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = c.Level,
                     Category = c.CourseCategory.CategoryName,
                     CategoryName = c.CourseCategory.CategoryName,
-                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsActive = c.Status == CourseConstants.Status.Approve,
                     IsOnline = c.IsOnline,
                     IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
@@ -379,7 +379,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = c.Level,
                     CategoryName = c.CourseCategory.CategoryName,
                     Status = c.Status,
-                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsActive = c.Status == CourseConstants.Status.Approve,
                     IsOnline = c.IsOnline,
                     IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
@@ -453,7 +453,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = c.Level,
                     CategoryName = c.CourseCategory.CategoryName,
                     Status = c.Status,
-                    IsActive = c.Status == CourseConstants.Status.Active,
+                    IsActive = c.Status == CourseConstants.Status.Approve,
                     IsOnline = c.IsOnline,
                     IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
@@ -558,11 +558,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 return false;
 
             // Chỉ cho phép xóa nếu khóa học đang Active
-            if (!course.Status.Equals(CourseConstants.Status.Active, StringComparison.OrdinalIgnoreCase))
+            if (!course.Status.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase))
                 return false;
 
             // Cập nhật trạng thái và lý do từ chối
-            course.Status = CourseConstants.Status.Deleted;
+            course.Status = CourseConstants.Status.Draft;
             course.RejectionReason = string.IsNullOrWhiteSpace(rejectReason)
                 ? "Khóa học bị xóa bởi Ban giám đốc."
                 : rejectReason.Trim();
