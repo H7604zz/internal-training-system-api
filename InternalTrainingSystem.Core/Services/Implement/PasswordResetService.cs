@@ -29,7 +29,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 var user = await _userManager.FindByEmailAsync(email);
                 if (user == null || !user.IsActive)
                 {
-                    _logger.LogWarning("Password reset attempted for non-existent or inactive user: {Email}", email);
                     return false;
                 }
 
@@ -43,7 +42,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 var result = await _userManager.UpdateAsync(user);
                 if (!result.Succeeded)
                 {
-                    _logger.LogError("Failed to update user with reset token for {Email}", email);
                     return false;
                 }
 
@@ -51,16 +49,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 var emailSent = await _emailService.SendPasswordResetEmailAsync(email, user.FullName, otp);
                 if (!emailSent)
                 {
-                    _logger.LogError("Failed to send password reset email to {Email}", email);
                     return false;
                 }
 
-                _logger.LogInformation("Password reset OTP sent successfully to {Email}", email);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending password reset OTP to {Email}", email);
                 return false;
             }
         }
@@ -72,7 +67,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 var user = await _userManager.FindByEmailAsync(email);
                 if (user == null || !user.IsActive)
                 {
-                    _logger.LogWarning("Password reset attempted for non-existent or inactive user: {Email}", email);
                     return (false, null);
                 }
 
@@ -82,7 +76,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     user.PasswordResetTokenExpiry == null ||
                     user.PasswordResetTokenExpiry < DateTime.UtcNow)
                 {
-                    _logger.LogWarning("Invalid or expired OTP for password reset: {Email}", email);
                     return (false, null);
                 }
 
@@ -95,8 +88,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
                 if (!result.Succeeded)
                 {
-                    _logger.LogError("Failed to reset password for {Email}: {Errors}",
-                        email, string.Join(", ", result.Errors.Select(e => e.Description)));
                     return (false, null);
                 }
 
@@ -109,15 +100,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 var emailSent = await _emailService.SendNewPasswordEmailAsync(email, user.FullName, newPassword);
                 if (!emailSent)
                 {
-                    _logger.LogWarning("Password reset successful but failed to send new password email to {Email}", email);
+                    return (false, null);
                 }
 
-                _logger.LogInformation("Password reset successful for {Email}", email);
                 return (true, newPassword);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error resetting password for {Email}", email);
                 return (false, null);
             }
         }
