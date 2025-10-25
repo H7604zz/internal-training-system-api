@@ -2,7 +2,10 @@ using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
+using InternalTrainingSystem.Core.Configuration;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -10,45 +13,73 @@ namespace InternalTrainingSystem.Core.Services.Implement
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ClassService> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ClassService(ApplicationDbContext context, ILogger<ClassService> logger)
+        public ClassService(ApplicationDbContext context, ILogger<ClassService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<IEnumerable<ClassDto>> GetClassesAsync()
+        public async Task<PagedResult<ClassDto>> GetClassesAsync(GetAllClassesRequest request)
         {
             try
             {
-                var classes = await _context.Classes
+                var query = _context.Classes
                     .Include(c => c.Course)
                     .Include(c => c.Mentor)
-                    .Include(c => c.ClassEnrollments)
-                        .ThenInclude(ce => ce.Student)
+                    .Include(c => c.Capacity)
                     .Where(c => c.IsActive)
+                    .AsQueryable();
+
+                // Lọc theo từ khóa (tìm theo tên lớp, tên khóa học, tên mentor)
+                if (!string.IsNullOrWhiteSpace(request.Search))
+                {
+                    string keyword = request.Search.Trim().ToLower();
+                    query = query.Where(c =>
+                        c.ClassName.ToLower().Contains(keyword) ||
+                        (c.Course != null && c.Course.CourseName.ToLower().Contains(keyword)) ||
+                        (c.Mentor != null && c.Mentor.FullName.ToLower().Contains(keyword))
+                    );
+                }
+
+                // Tổng số bản ghi
+                int totalCount = await query.CountAsync();
+
+                // Phân trang và ánh xạ sang DTO trong một query
+                var items = await query
                     .OrderByDescending(c => c.CreatedDate)
+                    .Skip((request.Page - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .Select(c => new ClassDto
+                    {
+                        ClassId = c.ClassId,
+                        ClassName = c.ClassName,
+                        CourseId = c.CourseId,
+                        CourseName = c.Course != null ? c.Course.CourseName : null,
+                        MentorId = c.MentorId,
+                        MentorName = c.Mentor != null ? c.Mentor.FullName : null,
+                        Employees = c.Employees
+                            .Select(s => new ClassEmployeeDto
+                            {
+                                EmployeeId = s.Id,
+                                FullName = s.FullName,
+                                Email = s.Email
+                            }).ToList(),
+                        CreatedDate = c.CreatedDate,
+                        IsActive = c.IsActive
+                    })
                     .ToListAsync();
 
-                var classesDto = classes.Select(c => new ClassDto
+                // Trả về kết quả phân trang
+                return new PagedResult<ClassDto>
                 {
-                    ClassId = c.ClassId,
-                    ClassName = c.ClassName,
-                    CourseId = c.CourseId,
-                    CourseName = c.Course?.CourseName,
-                    MentorId = c.MentorId,
-                    MentorName = c.Mentor?.FullName,
-                    Students = c.ClassEnrollments?.Where(ce => ce.IsActive).Select(ce => new ClassStudentDto
-                    {
-                        StudentId = ce.StudentId,
-                        StudentName = ce.Student?.FullName,
-                        StudentEmail = ce.Student?.Email
-                    }).ToList() ?? new List<ClassStudentDto>(),
-                    CreatedDate = c.CreatedDate,
-                    IsActive = c.IsActive
-                }).ToList();
-
-                return classesDto;
+                    Items = items,
+                    TotalCount = totalCount,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                };
             }
             catch (Exception ex)
             {
@@ -57,10 +88,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }
         }
 
-        public async Task<List<ClassDto>> CreateClassesAsync(CreateClassesDto createClassesDto, string? currentUserId)
+        public async Task<List<ClassDto>> CreateClassesAsync(CreateClassesDto createClassesDto)
         {
             try
             {
+                // Lấy currentUserId từ claims
+                var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
                 if (string.IsNullOrEmpty(currentUserId))
                 {
                     // Lấy user đầu tiên trong database để làm CreatedBy
@@ -82,7 +116,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     {
                         // Check if course exists
                         var course = await _context.Courses
-                            .FirstOrDefaultAsync(c => c.CourseId == classRequest.CourseId && c.Status == Constants.CourseConstants.Status.Active);
+                            .FirstOrDefaultAsync(c => c.CourseId == classRequest.CourseId && c.Status == Constants.CourseConstants.Status.Pending);
                         if (course == null)
                         {
                             throw new ArgumentException($"Course with ID {classRequest.CourseId} not found or inactive");
@@ -97,7 +131,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         }
 
                         // Validate all staff IDs exist
-                        foreach (var staffId in classRequest.StaffIds)
+                        foreach (var staffId in classRequest.EmployeeIds)
                         {
                             var staffExists = await _context.Users.AnyAsync(u => u.Id == staffId && u.IsActive);
                             if (!staffExists)
@@ -109,11 +143,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         // Create class
                         var classEntity = new Class
                         {
-                            ClassName = $"{course.CourseName} - Class",
+                            ClassName = $"{course.CourseName}",
                             CourseId = classRequest.CourseId,
                             MentorId = classRequest.MentorId,
                             StartDate = DateTime.UtcNow,
-                            MaxStudents = classRequest.StaffIds.Count,
+                            Capacity = classRequest.EmployeeIds.Count,
                             Status = "Active",
                             CreatedById = currentUserId,
                             CreatedDate = DateTime.UtcNow,
@@ -123,20 +157,14 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         _context.Classes.Add(classEntity);
                         await _context.SaveChangesAsync();
 
-                        // Enroll all staff members
-                        foreach (var staffId in classRequest.StaffIds)
-                        {
-                            var enrollment = new ClassEnrollment
-                            {
-                                ClassId = classEntity.ClassId,
-                                StudentId = staffId,
-                                Status = "Enrolled",
-                                EnrollmentDate = DateTime.UtcNow,
-                                CreatedDate = DateTime.UtcNow,
-                                IsActive = true
-                            };
+                        // Add all staff members to the class using many-to-many relationship
+                        var staffUsers = await _context.Users
+                            .Where(u => classRequest.EmployeeIds.Contains(u.Id) && u.IsActive)
+                            .ToListAsync();
 
-                            _context.ClassEnrollments.Add(enrollment);
+                        foreach (var staff in staffUsers)
+                        {
+                            classEntity.Employees.Add(staff);
                         }
 
                         await _context.SaveChangesAsync();
@@ -145,8 +173,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         var createdClass = await _context.Classes
                             .Include(c => c.Course)
                             .Include(c => c.Mentor)
-                            .Include(c => c.ClassEnrollments)
-                                .ThenInclude(ce => ce.Student)
+                            .Include(c => c.Employees)
                             .FirstOrDefaultAsync(c => c.ClassId == classEntity.ClassId);
 
                         var classDto = new ClassDto
@@ -157,12 +184,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                             CourseName = createdClass.Course?.CourseName,
                             MentorId = createdClass.MentorId,
                             MentorName = createdClass.Mentor?.FullName,
-                            Students = createdClass.ClassEnrollments?.Where(ce => ce.IsActive).Select(ce => new ClassStudentDto
+                            Employees = createdClass.Employees?.Select(s => new ClassEmployeeDto
                             {
-                                StudentId = ce.StudentId,
-                                StudentName = ce.Student?.FullName,
-                                StudentEmail = ce.Student?.Email
-                            }).ToList() ?? new List<ClassStudentDto>(),
+                                EmployeeId = s.Id,
+                                FullName = s.FullName,
+                                Email = s.Email
+                            }).ToList() ?? new List<ClassEmployeeDto>(),
                             CreatedDate = createdClass.CreatedDate,
                             IsActive = createdClass.IsActive
                         };

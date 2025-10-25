@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -20,14 +21,17 @@ namespace InternalTrainingSystem.Core.Controllers
     public class CourseController : ControllerBase
     {
         private readonly ICourseService _courseService;
+        private readonly IUserService _userService;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
         private readonly IHubContext<EnrollmentHub> _hub;
 
-        public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService, IHubContext<EnrollmentHub> hub)
+        public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService, 
+            IHubContext<EnrollmentHub> hub, IUserService userService)
         {
             _courseService = courseService;
             _hub = hub;
             _courseEnrollmentService = courseEnrollmentService;
+            _userService = userService;
         }
 
         // POST: /api/courses
@@ -317,13 +321,14 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok();
         }
 
-        [HttpGet("user-courses")]
-        [Authorize(Roles = UserRoles.Staff)]
-        public async Task<IActionResult> GetUserCourses([FromQuery] GetAllCoursesRequest request)
+        [HttpGet("{courseId}/eligible-staff")]
+        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult GetEligibleUsers(int courseId, [FromQuery] UserSearchDto searchDto)
         {
-            var result = await _courseEnrollmentService.GetAllCoursesEnrollmentsByStaffAsync(request);
+            var result = _userService.GetEligibleStaff(courseId, searchDto);
             return Ok(result);
         }
+
         [HttpPost("full")]
         [RequestSizeLimit(600 * 1024 * 1024)]
         //[Authorize(Roles = UserRoles.TrainingDepartment)]
@@ -393,6 +398,15 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
+
+
+        [HttpGet("{courseId}/confirmed-staff")]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, page, pageSize);
+            return Ok(confirmedUsers);
+
         }
     }
 }

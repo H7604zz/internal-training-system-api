@@ -22,6 +22,21 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ClassEmployees", b =>
+                {
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EmployeeId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ClassId", "EmployeeId");
+
+                    b.HasIndex("EmployeeId", "ClassId");
+
+                    b.ToTable("ClassEmployees");
+                });
+
             modelBuilder.Entity("DepartmentCourse", b =>
                 {
                     b.Property<int>("DepartmentId")
@@ -85,7 +100,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("DepartmentId")
-                        .IsRequired()
                         .HasColumnType("int");
 
                     b.Property<string>("Email")
@@ -151,6 +165,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -258,6 +274,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClassId"));
 
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
                     b.Property<string>("ClassName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -281,9 +300,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
-
-                    b.Property<int>("MaxStudents")
-                        .HasColumnType("int");
 
                     b.Property<string>("MentorId")
                         .IsRequired()
@@ -315,59 +331,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.HasIndex("StartDate", "EndDate");
 
                     b.ToTable("Classes");
-                });
-
-            modelBuilder.Entity("InternalTrainingSystem.Core.Models.ClassEnrollment", b =>
-                {
-                    b.Property<int>("ClassEnrollmentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClassEnrollmentId"));
-
-                    b.Property<int>("ClassId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("CompletionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("EnrollmentDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("FinalGrade")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("StudentId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ClassEnrollmentId");
-
-                    b.HasIndex("EnrollmentDate");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("StudentId");
-
-                    b.HasIndex("ClassId", "StudentId")
-                        .IsUnique();
-
-                    b.ToTable("ClassEnrollments");
                 });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Course", b =>
@@ -626,17 +589,10 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
-
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Departments");
                 });
@@ -690,6 +646,32 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.ToTable("Lessons");
                 });
 
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.LessonProgress", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDone")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserId", "LessonId");
+
+                    b.HasIndex("IsDone");
+
+                    b.HasIndex("LessonId");
+
+                    b.ToTable("LessonProgresses");
+                });
+
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Notification", b =>
                 {
                     b.Property<int>("Id")
@@ -734,32 +716,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.HasIndex("Type", "CourseId", "UserId", "ClassId");
 
                     b.ToTable("Notifications");
-                });
-
-            modelBuilder.Entity("InternalTrainingSystem.Core.Models.LessonProgress", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("LessonId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDone")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("StartedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("UserId", "LessonId");
-
-                    b.HasIndex("IsDone");
-
-                    b.HasIndex("LessonId");
-
-                    b.ToTable("LessonProgresses");
                 });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Question", b =>
@@ -1238,6 +1194,21 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ClassEmployees", b =>
+                {
+                    b.HasOne("InternalTrainingSystem.Core.Models.Class", null)
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("DepartmentCourse", b =>
                 {
                     b.HasOne("InternalTrainingSystem.Core.Models.Course", null)
@@ -1262,6 +1233,16 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .IsRequired();
 
                     b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.ApplicationUser", b =>
+                {
+                    b.HasOne("InternalTrainingSystem.Core.Models.Department", "Department")
+                        .WithMany("Users")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Attendance", b =>
@@ -1326,25 +1307,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Mentor");
-                });
-
-            modelBuilder.Entity("InternalTrainingSystem.Core.Models.ClassEnrollment", b =>
-                {
-                    b.HasOne("InternalTrainingSystem.Core.Models.Class", "Class")
-                        .WithMany("ClassEnrollments")
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "Student")
-                        .WithMany("ClassEnrollments")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Class");
-
-                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Course", b =>
@@ -1440,16 +1402,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .IsRequired();
 
                     b.Navigation("Course");
-                });
-
-            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Department", b =>
-                {
-                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
-                        .WithOne("Department")
-                        .HasForeignKey("InternalTrainingSystem.Core.Models.Department", "UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Lesson", b =>
@@ -1674,8 +1626,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
                     b.Navigation("Certificates");
 
-                    b.Navigation("ClassEnrollments");
-
                     b.Navigation("CourseEnrollments");
 
                     b.Navigation("CourseHistories");
@@ -1683,8 +1633,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("CreatedClasses");
 
                     b.Navigation("CreatedCourses");
-
-                    b.Navigation("Department");
 
                     b.Navigation("LessonProgresses");
 
@@ -1697,8 +1645,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Class", b =>
                 {
-                    b.Navigation("ClassEnrollments");
-
                     b.Navigation("Schedules");
                 });
 
@@ -1732,6 +1678,11 @@ namespace InternalTrainingSystem.Core.DB.Migrations
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseModule", b =>
                 {
                     b.Navigation("Lessons");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.Department", b =>
+                {
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Question", b =>

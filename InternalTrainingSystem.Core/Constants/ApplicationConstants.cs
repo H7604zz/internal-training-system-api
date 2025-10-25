@@ -11,12 +11,10 @@
 
         public static class Status
         {
-            public const string Active = "Active";
-            public const string Inactive = "Inactive";
             public const string Pending = "Pending";
-            public const string Approve = "Approve";
-            public const string Reject = "Reject";
-            public const string Deleted = "Deleted";
+            public const string Approve = "Approved";
+            public const string Reject = "Rejected";
+            public const string Draft = "Draft";
         }
     }
 

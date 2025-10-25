@@ -1,4 +1,4 @@
-using InternalTrainingSystem.Core.Constants;
+﻿using InternalTrainingSystem.Core.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -27,7 +27,7 @@ namespace InternalTrainingSystem.Core.Models
         public DateTime? EndDate { get; set; }
 
         [Range(1, 100)]
-        public int MaxStudents { get; set; } = 30;
+        public int Capacity { get; set; } = 30; //số lượng tối đa một lớp có thể chứa
 
         [StringLength(20)]
         public string Status { get; set; } = ClassConstants.Status.Active; // Active, Completed, Cancelled, Scheduled
@@ -50,7 +50,9 @@ namespace InternalTrainingSystem.Core.Models
         [ForeignKey("CreatedById")]
         public virtual ApplicationUser CreatedBy { get; set; } = null!;
 
-        public virtual ICollection<ClassEnrollment> ClassEnrollments { get; set; } = new List<ClassEnrollment>();
+        // Many-to-Many relationship with ApplicationUser (Employees)
+        public virtual ICollection<ApplicationUser> Employees { get; set; } = new List<ApplicationUser>();
+        
         public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
     }
 }

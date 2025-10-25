@@ -1,5 +1,6 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
@@ -34,7 +35,14 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult NotifyEligibleUsers(int courseId)
         {
-            var eligiblePaged = _userService.GetUserRoleEligibleStaff(courseId, 1, int.MaxValue);
+            var searchDto = new UserSearchDto
+            {
+                Page = 1,
+                PageSize = int.MaxValue,
+                SearchTerm = null,
+                status = null
+            };
+            var eligiblePaged = _userService.GetEligibleStaff(courseId, searchDto);
             if (eligiblePaged.TotalCount == 0)
                 return NotFound("Không có nhân viên nào cần học khóa này.");
 
