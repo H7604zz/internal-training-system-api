@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace InternalTrainingSystem.Core.Migrations
+namespace InternalTrainingSystem.Core.DB.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -337,7 +337,7 @@ namespace InternalTrainingSystem.Core.Migrations
                     MentorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    MaxStudents = table.Column<int>(type: "int", nullable: false),
+                    Capacity = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -475,23 +475,23 @@ namespace InternalTrainingSystem.Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ClassStudent",
+                name: "ClassEmployees",
                 columns: table => new
                 {
                     ClassId = table.Column<int>(type: "int", nullable: false),
-                    StudentId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    EmployeeId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ClassStudent", x => new { x.ClassId, x.StudentId });
+                    table.PrimaryKey("PK_ClassEmployees", x => new { x.ClassId, x.EmployeeId });
                     table.ForeignKey(
-                        name: "FK_ClassStudent_AspNetUsers_StudentId",
-                        column: x => x.StudentId,
+                        name: "FK_ClassEmployees_AspNetUsers_EmployeeId",
+                        column: x => x.EmployeeId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_ClassStudent_Classes_ClassId",
+                        name: "FK_ClassEmployees_Classes_ClassId",
                         column: x => x.ClassId,
                         principalTable: "Classes",
                         principalColumn: "ClassId",
@@ -903,6 +903,11 @@ namespace InternalTrainingSystem.Core.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_ClassEmployees_EmployeeId_ClassId",
+                table: "ClassEmployees",
+                columns: new[] { "EmployeeId", "ClassId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Classes_ClassName",
                 table: "Classes",
                 column: "ClassName");
@@ -931,11 +936,6 @@ namespace InternalTrainingSystem.Core.Migrations
                 name: "IX_Classes_Status",
                 table: "Classes",
                 column: "Status");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ClassStudent_StudentId_ClassId",
-                table: "ClassStudent",
-                columns: new[] { "StudentId", "ClassId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_CourseCategories_CategoryName",
@@ -1169,7 +1169,7 @@ namespace InternalTrainingSystem.Core.Migrations
                 name: "Certificates");
 
             migrationBuilder.DropTable(
-                name: "ClassStudent");
+                name: "ClassEmployees");
 
             migrationBuilder.DropTable(
                 name: "CourseHistories");

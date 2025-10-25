@@ -25,7 +25,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 var query = _context.Classes
                     .Include(c => c.Course)
                     .Include(c => c.Mentor)
-                    .Include(c => c.Students)
+                    .Include(c => c.Capacity)
                     .Where(c => c.IsActive)
                     .AsQueryable();
 
@@ -56,12 +56,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         CourseName = c.Course != null ? c.Course.CourseName : null,
                         MentorId = c.MentorId,
                         MentorName = c.Mentor != null ? c.Mentor.FullName : null,
-                        Students = c.Students
-                            .Select(s => new ClassStudentDto
+                        Employees = c.Employees
+                            .Select(s => new ClassEmployeeDto
                             {
-                                StudentId = s.Id,
-                                StudentName = s.FullName,
-                                StudentEmail = s.Email
+                                EmployeeId = s.Id,
+                                FullName = s.FullName,
+                                Email = s.Email
                             }).ToList(),
                         CreatedDate = c.CreatedDate,
                         IsActive = c.IsActive
@@ -124,7 +124,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         }
 
                         // Validate all staff IDs exist
-                        foreach (var staffId in classRequest.StaffIds)
+                        foreach (var staffId in classRequest.EmployeeIds)
                         {
                             var staffExists = await _context.Users.AnyAsync(u => u.Id == staffId && u.IsActive);
                             if (!staffExists)
@@ -140,7 +140,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                             CourseId = classRequest.CourseId,
                             MentorId = classRequest.MentorId,
                             StartDate = DateTime.UtcNow,
-                            MaxStudents = classRequest.StaffIds.Count,
+                            Capacity = classRequest.EmployeeIds.Count,
                             Status = "Active",
                             CreatedById = currentUserId,
                             CreatedDate = DateTime.UtcNow,
@@ -152,12 +152,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
                         // Add all staff members to the class using many-to-many relationship
                         var staffUsers = await _context.Users
-                            .Where(u => classRequest.StaffIds.Contains(u.Id) && u.IsActive)
+                            .Where(u => classRequest.EmployeeIds.Contains(u.Id) && u.IsActive)
                             .ToListAsync();
 
                         foreach (var staff in staffUsers)
                         {
-                            classEntity.Students.Add(staff);
+                            classEntity.Employees.Add(staff);
                         }
 
                         await _context.SaveChangesAsync();
@@ -166,7 +166,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         var createdClass = await _context.Classes
                             .Include(c => c.Course)
                             .Include(c => c.Mentor)
-                            .Include(c => c.Students)
+                            .Include(c => c.Employees)
                             .FirstOrDefaultAsync(c => c.ClassId == classEntity.ClassId);
 
                         var classDto = new ClassDto
@@ -177,12 +177,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                             CourseName = createdClass.Course?.CourseName,
                             MentorId = createdClass.MentorId,
                             MentorName = createdClass.Mentor?.FullName,
-                            Students = createdClass.Students?.Select(s => new ClassStudentDto
+                            Employees = createdClass.Employees?.Select(s => new ClassEmployeeDto
                             {
-                                StudentId = s.Id,
-                                StudentName = s.FullName,
-                                StudentEmail = s.Email
-                            }).ToList() ?? new List<ClassStudentDto>(),
+                                EmployeeId = s.Id,
+                                FullName = s.FullName,
+                                Email = s.Email
+                            }).ToList() ?? new List<ClassEmployeeDto>(),
                             CreatedDate = createdClass.CreatedDate,
                             IsActive = createdClass.IsActive
                         };
