@@ -121,12 +121,12 @@ namespace InternalTrainingSystem.Core.Controllers
         /// API xác nhận email người dùng từ link gửi trong email.
         /// </summary>
         [HttpGet("verify-account")]
-        public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
+        public async Task<IActionResult> VerifyAccount([FromQuery] string userId, [FromQuery] string token)
         {
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
                 return BadRequest("Thiếu thông tin xác nhận email.");
 
-            var success = await _userService.ConfirmEmailAsync(userId, token);
+            var success = await _userService.VerifyAccountAsync(userId, token);
 
             if (!success)
                 return BadRequest("Xác nhận email thất bại hoặc token không hợp lệ.");

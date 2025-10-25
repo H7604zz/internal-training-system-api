@@ -11,6 +11,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         public PagedResult<StaffConfirmCourseResponse> GetStaffConfirmCourse(int courseId, int page, int pageSize);
         public List<ApplicationUser> GetUsersByRole(string role);
         Task<bool> CreateUserAsync(CreateUserDto req);
-        Task<bool> ConfirmEmailAsync(string userId, string token);
+        Task<bool> VerifyAccountAsync(string userId, string token);
     }
 }

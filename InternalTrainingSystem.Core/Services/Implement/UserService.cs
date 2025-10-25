@@ -225,7 +225,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return true;
         }
 
-        public async Task<bool> ConfirmEmailAsync(string userId, string token)
+        public async Task<bool> VerifyAccountAsync(string userId, string token)
         {
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
                 return false;
