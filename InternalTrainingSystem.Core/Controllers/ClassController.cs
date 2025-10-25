@@ -3,7 +3,6 @@ using InternalTrainingSystem.Core.Services.Interface;
 using InternalTrainingSystem.Core.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -41,8 +40,7 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             try
             {
-                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var createdClasses = await _classService.CreateClassesAsync(createClassesDto, currentUserId);
+                var createdClasses = await _classService.CreateClassesAsync(createClassesDto);
                 return Ok(createdClasses);
             }
             catch (ArgumentException ex)

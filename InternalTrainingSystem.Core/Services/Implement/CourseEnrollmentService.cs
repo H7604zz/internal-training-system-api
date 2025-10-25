@@ -116,7 +116,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = e.Course.Level,
                     Category = e.Course.CourseCategory.CategoryName,
                     CategoryName = e.Course.CourseCategory.CategoryName,
-                    IsActive = e.Course.Status == CourseConstants.Status.Active,
+                    IsActive = true,
                     IsOnline = e.Course.IsOnline,
                     IsMandatory = e.Course.IsMandatory,
                     CreatedDate = e.Course.CreatedDate,

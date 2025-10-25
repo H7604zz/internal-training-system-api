@@ -4,6 +4,8 @@ using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using InternalTrainingSystem.Core.Configuration;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -11,11 +13,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ClassService> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ClassService(ApplicationDbContext context, ILogger<ClassService> logger)
+        public ClassService(ApplicationDbContext context, ILogger<ClassService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<PagedResult<ClassDto>> GetClassesAsync(GetAllClassesRequest request)
@@ -84,10 +88,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }
         }
 
-        public async Task<List<ClassDto>> CreateClassesAsync(CreateClassesDto createClassesDto, string? currentUserId)
+        public async Task<List<ClassDto>> CreateClassesAsync(CreateClassesDto createClassesDto)
         {
             try
             {
+                // Lấy currentUserId từ claims
+                var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
                 if (string.IsNullOrEmpty(currentUserId))
                 {
                     // Lấy user đầu tiên trong database để làm CreatedBy
@@ -109,7 +116,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     {
                         // Check if course exists
                         var course = await _context.Courses
-                            .FirstOrDefaultAsync(c => c.CourseId == classRequest.CourseId && c.Status == Constants.CourseConstants.Status.Active);
+                            .FirstOrDefaultAsync(c => c.CourseId == classRequest.CourseId && c.Status == Constants.CourseConstants.Status.Pending);
                         if (course == null)
                         {
                             throw new ArgumentException($"Course with ID {classRequest.CourseId} not found or inactive");
@@ -136,7 +143,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         // Create class
                         var classEntity = new Class
                         {
-                            ClassName = $"{course.CourseName} - Class",
+                            ClassName = $"{course.CourseName}",
                             CourseId = classRequest.CourseId,
                             MentorId = classRequest.MentorId,
                             StartDate = DateTime.UtcNow,
