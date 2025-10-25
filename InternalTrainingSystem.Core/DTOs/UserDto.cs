@@ -98,13 +98,9 @@ namespace InternalTrainingSystem.Core.DTOs
     {
         public string? SearchTerm { get; set; }
         public string? Department { get; set; }
-        public string? Position { get; set; }
-        public bool? IsActive { get; set; }
-        public List<string>? Roles { get; set; }
+        public string? status { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
-        public string? SortBy { get; set; } = "CreatedDate";
-        public bool SortDescending { get; set; } = true;
     }
 
     public class ApiResponseDto<T>

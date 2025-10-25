@@ -320,9 +320,9 @@ namespace InternalTrainingSystem.Core.Controllers
 
         [HttpGet("{courseId}/eligible-staff")]
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
-        public IActionResult GetEligibleUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public IActionResult GetEligibleUsers(int courseId, [FromQuery] UserSearchDto searchDto)
         {
-            var result = _userService.GetEligibleStaff(courseId, page, pageSize);
+            var result = _userService.GetEligibleStaff(courseId, searchDto);
             return Ok(result);
         }
 
