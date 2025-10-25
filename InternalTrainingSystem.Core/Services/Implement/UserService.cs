@@ -32,7 +32,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _config = config;
         }
 
-        public PagedResult<StaffConfirmCourseResponse> GetUserRoleStaffConfirmCourse(int courseId, int page, int pageSize)
+        public PagedResult<StaffConfirmCourseResponse> GetStaffConfirmCourse(int courseId, int page, int pageSize)
         {
             var query = _context.Users
                 .Include(u => u.CourseEnrollments)
@@ -72,7 +72,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
         }
 
-        public PagedResult<EligibleStaffResponse> GetUserRoleEligibleStaff(int courseId, int page, int pageSize)
+        public PagedResult<EligibleStaffResponse> GetEligibleStaff(int courseId, UserSearchDto searchDto)
         {
             var query = from u in _context.Users
                         join ur in _context.UserRoles on u.Id equals ur.UserId
@@ -89,6 +89,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                                   .Any(dep => dep.Id == d.Id)
                               && !_context.Certificates
                                   .Any(c => c.UserId == u.Id && c.CourseId == courseId)
+                             && (string.IsNullOrEmpty(searchDto.SearchTerm)
+                                  || u.FullName.Contains(searchDto.SearchTerm)
+                                  || u.EmployeeId!.Contains(searchDto.SearchTerm)
+                                  || u.Email!.Contains(searchDto.SearchTerm))
+                              && (string.IsNullOrEmpty(searchDto.status)
+                                  || (e != null && e.Status == searchDto.status))
                         orderby u.FullName
                         select new EligibleStaffResponse
                         {
@@ -104,16 +110,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
             int totalCount = query.Count();
 
             var items = query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+                .Skip((searchDto.Page - 1) * searchDto.PageSize)
+                .Take(searchDto.PageSize)
                 .ToList();
 
             return new PagedResult<EligibleStaffResponse>
             {
                 Items = items,
                 TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize
+                Page = searchDto.Page,
+                PageSize = searchDto.PageSize
             };
         }
 

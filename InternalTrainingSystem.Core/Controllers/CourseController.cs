@@ -2,13 +2,17 @@
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -17,14 +21,17 @@ namespace InternalTrainingSystem.Core.Controllers
     public class CourseController : ControllerBase
     {
         private readonly ICourseService _courseService;
+        private readonly IUserService _userService;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
         private readonly IHubContext<EnrollmentHub> _hub;
 
-        public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService, IHubContext<EnrollmentHub> hub)
+        public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService, 
+            IHubContext<EnrollmentHub> hub, IUserService userService)
         {
             _courseService = courseService;
             _hub = hub;
             _courseEnrollmentService = courseEnrollmentService;
+            _userService = userService;
         }
 
         // POST: /api/courses
@@ -314,12 +321,92 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok();
         }
 
-        [HttpGet("user-courses")]
-        [Authorize(Roles = UserRoles.Staff)]
-        public async Task<IActionResult> GetUserCourses([FromQuery] GetAllCoursesRequest request)
+        [HttpGet("{courseId}/eligible-staff")]
+        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult GetEligibleUsers(int courseId, [FromQuery] UserSearchDto searchDto)
         {
-            var result = await _courseEnrollmentService.GetAllCoursesEnrollmentsByStaffAsync(request);
+            var result = _userService.GetEligibleStaff(courseId, searchDto);
             return Ok(result);
+        }
+
+        [HttpPost("full")]
+        [RequestSizeLimit(600 * 1024 * 1024)]
+        //[Authorize(Roles = UserRoles.TrainingDepartment)]
+        public async Task<IActionResult> CreateFullCourse(
+                                                          [FromForm] CreateFullCourseFormDto form,
+                                                           CancellationToken ct)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            if (string.IsNullOrWhiteSpace(form.Metadata))
+                return BadRequest(new { message = "metadata is required and must be a JSON string" });
+
+            CreateFullCourseMetadataDto meta;
+            try
+            {
+                meta = JsonSerializer.Deserialize<CreateFullCourseMetadataDto>(
+                    form.Metadata,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                ) ?? throw new ArgumentException("metadata invalid");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Invalid metadata JSON", error = ex.Message });
+            }
+            var validationResults = new List<ValidationResult>();
+            var context = new ValidationContext(meta, serviceProvider: HttpContext.RequestServices, items: null);
+            bool isValid = Validator.TryValidateObject(meta, context, validationResults, validateAllProperties: true);
+            foreach (var module in meta.Modules)
+            {
+                var moduleContext = new ValidationContext(module, serviceProvider: HttpContext.RequestServices, items: null);
+                isValid &= Validator.TryValidateObject(module, moduleContext, validationResults, true);
+
+                foreach (var lesson in module.Lessons)
+                {
+                    var lessonContext = new ValidationContext(lesson, serviceProvider: HttpContext.RequestServices, items: null);
+                    isValid &= Validator.TryValidateObject(lesson, lessonContext, validationResults, true);
+                }
+            }
+            if (!isValid)
+            {
+                var errors = validationResults.Select(r => r.ErrorMessage).Where(msg => !string.IsNullOrWhiteSpace(msg)).ToList();
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+            if (await _courseService.GetCourseByCourseCodeAsync(meta.CourseCode) != null)
+                return Conflict(new { message = $"Mã khóa học '{meta.CourseCode}' đã tồn tại. Vui lòng chọn mã khác." });
+            try
+            {
+                var course = await _courseService.CreateFullCourseAsync(
+                    meta,
+                    form.LessonFiles,
+                    userId,
+                    ct
+                );
+
+                return CreatedAtAction(nameof(GetCourseDetail),
+                    new { id = course.CourseId },
+                    new { course.CourseId, course.CourseName });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
+
+        [HttpGet("{courseId}/confirmed-staff")]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, page, pageSize);
+            return Ok(confirmedUsers);
+
         }
     }
 }

@@ -4,6 +4,8 @@ using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using InternalTrainingSystem.Core.Configuration;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -11,11 +13,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ClassService> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ClassService(ApplicationDbContext context, ILogger<ClassService> logger)
+        public ClassService(ApplicationDbContext context, ILogger<ClassService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<PagedResult<ClassDto>> GetClassesAsync(GetAllClassesRequest request)
@@ -25,7 +29,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 var query = _context.Classes
                     .Include(c => c.Course)
                     .Include(c => c.Mentor)
-                    .Include(c => c.Students)
+                    .Include(c => c.Capacity)
                     .Where(c => c.IsActive)
                     .AsQueryable();
 
@@ -56,12 +60,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         CourseName = c.Course != null ? c.Course.CourseName : null,
                         MentorId = c.MentorId,
                         MentorName = c.Mentor != null ? c.Mentor.FullName : null,
-                        Students = c.Students
-                            .Select(s => new ClassStudentDto
+                        Employees = c.Employees
+                            .Select(s => new ClassEmployeeDto
                             {
-                                StudentId = s.Id,
-                                StudentName = s.FullName,
-                                StudentEmail = s.Email
+                                EmployeeId = s.Id,
+                                FullName = s.FullName,
+                                Email = s.Email
                             }).ToList(),
                         CreatedDate = c.CreatedDate,
                         IsActive = c.IsActive
@@ -84,10 +88,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }
         }
 
-        public async Task<List<ClassDto>> CreateClassesAsync(CreateClassesDto createClassesDto, string? currentUserId)
+        public async Task<List<ClassDto>> CreateClassesAsync(CreateClassesDto createClassesDto)
         {
             try
             {
+                // Lấy currentUserId từ claims
+                var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
                 if (string.IsNullOrEmpty(currentUserId))
                 {
                     // Lấy user đầu tiên trong database để làm CreatedBy
@@ -109,7 +116,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     {
                         // Check if course exists
                         var course = await _context.Courses
-                            .FirstOrDefaultAsync(c => c.CourseId == classRequest.CourseId && c.Status == Constants.CourseConstants.Status.Active);
+                            .FirstOrDefaultAsync(c => c.CourseId == classRequest.CourseId && c.Status == Constants.CourseConstants.Status.Pending);
                         if (course == null)
                         {
                             throw new ArgumentException($"Course with ID {classRequest.CourseId} not found or inactive");
@@ -124,7 +131,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         }
 
                         // Validate all staff IDs exist
-                        foreach (var staffId in classRequest.StaffIds)
+                        foreach (var staffId in classRequest.EmployeeIds)
                         {
                             var staffExists = await _context.Users.AnyAsync(u => u.Id == staffId && u.IsActive);
                             if (!staffExists)
@@ -136,11 +143,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         // Create class
                         var classEntity = new Class
                         {
-                            ClassName = $"{course.CourseName} - Class",
+                            ClassName = $"{course.CourseName}",
                             CourseId = classRequest.CourseId,
                             MentorId = classRequest.MentorId,
                             StartDate = DateTime.UtcNow,
-                            MaxStudents = classRequest.StaffIds.Count,
+                            Capacity = classRequest.EmployeeIds.Count,
                             Status = "Active",
                             CreatedById = currentUserId,
                             CreatedDate = DateTime.UtcNow,
@@ -152,12 +159,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
                         // Add all staff members to the class using many-to-many relationship
                         var staffUsers = await _context.Users
-                            .Where(u => classRequest.StaffIds.Contains(u.Id) && u.IsActive)
+                            .Where(u => classRequest.EmployeeIds.Contains(u.Id) && u.IsActive)
                             .ToListAsync();
 
                         foreach (var staff in staffUsers)
                         {
-                            classEntity.Students.Add(staff);
+                            classEntity.Employees.Add(staff);
                         }
 
                         await _context.SaveChangesAsync();
@@ -166,7 +173,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         var createdClass = await _context.Classes
                             .Include(c => c.Course)
                             .Include(c => c.Mentor)
-                            .Include(c => c.Students)
+                            .Include(c => c.Employees)
                             .FirstOrDefaultAsync(c => c.ClassId == classEntity.ClassId);
 
                         var classDto = new ClassDto
@@ -177,12 +184,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                             CourseName = createdClass.Course?.CourseName,
                             MentorId = createdClass.MentorId,
                             MentorName = createdClass.Mentor?.FullName,
-                            Students = createdClass.Students?.Select(s => new ClassStudentDto
+                            Employees = createdClass.Employees?.Select(s => new ClassEmployeeDto
                             {
-                                StudentId = s.Id,
-                                StudentName = s.FullName,
-                                StudentEmail = s.Email
-                            }).ToList() ?? new List<ClassStudentDto>(),
+                                EmployeeId = s.Id,
+                                FullName = s.FullName,
+                                Email = s.Email
+                            }).ToList() ?? new List<ClassEmployeeDto>(),
                             CreatedDate = createdClass.CreatedDate,
                             IsActive = createdClass.IsActive
                         };
