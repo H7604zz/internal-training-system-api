@@ -6,8 +6,8 @@ namespace InternalTrainingSystem.Core.Services.Interface
 {
     public interface IUserService
     {
-        public PagedResult<EligibleStaffResponse> GetUserRoleEligibleStaff(int courseId, int page, int pageSize);
-        public PagedResult<StaffConfirmCourseResponse> GetUserRoleStaffConfirmCourse(int courseId, int page, int pageSize);
+        public PagedResult<EligibleStaffResponse> GetEligibleStaff(int courseId, int page, int pageSize);
+        public PagedResult<StaffConfirmCourseResponse> GetStaffConfirmCourse(int courseId, int page, int pageSize);
         public List<ApplicationUser> GetUsersByRole(string role);
     }
 }

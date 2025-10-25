@@ -17,7 +17,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _context = context;
         }
 
-        public PagedResult<StaffConfirmCourseResponse> GetUserRoleStaffConfirmCourse(int courseId, int page, int pageSize)
+        public PagedResult<StaffConfirmCourseResponse> GetStaffConfirmCourse(int courseId, int page, int pageSize)
         {
             var query = _context.Users
                 .Include(u => u.CourseEnrollments)
@@ -57,7 +57,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
         }
 
-        public PagedResult<EligibleStaffResponse> GetUserRoleEligibleStaff(int courseId, int page, int pageSize)
+        public PagedResult<EligibleStaffResponse> GetEligibleStaff(int courseId, int page, int pageSize)
         {
             var query = from u in _context.Users
                         join ur in _context.UserRoles on u.Id equals ur.UserId

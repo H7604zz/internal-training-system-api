@@ -74,7 +74,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetEligibleUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var result = _userService.GetUserRoleEligibleStaff(courseId, page, pageSize);
+            var result = _userService.GetEligibleStaff(courseId, page, pageSize);
             return Ok(result);
         }
 
@@ -82,7 +82,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var confirmedUsers = _userService.GetUserRoleStaffConfirmCourse(courseId, page, pageSize);
+            var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, page, pageSize);
             return Ok(confirmedUsers);
         }
 
