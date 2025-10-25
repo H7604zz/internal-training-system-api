@@ -1,4 +1,6 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 using System.Net;

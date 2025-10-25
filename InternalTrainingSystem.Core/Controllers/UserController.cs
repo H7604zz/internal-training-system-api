@@ -96,12 +96,55 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(response);
         }
 
+        /// <summary>
+        /// API tạo mới người dùng và gửi email kích hoạt.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto req)
+        {
+            if (req == null)
+                return BadRequest("Dữ liệu đầu vào không hợp lệ.");
+
+            var success = await _userService.CreateUserAsync(req);
+
+            if (!success)
+                return BadRequest("Không thể tạo người dùng. Vui lòng kiểm tra lại dữ liệu hoặc email.");
+
+            return Ok(new
+            {
+                Message = "Tạo người dùng thành công. Email kích hoạt đã được gửi.",
+                Email = req.Email
+            });
+        }
+
+        /// <summary>
+        /// API xác nhận email người dùng từ link gửi trong email.
+        /// </summary>
+        [HttpGet("verify-account")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+                return BadRequest("Thiếu thông tin xác nhận email.");
+
+            var success = await _userService.ConfirmEmailAsync(userId, token);
+
+            if (!success)
+                return BadRequest("Xác nhận email thất bại hoặc token không hợp lệ.");
+
+            return Ok(new
+            {
+                Message = "Xác nhận email thành công. Bạn có thể đăng nhập vào hệ thống."
+            });
+        }
+
         [HttpGet("courses")]
         [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> GetUserCourses([FromQuery] GetAllCoursesRequest request)
         {
             var result = await _courseEnrollmentService.GetAllCoursesEnrollmentsByStaffAsync(request);
             return Ok(result);
+
         }
     }
 }
+                                                            

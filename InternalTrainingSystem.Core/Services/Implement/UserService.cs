@@ -4,17 +4,33 @@ using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
+using InternalTrainingSystem.Core.Utils;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
     public class UserService : IUserService
     {
         private readonly ApplicationDbContext _context;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IEmailSender _emailSender;
+        private readonly IConfiguration _config;
 
-        public UserService(ApplicationDbContext context)
+        public UserService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IEmailSender emailSender, IConfiguration config)
         {
             _context = context;
+            _userManager = userManager;
+            _roleManager = roleManager;
+            _emailSender = emailSender;
+            _config = config;
         }
 
         public PagedResult<StaffConfirmCourseResponse> GetStaffConfirmCourse(int courseId, int page, int pageSize)
@@ -119,6 +135,133 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .ToList();
 
             return mentors;
+        }
+
+
+        public async Task<bool> CreateUserAsync(CreateUserDto req)
+        {
+            // Validate department
+            if (!await _context.Departments.AnyAsync(d => d.Id == req.DepartmentId))
+                return false;
+
+            // Validate duplicate email
+            if (await _context.Users.AnyAsync(u => u.Email == req.Email))
+                return false;
+
+            // Validate role
+            var roleName = string.IsNullOrWhiteSpace(req.RoleName) ? "Staff" : req.RoleName.Trim();
+            if (!UserRoles.All.Contains(roleName, StringComparer.OrdinalIgnoreCase))
+                return false;
+
+            // Map sang ApplicationUser
+            var user = new ApplicationUser
+            {
+                UserName = req.Email,
+                Email = req.Email,
+                PhoneNumber = req.Phone,
+                FullName = req.FullName,
+                Position = req.Position,
+                DepartmentId = req.DepartmentId,
+                IsActive = false,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            // Tạo user với mật khẩu tạm
+            var tempPassword = PasswordUtils.Generate(_userManager.Options.Password);
+            var createResult = await _userManager.CreateAsync(user, tempPassword);
+            if (!createResult.Succeeded)
+                return false;
+
+            // Đảm bảo chỉ 1 role
+            if (!await _roleManager.RoleExistsAsync(roleName))
+                await _roleManager.CreateAsync(new IdentityRole(roleName));
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (currentRoles.Any())
+                await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+            var addRoleResult = await _userManager.AddToRoleAsync(user, roleName);
+            if (!addRoleResult.Succeeded)
+                return false;
+
+            // Bắt đổi mật khẩu lần đầu
+            await _userManager.AddClaimAsync(user, new Claim("MustChangePassword", "true"));
+
+            // Link xác nhận email
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var baseUrl = _config["App:FrontendBaseUrl"]?.TrimEnd('/') ?? "https://localhost:7001";
+            var confirmUrl =
+                $"{baseUrl}/account/confirm-email?userId={Uri.EscapeDataString(user.Id)}&token={Uri.EscapeDataString(token)}";
+
+            // Gửi email HTML
+            var subject = "Kích hoạt tài khoản hệ thống đào tạo";
+            var body = $@"
+                <html>
+                <body style='font-family:Arial, sans-serif; line-height:1.6; color:#333'>
+                    <p>Chào <strong>{user.FullName}</strong>,</p>
+
+                    <p>Tài khoản của bạn đã được tạo trên <strong>hệ thống đào tạo nội bộ</strong>.</p>
+
+                    <p>
+                        <b>Tên đăng nhập (Email):</b> {user.Email}<br/>
+                        <b>Mật khẩu tạm:</b> {tempPassword}
+                    </p>
+
+                    <p>
+                        Vui lòng xác nhận email và đăng nhập tại liên kết bên dưới:<br/>
+                        <a href='{confirmUrl}' style='color:#1a73e8;text-decoration:none;' target='_blank'>
+                            Xác nhận tài khoản của tôi
+                        </a>
+                    </p>
+
+                    <p><i>Hãy đổi mật khẩu ngay sau khi đăng nhập.</i></p>
+
+                    <p>Trân trọng,<br/>
+                    <b>Phòng IT</b></p>
+                </body>
+                </html>";
+            await _emailSender.SendEmailAsync(user.Email!, subject, body);
+
+            return true;
+        }
+
+        public async Task<bool> ConfirmEmailAsync(string userId, string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+                return false;
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return false;
+
+            if (user.EmailConfirmed)
+                return true;
+
+            string usableToken;
+            try
+            {
+                var decodedBytes = WebEncoders.Base64UrlDecode(token);
+                usableToken = Encoding.UTF8.GetString(decodedBytes);
+            }
+            catch
+            {
+                usableToken = Uri.UnescapeDataString(token)
+                                 .Replace(" ", "+");
+            }
+
+            var result = await _userManager.ConfirmEmailAsync(user, usableToken);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                Console.WriteLine($"❌ Xác nhận email thất bại: {errors}");
+                return false;
+            }
+
+            user.IsActive = true;
+            await _userManager.UpdateAsync(user);
+
+            Console.WriteLine($"✅ Email xác nhận thành công cho user {user.Email}");
+            return true;
         }
 
     }
