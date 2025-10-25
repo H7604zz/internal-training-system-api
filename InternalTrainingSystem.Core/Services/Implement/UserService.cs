@@ -78,8 +78,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                                   || u.FullName.Contains(searchDto.SearchTerm)
                                   || u.EmployeeId!.Contains(searchDto.SearchTerm)
                                   || u.Email!.Contains(searchDto.SearchTerm))
-                              && (string.IsNullOrEmpty(searchDto.Department)
-                                  || d.Name == searchDto.Department)
                               && (string.IsNullOrEmpty(searchDto.status)
                                   || (e != null && e.Status == searchDto.status))
                         orderby u.FullName
