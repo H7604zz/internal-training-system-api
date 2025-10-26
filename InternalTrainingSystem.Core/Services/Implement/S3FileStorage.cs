@@ -37,8 +37,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 BucketName = _bucket,
                 Key = key,
                 InputStream = stream,
-                ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType
-                // CannedACL = S3CannedACL.PublicRead  // uncomment ONLY if you want objects public
+                ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
+                CannedACL = S3CannedACL.PublicRead  
             };
             var resp = await _s3.PutObjectAsync(put, ct);
             if ((int)resp.HttpStatusCode >= 300)
