@@ -144,7 +144,15 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             // Validate role
             var roleName = string.IsNullOrWhiteSpace(req.RoleName) ? "Staff" : req.RoleName.Trim();
-            
+            // ✅ Kiểm tra EmployeeId đã tồn tại chưa
+            var existingUser = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.EmployeeId == req.EmployeeId);
+
+            if (existingUser != null)
+            {
+                // Có thể throw exception hoặc return false tùy yêu cầu
+                throw new InvalidOperationException($"EmployeeId '{req.EmployeeId}' đã tồn tại trong hệ thống.");
+            }
 
             // Map sang ApplicationUser
             var user = new ApplicationUser
@@ -157,7 +165,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Position = req.Position,
                 DepartmentId = req.DepartmentId,
                 IsActive = false,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTime.Now
             };
 
             // Tạo user với mật khẩu tạm
