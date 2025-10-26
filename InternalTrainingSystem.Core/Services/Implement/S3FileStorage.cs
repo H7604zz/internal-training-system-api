@@ -47,7 +47,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             // nếu có public base url => trả public url (bucket mở policy public)
             // nếu không => trả presigned url ngắn hạn
-            var url = GetReadUrl(key, TimeSpan.FromMinutes(10));
+            var url = _publicBaseUrl is not null
+                      ? $"{_publicBaseUrl}/{key}"
+                      : GetReadUrl(key, TimeSpan.FromMinutes(10));
+
 
             return (url, key);
         }
