@@ -95,7 +95,7 @@ namespace InternalTrainingSystem.Core.Controllers
                                 EmployeeId = user.EmployeeId,
                                 Department = user.Department?.Name,
                                 Position = user.Position,
-                                Roles = roles.ToList(),
+                                Roles = roles.FirstOrDefault(),
                                 IsActive = user.IsActive,
                                 LastLoginDate = user.LastLoginDate
                             },
@@ -281,7 +281,7 @@ namespace InternalTrainingSystem.Core.Controllers
                         EmployeeId = user.EmployeeId,
                         Department = user.Department?.Name,
                         Position = user.Position,
-                        Roles = roles.ToList(),
+                        Roles = roles.FirstOrDefault(),
                         IsActive = user.IsActive,
                         LastLoginDate = user.LastLoginDate
                     },

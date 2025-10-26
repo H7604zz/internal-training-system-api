@@ -40,7 +40,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Unauthorized(ApiResponseDto.ErrorResult("User not found"));
+                    return NotFound("User not found");
                 }
 
                 // Sử dụng UserService để lấy user profile
@@ -48,7 +48,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     
                 if (user == null)
                 {
-                    return NotFound(ApiResponseDto.ErrorResult("User not found"));
+                    return NotFound("User not found");
                 }
 
                 var roles = await _userManager.GetRolesAsync(user);
@@ -56,21 +56,22 @@ namespace InternalTrainingSystem.Core.Controllers
                 var userProfile = new UserProfileDto
                 {
                     Id = user.Id,
+                    EmployeeId = user.EmployeeId,
                     FullName = user.FullName,
                     Email = user.Email!,
-                    EmployeeId = user.EmployeeId,
+                    Phone = user.PhoneNumber!,
                     Department = user.Department?.Name,
                     Position = user.Position,
-                    Roles = roles.ToList(),
+                    Roles = roles.FirstOrDefault(),
                     IsActive = user.IsActive,
                     LastLoginDate = user.LastLoginDate
                 };
 
-                return Ok(ApiResponseDto.SuccessResult(new { user = userProfile }));
+                return Ok(userProfile);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponseDto.ErrorResult($"Error retrieving profile: {ex.Message}"));
+                return BadRequest();
             }
         }
 

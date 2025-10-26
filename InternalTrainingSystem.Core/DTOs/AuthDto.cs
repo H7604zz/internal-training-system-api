@@ -29,10 +29,11 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Id { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
         public string? EmployeeId { get; set; }
         public string? Department { get; set; }
         public string? Position { get; set; }
-        public List<string> Roles { get; set; } = new List<string>();
+        public string? Roles { get; set; }
         public bool IsActive { get; set; }
         public DateTime? LastLoginDate { get; set; }
     }
