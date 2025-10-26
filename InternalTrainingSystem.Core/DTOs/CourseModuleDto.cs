@@ -91,6 +91,9 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? ContentHtml { get; set; }
 
         public bool UploadBinary { get; set; } = false;
+
+        public string? QuizTitle { get; set; }
+        public bool IsQuizExcel { get; set; } = false;
     }
 
     // Module full course

@@ -376,7 +376,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 return BadRequest(new { message = "Validation failed", errors });
             }
             if (await _courseService.GetCourseByCourseCodeAsync(meta.CourseCode) != null)
-                    return Conflict(new { message = $"Mã khóa học '{meta.CourseCode}' đã tồn tại. Vui lòng chọn mã khác." });
+                return Conflict(new { message = $"Mã khóa học '{meta.CourseCode}' đã tồn tại. Vui lòng chọn mã khác." });
             try
             {
                 var course = await _courseService.CreateFullCourseAsync(
@@ -398,7 +398,7 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
-
+        }
 
         [HttpGet("{courseId}/confirmed-staff")]
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
