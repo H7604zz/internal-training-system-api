@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Extensions;
+using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Middleware;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
@@ -129,6 +130,8 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "Internal Training System API", Version = "v1" });
 });
 
+builder.Services.AddHostedService<NotificationCleanupService>();
+
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailSender, EmailSenderService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
@@ -151,7 +154,7 @@ else
 
 var app = builder.Build();
 
-app.MapHub<EnrollmentHub>("/hubs/enrollment");
+app.MapHub<NotificationHub>("/hubs/notifications");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

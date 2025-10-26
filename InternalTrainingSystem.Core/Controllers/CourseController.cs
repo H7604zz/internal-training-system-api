@@ -1,6 +1,8 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
@@ -23,15 +25,17 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly ICourseService _courseService;
         private readonly IUserService _userService;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
-        private readonly IHubContext<EnrollmentHub> _hub;
+        private readonly INotificationService _notificationService;
+        private readonly IHubContext<NotificationHub> _hub;
 
-        public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService, 
-            IHubContext<EnrollmentHub> hub, IUserService userService)
+        public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
+            IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService)
         {
             _courseService = courseService;
             _hub = hub;
             _courseEnrollmentService = courseEnrollmentService;
             _userService = userService;
+            _notificationService = notificationService;
         }
 
         // POST: /api/courses
@@ -147,7 +151,7 @@ namespace InternalTrainingSystem.Core.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest( new { message = "Internal server error", error = ex.Message });
+                return BadRequest(new { message = "Internal server error", error = ex.Message });
             }
         }
 
@@ -286,8 +290,8 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 CourseId = course.CourseId,
                 UserId = userId,
-                EnrollmentDate = DateTime.UtcNow,
-                LastAccessedDate = DateTime.UtcNow
+                EnrollmentDate = DateTime.Now,
+                LastAccessedDate = DateTime.Now
             };
 
             if (course.IsOnline || course.IsMandatory)
@@ -407,6 +411,65 @@ namespace InternalTrainingSystem.Core.Controllers
             var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, page, pageSize);
             return Ok(confirmedUsers);
 
+        }
+
+        [HttpPost("{courseId}/finalize-enrollments")]
+        [Authorize(Roles = UserRoles.TrainingDepartment)]
+        public async Task<IActionResult> FinalizeEnrollments(string courseCode)
+        {
+
+            var course = await _courseService.GetCourseByCourseCodeAsync(courseCode);
+            if (course == null) return BadRequest();
+
+            var existingNotification = _notificationService.GetNotificationByCourseAndType(course.CourseId, NotificationType.CourseFinalized);
+
+            if (existingNotification != null)
+            {
+                return Ok(ApiResponseDto.SuccessResult(new { sent = false }, "Thông báo đã được gửi trước đó."));
+            }
+
+            var searchDto = new UserSearchDto
+            {
+                Page = 1,
+                PageSize = int.MaxValue,
+            };
+
+            var eligiblePaged = _userService.GetEligibleStaff(course.CourseId, searchDto);
+            var enrollmentsToAdd = new List<CourseEnrollment>();
+            foreach (var user in eligiblePaged.Items)
+            { 
+                if(user.Status == EnrollmentConstants.Status.NotEnrolled)
+                {
+                    enrollmentsToAdd.Add(new CourseEnrollment
+                    {
+                        CourseId = course.CourseId,
+                        UserId = user.EmployeeId!,
+                        Status = EnrollmentConstants.Status.Enrolled,
+                        EnrollmentDate = DateTime.Now,
+                        LastAccessedDate = DateTime.Now
+                    });
+                }
+            }
+            if (enrollmentsToAdd.Any())
+            {
+                await _courseEnrollmentService.AddRangeAsync(enrollmentsToAdd);
+            }
+
+            await _notificationService.SaveNotificationAsync(new Notification
+            {
+                CourseId = course.CourseId,
+                Type = NotificationType.CourseFinalized,
+                SentAt = DateTime.Now,
+            });
+
+            await _hub.Clients.Group($"finalize-enrollments-{course.Code}").SendAsync("ReceiveNotification", new
+            {
+                CourseId = course.Code,
+                Type = "EnrollmentsFinalized",
+                Message = "Danh sách nhân viên trong khóa học đã được chốt, vui lòng xem xét."
+            });
+
+            return Ok(ApiResponseDto.SuccessResult(null, "Danh sách nhân viên tham gia khóa học đã được chốt thành công."));
         }
     }
 }

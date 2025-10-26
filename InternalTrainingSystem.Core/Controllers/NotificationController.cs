@@ -39,8 +39,6 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 Page = 1,
                 PageSize = int.MaxValue,
-                SearchTerm = null,
-                status = null
             };
             var eligiblePaged = _userService.GetEligibleStaff(courseId, searchDto);
             if (eligiblePaged.TotalCount == 0)
