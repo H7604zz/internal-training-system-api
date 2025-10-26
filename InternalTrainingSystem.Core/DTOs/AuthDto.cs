@@ -33,7 +33,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? EmployeeId { get; set; }
         public string? Department { get; set; }
         public string? Position { get; set; }
-        public string? Roles { get; set; }
+        public string? CurrentRole { get; set; }
         public bool IsActive { get; set; }
         public DateTime? LastLoginDate { get; set; }
     }

@@ -62,7 +62,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     Phone = user.PhoneNumber!,
                     Department = user.Department?.Name,
                     Position = user.Position,
-                    Roles = roles.FirstOrDefault(),
+                    CurrentRole = roles.FirstOrDefault(),
                     IsActive = user.IsActive,
                     LastLoginDate = user.LastLoginDate
                 };
