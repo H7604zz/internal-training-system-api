@@ -264,5 +264,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return true;
         }
 
+        public List<IdentityRole> GetRoles()
+        {
+           return _context.Roles.ToList();
+        }
     }
 }

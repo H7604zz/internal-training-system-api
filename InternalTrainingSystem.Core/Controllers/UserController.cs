@@ -125,6 +125,14 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
 
         }
+
+        [HttpGet("roles")]
+        public IActionResult GetUserRoles()
+        {
+            var result =  _userService.GetRoles();
+            return Ok(result);
+
+        }
     }
 }
                                                             

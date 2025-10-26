@@ -1,6 +1,8 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InternalTrainingSystem.Core.Services.Interface
@@ -12,5 +14,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         public List<ApplicationUser> GetUsersByRole(string role);
         Task<bool> CreateUserAsync(CreateUserDto req);
         Task<bool> VerifyAccountAsync(string userId, string token);
+        List<IdentityRole> GetRoles();
     }
 }
