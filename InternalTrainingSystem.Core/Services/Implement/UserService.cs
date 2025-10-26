@@ -268,5 +268,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
            return _context.Roles.ToList();
         }
+
+        public async Task<ApplicationUser?> GetUserProfileAsync(string userId)
+        {
+            return await _context.Users
+                .Include(u => u.Department)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
     }
 }

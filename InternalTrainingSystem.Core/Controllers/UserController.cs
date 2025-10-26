@@ -43,7 +43,9 @@ namespace InternalTrainingSystem.Core.Controllers
                     return Unauthorized(ApiResponseDto.ErrorResult("User not found"));
                 }
 
-                var user = await _userManager.FindByIdAsync(userId);
+                // Sử dụng UserService để lấy user profile
+                var user = await _userService.GetUserProfileAsync(userId);
+                    
                 if (user == null)
                 {
                     return NotFound(ApiResponseDto.ErrorResult("User not found"));
