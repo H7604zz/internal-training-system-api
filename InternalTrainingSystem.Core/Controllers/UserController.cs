@@ -19,7 +19,7 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
 
-        private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR};
+        private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR };
 
         public UserController(IUserService userServices, UserManager<ApplicationUser> userManager, ICourseEnrollmentService courseEnrollmentService)
         {
@@ -45,7 +45,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
                 // Sử dụng UserService để lấy user profile
                 var user = await _userService.GetUserProfileAsync(userId);
-                    
+
                 if (user == null)
                 {
                     return NotFound("User not found");
@@ -132,9 +132,39 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpGet("roles")]
         public IActionResult GetUserRoles()
         {
-            var result =  _userService.GetRoles();
+            var result = _userService.GetRoles();
             return Ok(result);
 
+        }
+
+        /// <summary>
+        /// Vô hiệu hóa (deactivate) tài khoản người dùng theo userId.
+        /// </summary>
+        [HttpPatch("{userId}/deactivate")]
+        public async Task<IActionResult> DeactivateUser(string userId)
+        {
+            try
+            {
+                var result = await _userService.DeactivateUserAsync(userId);
+
+                if (!result)
+                    return BadRequest(new { message = "Người dùng đã bị vô hiệu trước đó hoặc không thể cập nhật." });
+
+                return Ok(new { message = "Vô hiệu hóa người dùng thành công." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                // log lỗi ở đây nếu cần
+                return StatusCode(500, new { message = "Có lỗi xảy ra trong quá trình xử lý.", error = ex.Message });
+            }
         }
     }
 }

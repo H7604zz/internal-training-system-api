@@ -277,5 +277,28 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .Include(u => u.Department)
                 .FirstOrDefaultAsync(u => u.Id == userId);
         }
+
+        public async Task<bool> DeactivateUserAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId không được để trống.", nameof(userId));
+
+            // Lấy user từ DbContext (vì bạn có ApplicationDbContext)
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+                throw new KeyNotFoundException($"Không tìm thấy người dùng với Id = {userId}.");
+
+            if (!user.IsActive)
+                return false; // đã bị vô hiệu rồi
+
+            user.IsActive = false;
+
+            // Lưu thay đổi
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
     }
 }
