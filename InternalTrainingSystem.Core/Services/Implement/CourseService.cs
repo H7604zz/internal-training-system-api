@@ -579,14 +579,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _context.SaveChangesAsync();
             return true;
         }
-        public async Task<Course> CreateFullCourseAsync(
-    CreateFullCourseMetadataDto meta,
-    IList<IFormFile> lessonFiles,
-    string createdByUserId,
-    CancellationToken ct = default)
+        public async Task<Course> CreateFullCourseAsync(CreateFullCourseMetadataDto meta,
+                                IList<IFormFile> lessonFiles, string createdByUserId, CancellationToken ct = default)
         {
             await using var tx = await _context.Database.BeginTransactionAsync(ct);
-
             try
             {
                 var course = new Course
@@ -717,11 +713,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 throw;
             }
         }
-        private async Task<int> ImportQuizFromExcelInternal(
-    int courseId,
-    string quizTitle,
-    IFormFile excelFile,
-    CancellationToken ct)
+        private async Task<int> ImportQuizFromExcelInternal(int courseId, string quizTitle,
+                                                            IFormFile excelFile, CancellationToken ct)
         {
             if (excelFile == null || excelFile.Length == 0)
                 throw new ArgumentException("Quiz Excel file is empty.");
