@@ -140,22 +140,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public async Task<bool> CreateUserAsync(CreateUserDto req)
         {
-            // Validate department
-            if (!await _context.Departments.AnyAsync(d => d.Id == req.DepartmentId))
-                return false;
-
-            // Validate duplicate email
-            if (await _context.Users.AnyAsync(u => u.Email == req.Email))
-                return false;
+            
 
             // Validate role
             var roleName = string.IsNullOrWhiteSpace(req.RoleName) ? "Staff" : req.RoleName.Trim();
-            if (!UserRoles.All.Contains(roleName, StringComparer.OrdinalIgnoreCase))
-                return false;
+            
 
             // Map sang ApplicationUser
             var user = new ApplicationUser
             {
+                EmployeeId=req.EmployeeId,
                 UserName = req.Email,
                 Email = req.Email,
                 PhoneNumber = req.Phone,

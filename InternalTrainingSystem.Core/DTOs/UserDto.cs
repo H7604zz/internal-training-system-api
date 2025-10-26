@@ -40,6 +40,8 @@ namespace InternalTrainingSystem.Core.DTOs
     public class CreateUserDto
     {
         [Required, StringLength(100)]
+        public string? EmployeeId { get; set; } = string.Empty;
+        [Required, StringLength(100)]
         public string FullName { get; set; } = string.Empty;
 
         [Required, EmailAddress, StringLength(256)]
