@@ -595,6 +595,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Level = meta.Level,
                     Status = CourseConstants.Status.Pending,
                     CreatedDate = DateTime.UtcNow,
+                    IsOnline = meta.IsOnline,
+                    IsMandatory = meta.IsMandatory,
                     CreatedById = createdByUserId
                 };
 
