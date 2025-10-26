@@ -32,7 +32,7 @@ namespace InternalTrainingSystem.Core.Models
         [StringLength(500)]
         public string? OnlineLink { get; set; }
 
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Foreign Keys
         [Required]

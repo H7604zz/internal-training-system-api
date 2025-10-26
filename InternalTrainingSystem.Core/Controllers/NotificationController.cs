@@ -48,7 +48,7 @@ namespace InternalTrainingSystem.Core.Controllers
             if (course == null)
                 return NotFound("Không tìm thấy khóa học tương ứng.");
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var sevenDaysAgo = now.AddDays(-7);
 
             if (_notificationService.HasRecentNotification(NotificationType.Start, courseId))
@@ -101,8 +101,8 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 CourseId = courseId,
                 Type = NotificationType.Start,
-                SentAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
+                SentAt = DateTime.Now,
+                CreatedAt = DateTime.Now,
             });
             return Ok();
         }

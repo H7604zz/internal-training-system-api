@@ -50,7 +50,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public bool HasRecentNotification(NotificationType type, int courseId, int days = 7)
         {
-            var since = DateTime.UtcNow.AddDays(-days);
+            var since = DateTime.Now.AddDays(-days);
 
             return _context.Notifications
                 .Any(n =>

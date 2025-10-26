@@ -364,7 +364,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 // QuizId (identity)
                 Title = string.IsNullOrWhiteSpace(req.QuizTitle) ? req.Title : req.QuizTitle,
                 CourseId = module.CourseId,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 IsActive = true
             };
 

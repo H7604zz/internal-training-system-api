@@ -55,7 +55,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 return Conflict(new { message = $"Mã khóa học '{code}' đã tồn tại. Vui lòng chọn mã khác." });
 
             var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var entity = new Course
             {
@@ -208,7 +208,7 @@ namespace InternalTrainingSystem.Core.Controllers
             public string NewStatus { get; set; } = default!;
         }
 
-        /// <summary>Duyệt/ Từ chối 1 course đang Pending: newStatus = "Apporove" | "Reject".</summary>
+        /// <summary>Duyệt 1 course đang Pending: newStatus = "Apporove".</summary>
         [HttpPut("{courseId:int}/status")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -443,7 +443,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     enrollmentsToAdd.Add(new CourseEnrollment
                     {
                         CourseId = course.CourseId,
-                        UserId = user.EmployeeId!,
+                        UserId = user.Id!,
                         Status = EnrollmentConstants.Status.Enrolled,
                         EnrollmentDate = DateTime.Now,
                         LastAccessedDate = DateTime.Now

@@ -4,6 +4,7 @@ namespace InternalTrainingSystem.Core.DTOs
 {
     public class EligibleStaffResponse
     {
+        public string? Id { get; set; }        
         public string? EmployeeId { get; set; }
         public required string FullName { get; set; }
         public required string Email { get; set; }
@@ -18,6 +19,7 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class StaffConfirmCourseResponse
     {
+        public string? Id { get; set; }
         public string? EmployeeId { get; set; }
         public required string FullName { get; set; }
         public required string Email { get; set; }

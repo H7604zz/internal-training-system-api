@@ -69,7 +69,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     try
                     {
                         // Update last login date
-                        user.LastLoginDate = DateTime.UtcNow;
+                        user.LastLoginDate = DateTime.Now;
                         await _userManager.UpdateAsync(user);
 
                         // Get user roles
@@ -81,7 +81,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
                         // Calculate expiry time
                         var expireMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") ?? "60");
-                        var expiresAt = DateTime.UtcNow.AddMinutes(expireMinutes);
+                        var expiresAt = DateTime.Now.AddMinutes(expireMinutes);
 
                         var response = new LoginResponseDto
                         {
@@ -212,8 +212,8 @@ namespace InternalTrainingSystem.Core.Controllers
                 // Blacklist the current token
                 if (!string.IsNullOrEmpty(jwtId))
                 {
-                    var expiry = DateTime.UtcNow.AddDays(7); // Token expiry time
-                    await _tokenBlacklistService.BlacklistTokenAsync(jwtId, expiry);
+                    var expiry = DateTime.Now.AddDays(7); // Token expiry time
+                    await _tokenBlacklistService.BlacklistTokenAsync(jwtId, expiry) ;
                 }
 
                 await _signInManager.SignOutAsync();

@@ -55,6 +55,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .Take(pageSize)
                 .Select(u => new StaffConfirmCourseResponse
                 {
+                    Id = u.Id,
                     EmployeeId = u.EmployeeId,
                     FullName = u.FullName,
                     Email = u.Email!,
@@ -99,6 +100,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         orderby u.FullName
                         select new EligibleStaffResponse
                         {
+                            Id = u.Id,
                             EmployeeId = u.EmployeeId,
                             FullName = u.FullName,
                             Email = u.Email!,
@@ -163,7 +165,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Position = req.Position,
                 DepartmentId = req.DepartmentId,
                 IsActive = false,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTime.Now
             };
 
             // Tạo user với mật khẩu tạm

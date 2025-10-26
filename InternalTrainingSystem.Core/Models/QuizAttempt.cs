@@ -9,7 +9,7 @@ namespace InternalTrainingSystem.Core.Models
         [Key]
         public int AttemptId { get; set; }
 
-        public DateTime StartTime { get; set; } = DateTime.UtcNow;
+        public DateTime StartTime { get; set; } = DateTime.Now;
 
         public DateTime? EndTime { get; set; }
 

@@ -22,7 +22,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public Task CleanupExpiredTokensAsync()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var expiredTokens = _blacklistedTokens
                 .Where(kvp => kvp.Value <= now)
                 .Select(kvp => kvp.Key)

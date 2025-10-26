@@ -73,7 +73,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 BucketName = _bucket,
                 Key = key,
-                Expires = DateTime.UtcNow.Add(ttl),
+                Expires = DateTime.Now.Add(ttl),
                 Verb = HttpVerb.GET
             };
             return _s3.GetPreSignedURL(req);

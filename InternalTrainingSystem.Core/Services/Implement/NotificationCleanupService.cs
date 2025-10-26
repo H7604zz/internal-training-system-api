@@ -31,7 +31,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 using var scope = _serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                var cutoffDate = DateTime.UtcNow.AddDays(-14);
+                var cutoffDate = DateTime.Now.AddDays(-14);
 
                 var oldNotifications = await context.Notifications
                     .Where(n => n.CreatedAt < cutoffDate)
@@ -42,7 +42,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     context.Notifications.RemoveRange(oldNotifications);
                     await context.SaveChangesAsync();
 
-                    Console.WriteLine($"Đã xóa {oldNotifications.Count} thông báo cũ hơn 14 ngày ({DateTime.UtcNow}).");
+                    Console.WriteLine($"Đã xóa {oldNotifications.Count} thông báo cũ hơn 14 ngày ({DateTime.Now}).");
                 }
             }
             catch (Exception ex)

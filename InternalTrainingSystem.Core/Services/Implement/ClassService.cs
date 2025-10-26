@@ -146,11 +146,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
                             ClassName = $"{course.CourseName}",
                             CourseId = classRequest.CourseId,
                             MentorId = classRequest.MentorId,
-                            StartDate = DateTime.UtcNow,
+                            StartDate = DateTime.Now,
                             Capacity = classRequest.EmployeeIds.Count,
                             Status = "Active",
                             CreatedById = currentUserId,
-                            CreatedDate = DateTime.UtcNow,
+                            CreatedDate = DateTime.Now,
                             IsActive = true
                         };
 

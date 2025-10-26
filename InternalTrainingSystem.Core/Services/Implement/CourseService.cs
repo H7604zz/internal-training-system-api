@@ -120,7 +120,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             course.Duration = dto.Duration;
             course.Level = dto.Level;
             course.Status = dto.Status ?? course.Status;
-            course.UpdatedDate = DateTime.UtcNow;
+            course.UpdatedDate = DateTime.Now;
 
             if (dto.Departments != null)
             {
@@ -153,7 +153,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (course == null) return false;
             if (course.Status.ToLower().Equals(CourseConstants.Status.Approve.ToLower())){
                 course.Status = status;
-                course.UpdatedDate = DateTime.UtcNow;
+                course.UpdatedDate = DateTime.Now;
                 return _context.SaveChanges() > 0;
             }
             return false;
@@ -502,7 +502,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 // ✅ Duyệt khóa học
                 course.Status = CourseConstants.Status.Approve;
-                course.UpdatedDate = DateTime.UtcNow;
+                course.UpdatedDate = DateTime.Now;
             }
 
             await _context.SaveChangesAsync();
@@ -550,7 +550,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             // 6) Đưa trạng thái về Pending để "gửi lại", cập nhật thời gian
             course.Status = CourseConstants.Status.Pending;
-            course.UpdatedDate = DateTime.UtcNow;
+            course.UpdatedDate = DateTime.Now;
 
             await _context.SaveChangesAsync();
             return true;
@@ -573,7 +573,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 ? "Khóa học bị xóa bởi Ban giám đốc."
                 : rejectReason.Trim();
 
-            course.UpdatedDate = DateTime.UtcNow;
+            course.UpdatedDate = DateTime.Now;
 
             await _context.SaveChangesAsync();
             return true;
@@ -597,7 +597,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Duration = meta.Duration,
                     Level = meta.Level,
                     Status = CourseConstants.Status.Pending,
-                    CreatedDate = DateTime.UtcNow,
+                    CreatedDate = DateTime.Now,
                     CreatedById = createdByUserId,
                 };
 
