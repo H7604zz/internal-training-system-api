@@ -38,61 +38,6 @@ namespace InternalTrainingSystem.Core.Controllers
             _notificationService = notificationService;
         }
 
-        // POST: /api/courses
-        [HttpPost]
-        [Authorize(Roles = UserRoles.TrainingDepartment)]
-        public async Task<ActionResult<Course>> Create([FromBody] CreateCourseDto dto)
-        {
-            if (!ModelState.IsValid)
-                return ValidationProblem(ModelState);
-
-            // Chuẩn hóa dữ liệu đầu vào
-            var code = (dto.CourseCode ?? string.Empty).Trim();
-            var name = (dto.CourseName ?? string.Empty).Trim();
-
-            // Kiểm tra mã khóa học trùng (case-insensitive)
-            if (await _courseService.GetCourseByCourseCodeAsync(code) != null)
-                return Conflict(new { message = $"Mã khóa học '{code}' đã tồn tại. Vui lòng chọn mã khác." });
-
-            var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
-            var now = DateTime.Now;
-
-            var entity = new Course
-            {
-                Code = code,
-                CourseName = name,
-                Description = dto.Description,
-                CourseCategoryId = dto.CourseCategoryId,
-                Duration = dto.Duration,
-                Level = dto.Level, // đã được DTO validate
-                Status = CourseConstants.Status.Pending, // server kiểm soát trạng thái ban đầu
-                CreatedDate = now,
-                UpdatedDate = null,
-                CreatedById = userId
-            };
-
-            try
-            {
-                var created = await _courseService.CreateCourseAsync(entity, dto.Departments);
-
-                // Phòng hờ service trả null (không mong đợi)
-                if (created is null)
-                    return BadRequest(new { message = "Tạo khóa học thất bại." });
-
-                return CreatedAtAction(nameof(GetCourseDetail), new { id = created.CourseId }, created);
-            }
-            catch (ArgumentException ex)
-            {
-                // Ví dụ: Department ID không tồn tại, hoặc các lỗi business hợp lệ
-                return BadRequest(new { message = ex.Message });
-            }
-            catch
-            {
-                // Lỗi không xác định
-                return StatusCode(500, new { message = "Đã xảy ra lỗi máy chủ khi tạo khóa học." });
-            }
-        }
-
         // PUT: /api/courses/5
         [HttpPut("{id:int}")]
         [Authorize(Roles = UserRoles.TrainingDepartment)]

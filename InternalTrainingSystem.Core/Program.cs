@@ -141,14 +141,6 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "Internal Training System API", Version = "v1" });
 });
 
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IEmailSender, EmailSenderService>();
-builder.Services.AddScoped<ICourseService, CourseService>();
-builder.Services.AddScoped<ICourseEnrollmentService, CourseEnrollmentService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IClassService, ClassService>();
-builder.Services.AddScoped<ICourseMaterialService, CourseMaterialService>();
-builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 
 builder.Services.AddHttpContextAccessor();
 var provider = builder.Configuration["STORAGE_PROVIDER"];
