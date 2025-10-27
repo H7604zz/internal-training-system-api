@@ -353,5 +353,55 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(confirmedUsers);
 
         }
+
+        /// <summary>
+        /// Cập nhật bản nháp (hoặc bản bị từ chối) và gửi lại duyệt (đưa về trạng thái Pending).
+        /// Chỉ hợp lệ khi khóa học đang Pending hoặc Reject.
+        /// </summary>
+        /// <param name="courseId">ID khóa học</param>
+        /// <param name="dto">Nội dung cập nhật & danh sách phòng ban</param>
+        /// <returns>NoContent nếu thành công; 409 nếu không đủ điều kiện; 400 nếu input sai.</returns>
+        [HttpPut("{courseId}/resubmit")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> ResubmitDraftAsync([FromRoute] int courseId,[FromBody] UpdateCourseRejectDto dto)
+        {
+            try
+            {
+                // Gọi service: trả true nếu lưu thành công, false nếu không tìm thấy
+                // hoặc trạng thái hiện tại không cho phép resubmit.
+                var ok = await _courseService.UpdateDraftAndResubmitAsync(courseId, dto);
+
+                if (!ok)
+                {
+                    // Không phân biệt được NotFound vs InvalidState vì service trả bool.
+                    // Quy ước: trả 409 Conflict, kèm message rõ nghĩa.
+                    return Conflict(new
+                    {
+                        message = "Không thể gửi lại: khóa học không tồn tại hoặc không ở trạng thái Pending/Reject."
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                // Lỗi validate đầu vào từ service (ví dụ tên rỗng, v.v.)
+                return BadRequest(new
+                {
+                    message = ex.Message,
+                    param = ex.ParamName
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "Đã xảy ra lỗi máy chủ khi xử lý yêu cầu."
+                });
+            }
+        }
     }
 }

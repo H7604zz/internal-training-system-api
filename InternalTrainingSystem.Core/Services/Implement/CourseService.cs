@@ -503,7 +503,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 // ✅ Duyệt khóa học
                 course.Status = CourseConstants.Status.Approve;
-                course.UpdatedDate = DateTime.UtcNow;
+                course.UpdatedDate = DateTime.Now;
+            }
+            else if (newStatus.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase))
+            {
+                course.Status = CourseConstants.Status.Reject; // <-- bổ sung nhánh Reject
+                course.UpdatedDate = DateTime.Now;
             }
 
             await _context.SaveChangesAsync();
@@ -594,7 +599,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Duration = meta.Duration,
                     Level = meta.Level,
                     Status = CourseConstants.Status.Pending,
-                    CreatedDate = DateTime.UtcNow,
+                    CreatedDate = DateTime.Now,
                     IsOnline = meta.IsOnline,
                     IsMandatory = meta.IsMandatory,
                     CreatedById = createdByUserId

@@ -22,6 +22,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<Course> GetCourseByCourseCodeAsync(string courseCode);
         Task<Course> CreateFullCourseAsync(CreateFullCourseMetadataDto meta, IList<IFormFile> lessonFiles,
                                             string createdByUserId, CancellationToken ct = default);
+        Task<bool> UpdateDraftAndResubmitAsync(int courseId, UpdateCourseRejectDto dto);
 
     }
 }
