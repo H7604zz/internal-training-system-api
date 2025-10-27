@@ -76,13 +76,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Otp { get; set; } = string.Empty;
     }
 
-    public class PasswordResetResponseDto
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public string? NewPassword { get; set; }
-    }
-
     public class ApiResponseDto
     {
         public bool Success { get; set; }

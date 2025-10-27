@@ -76,9 +76,9 @@ namespace InternalTrainingSystem.Core.Controllers
         }
         
         /// <summary>
-        /// Update current user profile (FullName and PhoneNumber only)
+        /// Update current user profile
         /// </summary>
-        [HttpPut("profile")]
+        [HttpPut()]
         [Authorize]
         public async Task<ActionResult<ApiResponseDto>> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto)
         {
@@ -87,13 +87,13 @@ namespace InternalTrainingSystem.Core.Controllers
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Unauthorized(ApiResponseDto.ErrorResult("User not found"));
+                    return Unauthorized();
                 }
 
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user == null)
                 {
-                    return NotFound(ApiResponseDto.ErrorResult("User not found"));
+                    return NotFound();
                 }
 
                 // Update only allowed fields
@@ -104,30 +104,14 @@ namespace InternalTrainingSystem.Core.Controllers
                 if (!result.Succeeded)
                 {
                     var errors = result.Errors.Select(e => e.Description).ToList();
-                    return BadRequest(ApiResponseDto.ErrorResult("Failed to update profile", errors));
+                    return BadRequest();
                 }
 
-                // Return updated profile
-                var roles = await _userManager.GetRolesAsync(user);
-                var updatedProfile = new UserProfileDto
-                {
-                    Id = user.Id,
-                    FullName = user.FullName,
-                    Email = user.Email!,
-                    EmployeeId = user.EmployeeId,
-                    Department = user.Department?.Name,
-                    Position = user.Position,
-                    PhoneNumber = user.PhoneNumber,
-                    Roles = roles.ToList(),
-                    IsActive = user.IsActive,
-                    LastLoginDate = user.LastLoginDate
-                };
-
-                return Ok(ApiResponseDto.SuccessResult(new { user = updatedProfile }, "Profile updated successfully"));
+                return Ok();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponseDto.ErrorResult($"Error updating profile: {ex.Message}"));
+                return BadRequest($"Error updating profile: {ex.Message}");
             }
         }
 

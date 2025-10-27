@@ -19,7 +19,6 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IJwtService _jwtService;
         private readonly ITokenBlacklistService _tokenBlacklistService;
         private readonly IUserService _userService;
-        private readonly IPasswordResetService _passwordResetService;
 
         public AuthController(
             UserManager<ApplicationUser> userManager,
@@ -27,14 +26,12 @@ namespace InternalTrainingSystem.Core.Controllers
             IJwtService jwtService,
             ITokenBlacklistService tokenBlacklistService,
             IUserService userService)
-            IPasswordResetService passwordResetService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _jwtService = jwtService;
             _tokenBlacklistService = tokenBlacklistService;
             _userService = userService;
-            _passwordResetService = passwordResetService;
         }
 
         /// <summary>
@@ -168,25 +165,25 @@ namespace InternalTrainingSystem.Core.Controllers
                         .SelectMany(v => v.Errors)
                         .Select(e => e.ErrorMessage)
                         .ToList();
-                    return BadRequest(ApiResponseDto.ErrorResult("Invalid input data", errors));
+                    return BadRequest(errors);
                 }
 
                 // Additional validation for password confirmation
                 if (request.NewPassword != request.ConfirmPassword)
                 {
-                    return BadRequest(ApiResponseDto.ErrorResult("New password and confirm password do not match"));
+                    return BadRequest();
                 }
 
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Unauthorized(ApiResponseDto.ErrorResult("User not found"));
+                    return Unauthorized();
                 }
 
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user == null)
                 {
-                    return NotFound(ApiResponseDto.ErrorResult("User not found"));
+                    return NotFound();
                 }
 
                 // Verify current password
@@ -205,11 +202,11 @@ namespace InternalTrainingSystem.Core.Controllers
                 var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
                 if (result.Succeeded)
                 {
-                    return Ok(ApiResponseDto.SuccessResult(null, "Password changed successfully"));
+                    return Ok();
                 }
 
                 var changePasswordErrors = result.Errors.Select(e => e.Description).ToList();
-                return BadRequest(ApiResponseDto.ErrorResult("Failed to change password", changePasswordErrors));
+                return BadRequest();
             }
             catch (Exception ex)
             {
@@ -333,7 +330,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// </summary>
         [HttpPost("forgot-password")]
         [AllowAnonymous]
-        public async Task<ActionResult<ApiResponseDto>> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
+        public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
         {
             try
             {
@@ -343,18 +340,18 @@ namespace InternalTrainingSystem.Core.Controllers
                         .SelectMany(v => v.Errors)
                         .Select(e => e.ErrorMessage)
                         .ToList();
-                    return BadRequest(ApiResponseDto.ErrorResult("Invalid input data", errors));
+                    return BadRequest($"Invalid input data: { errors}");
                 }
 
-                var result = await _passwordResetService.SendPasswordResetOtpAsync(request.Email);
+                var result = await _userService.SendPasswordResetOtpAsync(request.Email);
 
                 if (result)
                 {
-                    return Ok(ApiResponseDto.SuccessResult(null, "Password reset OTP has been sent to your email"));
+                    return Ok("Password reset OTP has been sent to your email");
                 }
 
                 // Don't reveal if email exists or not for security
-                return Ok(ApiResponseDto.SuccessResult(null, "If the email exists in our system, you will receive a password reset OTP"));
+                return Ok("If the email exists in our system, you will receive a password reset OTP");
             }
             catch (Exception ex)
             {
@@ -367,7 +364,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// </summary>
         [HttpPost("reset-password")]
         [AllowAnonymous]
-        public async Task<ActionResult<PasswordResetResponseDto>> ResetPassword([FromBody] ResetPasswordRequestDto request)
+        public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
         {
             try
             {
@@ -377,38 +374,21 @@ namespace InternalTrainingSystem.Core.Controllers
                         .SelectMany(v => v.Errors)
                         .Select(e => e.ErrorMessage)
                         .ToList();
-                    return BadRequest(new PasswordResetResponseDto
-                    {
-                        Success = false,
-                        Message = $"Invalid input data: {string.Join(", ", errors)}"
-                    });
+                    return BadRequest($"Invalid input data: {string.Join(", ", errors)}");
                 }
 
-                var (success, newPassword) = await _passwordResetService.ResetPasswordWithOtpAsync(request.Email, request.Otp);
+                var (success, newPassword) = await _userService.ResetPasswordWithOtpAsync(request.Email, request.Otp);
 
                 if (success)
                 {
-                    return Ok(new PasswordResetResponseDto
-                    {
-                        Success = true,
-                        Message = "Password has been reset successfully. A new password has been sent to your email.",
-                        NewPassword = newPassword // You can remove this if you don't want to return password in response
-                    });
+                    return Ok("Password has been reset successfully. A new password has been sent to your email.");
                 }
 
-                return BadRequest(new PasswordResetResponseDto
-                {
-                    Success = false,
-                    Message = "Invalid or expired OTP. Please try again."
-                });
+                return BadRequest("Invalid or expired OTP. Please try again.");
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new PasswordResetResponseDto
-                {
-                    Success = false,
-                    Message = $"Error resetting password: {ex.Message}"
-                });
+                return StatusCode(500, $"Error resetting password: {ex.Message}");
             }
         }
 
@@ -426,10 +406,7 @@ namespace InternalTrainingSystem.Core.Controllers
             if (!success)
                 return BadRequest("Xác nhận email thất bại hoặc token không hợp lệ.");
 
-            return Ok(new
-            {
-                Message = "Xác nhận email thành công. Bạn có thể đăng nhập vào hệ thống."
-            });
+            return Ok();
         }
     }
 }
