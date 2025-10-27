@@ -38,10 +38,10 @@ namespace InternalTrainingSystem.Core.Models
         public virtual ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
         public virtual ICollection<Class> MentoredClasses { get; set; } = new List<Class>();
         public virtual ICollection<Class> CreatedClasses { get; set; } = new List<Class>();
-        
-        // Many-to-Many relationship with Class (as Employee)
+
+        // Many-to-Many relationship with Class (as Student)
         public virtual ICollection<Class> EnrolledClasses { get; set; } = new List<Class>();
-        
+
         public virtual ICollection<LessonProgress> LessonProgresses { get; set; } = new List<LessonProgress>();
 
     }

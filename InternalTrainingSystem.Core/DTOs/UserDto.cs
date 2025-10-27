@@ -42,6 +42,8 @@ namespace InternalTrainingSystem.Core.DTOs
     public class CreateUserDto
     {
         [Required, StringLength(100)]
+        public string? EmployeeId { get; set; } = string.Empty;
+        [Required, StringLength(100)]
         public string FullName { get; set; } = string.Empty;
 
         [Required, EmailAddress, StringLength(256)]
@@ -82,6 +84,16 @@ namespace InternalTrainingSystem.Core.DTOs
         public bool IsActive { get; set; } = true;
 
         public List<string> Roles { get; set; } = new List<string>();
+    }
+
+    public class UpdateProfileDto
+    {
+        [Required]
+        [StringLength(100)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Phone]
+        public string? PhoneNumber { get; set; }
     }
 
     public class AdminResetPasswordDto

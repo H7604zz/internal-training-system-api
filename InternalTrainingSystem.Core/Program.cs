@@ -59,6 +59,16 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 
+builder.Services.AddHostedService<NotificationCleanupService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEmailSender, EmailSenderService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ICourseEnrollmentService, CourseEnrollmentService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IClassService, ClassService>();
+builder.Services.AddScoped<ICourseMaterialService, CourseMaterialService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+
 // Configure JWT Authentication
 // Read from configuration instead of environment variables directly
 var jwtSecretKey = builder.Configuration["JWT_SECRET_KEY"];
@@ -87,7 +97,7 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero,
         RequireExpirationTime = true
     };
-    
+
     options.Events = new JwtBearerEvents
     {
         OnAuthenticationFailed = context =>
@@ -130,8 +140,6 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Internal Training System API", Version = "v1" });
 });
-
-builder.Services.AddHostedService<NotificationCleanupService>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailSender, EmailSenderService>();

@@ -142,22 +142,24 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public async Task<bool> CreateUserAsync(CreateUserDto req)
         {
-            // Validate department
-            if (!await _context.Departments.AnyAsync(d => d.Id == req.DepartmentId))
-                return false;
-
-            // Validate duplicate email
-            if (await _context.Users.AnyAsync(u => u.Email == req.Email))
-                return false;
+            
 
             // Validate role
             var roleName = string.IsNullOrWhiteSpace(req.RoleName) ? "Staff" : req.RoleName.Trim();
-            if (!UserRoles.All.Contains(roleName, StringComparer.OrdinalIgnoreCase))
-                return false;
+            // ✅ Kiểm tra EmployeeId đã tồn tại chưa
+            var existingUser = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.EmployeeId == req.EmployeeId);
+
+            if (existingUser != null)
+            {
+                // Có thể throw exception hoặc return false tùy yêu cầu
+                throw new InvalidOperationException($"EmployeeId '{req.EmployeeId}' đã tồn tại trong hệ thống.");
+            }
 
             // Map sang ApplicationUser
             var user = new ApplicationUser
             {
+                EmployeeId=req.EmployeeId,
                 UserName = req.Email,
                 Email = req.Email,
                 PhoneNumber = req.Phone,
@@ -270,5 +272,15 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
            return _context.Roles.ToList();
         }
+
+        public async Task<ApplicationUser?> GetUserProfileAsync(string userId)
+        {
+            return await _context.Users
+                .Include(u => u.Department)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+
+
+        
     }
 }

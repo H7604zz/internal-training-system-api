@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -19,7 +20,7 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
 
-        private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR};
+        private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR };
 
         public UserController(IUserService userServices, UserManager<ApplicationUser> userManager, ICourseEnrollmentService courseEnrollmentService)
         {
@@ -40,13 +41,15 @@ namespace InternalTrainingSystem.Core.Controllers
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Unauthorized(ApiResponseDto.ErrorResult("User not found"));
+                    return NotFound("User not found");
                 }
 
-                var user = await _userManager.FindByIdAsync(userId);
+                // Sử dụng UserService để lấy user profile
+                var user = await _userService.GetUserProfileAsync(userId);
+                    
                 if (user == null)
                 {
-                    return NotFound(ApiResponseDto.ErrorResult("User not found"));
+                    return NotFound("User not found");
                 }
 
                 var roles = await _userManager.GetRolesAsync(user);
@@ -54,23 +57,90 @@ namespace InternalTrainingSystem.Core.Controllers
                 var userProfile = new UserProfileDto
                 {
                     Id = user.Id,
+                    EmployeeId = user.EmployeeId,
                     FullName = user.FullName,
                     Email = user.Email!,
-                    EmployeeId = user.EmployeeId,
+                    PhoneNumber = user.PhoneNumber!,
                     Department = user.Department?.Name,
                     Position = user.Position,
-                    Roles = roles.ToList(),
+                    CurrentRole = roles.FirstOrDefault(),
                     IsActive = user.IsActive,
                     LastLoginDate = user.LastLoginDate
                 };
 
-                return Ok(ApiResponseDto.SuccessResult(new { user = userProfile }));
+                return Ok(userProfile);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponseDto.ErrorResult($"Error retrieving profile: {ex.Message}"));
+                return BadRequest();
             }
         }
+
+        /// <summary>
+        /// Cập nhật thông tin người dùng (tên và sđt)
+        /// </summary>
+        [HttpPatch("update-profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto)
+        {
+            try
+            {
+                // Lấy ID người dùng từ token
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized("Không xác định được người dùng hiện tại.");
+                }
+
+                // Tìm user
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy người dùng.");
+                }
+
+                // Validate FullName
+                if (string.IsNullOrWhiteSpace(updateProfileDto.FullName))
+                {
+                    return BadRequest("Họ tên không được để trống.");
+                }
+
+                // Validate PhoneNumber
+                if (!string.IsNullOrWhiteSpace(updateProfileDto.PhoneNumber))
+                {
+                    var phone = updateProfileDto.PhoneNumber.Trim();
+
+                    // Kiểm tra đúng 10 chữ số
+                    if (!Regex.IsMatch(phone, @"^\d{10}$"))
+                    {
+                        return BadRequest("Số điện thoại phải gồm đúng 10 chữ số");
+                    }
+
+                    user.PhoneNumber = phone;
+                }
+                else
+                {
+                    user.PhoneNumber = null;
+                }
+
+                // Cập nhật thông tin
+                user.FullName = updateProfileDto.FullName.Trim();
+
+                var result = await _userManager.UpdateAsync(user);
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                    return BadRequest($"Cập nhật thất bại: {errors}");
+                }
+
+                return Ok("Cập nhật thông tin thành công.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Đã xảy ra lỗi khi cập nhật hồ sơ: {ex.Message}");
+            }
+        }
+
 
         [HttpGet("by-role")]
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]

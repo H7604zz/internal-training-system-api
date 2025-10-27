@@ -22,36 +22,36 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         public async Task<(string url, string relativePath)> SaveAsync(
-            IFormFile file, string subFolder, CancellationToken ct = default)
+    IFormFile file, string subFolder, CancellationToken ct = default)
         {
-            // Normalize key
             var ext = Path.GetExtension(file.FileName);
             var name = Path.GetFileNameWithoutExtension(file.FileName);
+
             var safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
             var key = $"{subFolder.Trim('/')}/{safeName}_{Guid.NewGuid():N}{ext}".Replace("\\", "/");
 
-            // Upload
             using var stream = file.OpenReadStream();
             var put = new PutObjectRequest
             {
                 BucketName = _bucket,
                 Key = key,
                 InputStream = stream,
-                ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType
-                // CannedACL = S3CannedACL.PublicRead  // uncomment ONLY if you want objects public
+                ContentType = string.IsNullOrWhiteSpace(file.ContentType)
+                    ? "application/octet-stream"
+                    : file.ContentType
             };
+
             var resp = await _s3.PutObjectAsync(put, ct);
             if ((int)resp.HttpStatusCode >= 300)
                 throw new InvalidOperationException($"S3 upload failed ({resp.HttpStatusCode}).");
 
-            // Build URL:
-            // - If bucket/objects are public and you set AWS_S3_PUBLIC_BASE_URL → return nice HTTPS URL
-            // - Else return an s3:// style path; your app can generate pre-signed URLs later if needed
+            // nếu có public base url => trả public url (bucket mở policy public)
+            // nếu không => trả presigned url ngắn hạn
             var url = _publicBaseUrl is not null
-                ? $"{_publicBaseUrl}/{key}"
-                : $"s3://{_bucket}/{key}";
+                      ? $"{_publicBaseUrl}/{key}"
+                      : GetReadUrl(key, TimeSpan.FromMinutes(10));
 
-            // relativePath = key for DB (used for delete)
+
             return (url, key);
         }
 

@@ -91,6 +91,9 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? ContentHtml { get; set; }
 
         public bool UploadBinary { get; set; } = false;
+
+        public string? QuizTitle { get; set; }
+        public bool IsQuizExcel { get; set; } = false;
     }
 
     // Module full course
@@ -131,6 +134,9 @@ namespace InternalTrainingSystem.Core.DTOs
         [RegularExpression("Beginner|Intermediate|Advanced",
             ErrorMessage = "Cấp độ chỉ được phép là 'Beginner', 'Intermediate' hoặc 'Advanced'.")]
         public string Level { get; set; } = "Beginner";
+        public bool IsOnline { get; set; } = true;
+
+        public bool IsMandatory { get; set; } = false;
 
         public List<int> Departments { get; set; } = new();
 

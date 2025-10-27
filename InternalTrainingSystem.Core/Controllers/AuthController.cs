@@ -95,7 +95,7 @@ namespace InternalTrainingSystem.Core.Controllers
                                 EmployeeId = user.EmployeeId,
                                 Department = user.Department?.Name,
                                 Position = user.Position,
-                                Roles = roles.ToList(),
+                                CurrentRole = roles.FirstOrDefault(),
                                 IsActive = user.IsActive,
                                 LastLoginDate = user.LastLoginDate
                             },
@@ -161,29 +161,52 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ApiResponseDto.ErrorResult("Invalid input data"));
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return BadRequest(errors);
+                }
+
+                // Additional validation for password confirmation
+                if (request.NewPassword != request.ConfirmPassword)
+                {
+                    return BadRequest();
                 }
 
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Unauthorized(ApiResponseDto.ErrorResult("User not found"));
+                    return Unauthorized();
                 }
 
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user == null)
                 {
-                    return NotFound(ApiResponseDto.ErrorResult("User not found"));
+                    return NotFound();
+                }
+
+                // Verify current password
+                var isCurrentPasswordValid = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
+                if (!isCurrentPasswordValid)
+                {
+                    return BadRequest(ApiResponseDto.ErrorResult("Current password is incorrect"));
+                }
+
+                // Check if new password is same as current password
+                if (request.CurrentPassword == request.NewPassword)
+                {
+                    return BadRequest(ApiResponseDto.ErrorResult("New password must be different from current password"));
                 }
 
                 var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
                 if (result.Succeeded)
                 {
-                    return Ok(ApiResponseDto.SuccessResult(null, "Password changed successfully"));
+                    return Ok();
                 }
 
-                var errors = result.Errors.Select(e => e.Description).ToList();
-                return BadRequest(ApiResponseDto.ErrorResult("Failed to change password", errors));
+                var changePasswordErrors = result.Errors.Select(e => e.Description).ToList();
+                return BadRequest();
             }
             catch (Exception ex)
             {
@@ -246,7 +269,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
                 // Validate refresh token using JWT service
                 var tokenResponse = await _jwtService.RefreshTokenAsync(request.RefreshToken);
-                
+
                 if (tokenResponse == null || !tokenResponse.Success)
                 {
                     return Unauthorized(new LoginResponseDto
@@ -281,7 +304,7 @@ namespace InternalTrainingSystem.Core.Controllers
                         EmployeeId = user.EmployeeId,
                         Department = user.Department?.Name,
                         Position = user.Position,
-                        Roles = roles.ToList(),
+                        CurrentRole = roles.FirstOrDefault(),
                         IsActive = user.IsActive,
                         LastLoginDate = user.LastLoginDate
                     },
@@ -302,24 +325,5 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
-        /// <summary>
-        /// API xác nhận email người dùng từ link gửi trong email.
-        /// </summary>
-        [HttpGet("verify-account")]
-        public async Task<IActionResult> VerifyAccount([FromQuery] string userId, [FromQuery] string token)
-        {
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
-                return BadRequest("Thiếu thông tin xác nhận email.");
-
-            var success = await _userService.VerifyAccountAsync(userId, token);
-
-            if (!success)
-                return BadRequest("Xác nhận email thất bại hoặc token không hợp lệ.");
-
-            return Ok(new
-            {
-                Message = "Xác nhận email thành công. Bạn có thể đăng nhập vào hệ thống."
-            });
-        }
     }
 }

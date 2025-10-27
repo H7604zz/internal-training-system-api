@@ -333,11 +333,11 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
-        [HttpPost("full")]
+        // POST: /api/courses
+        [HttpPost]
         [RequestSizeLimit(600 * 1024 * 1024)]
         //[Authorize(Roles = UserRoles.TrainingDepartment)]
-        public async Task<IActionResult> CreateFullCourse(
-                                                          [FromForm] CreateFullCourseFormDto form,
+        public async Task<IActionResult> CreateFullCourse([FromForm] CreateFullCourseFormDto form,
                                                            CancellationToken ct)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
