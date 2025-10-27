@@ -17,29 +17,37 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _context = applicationDbContext;
         }
 
-        public async Task SaveNotificationAsync(Notification courseNotification)
+        public async Task SaveNotificationAsync(Notification notification,List<string>? userIds = null,List<string>? roleNames = null)
         {
-            try
+            var recipients = new List<NotificationRecipient>();
+
+            // Thêm người nhận theo userId cụ thể
+            if (userIds != null && userIds.Any())
             {
-                _context.Notifications.Add(courseNotification);
-                await _context.SaveChangesAsync();
+                recipients.AddRange(userIds.Select(uid => new NotificationRecipient
+                {
+                    UserId = uid
+                }));
             }
-            catch (Exception ex)
+
+            // Thêm người nhận theo role cụ thể
+            if (roleNames != null && roleNames.Any())
             {
-                throw new InvalidOperationException($"{ex.Message}", ex);
+                recipients.AddRange(roleNames.Select(r => new NotificationRecipient
+                {
+                    RoleName = r
+                }));
             }
+            notification.Recipients = recipients;
+
+            await _context.Notifications.AddAsync(notification);
+            await _context.SaveChangesAsync();
         }
 
         public Notification? GetNotificationByCourseAndType(int courseId, NotificationType type)
         {
             return _context.Notifications
                 .FirstOrDefault(n => n.CourseId == courseId && n.Type == type);
-        }
-
-        public Notification? GetNotificationByUserAndType(string userId, NotificationType type)
-        {
-            return _context.Notifications
-                .FirstOrDefault(n => n.UserId == userId && n.Type == type);
         }
 
         public Notification? GetNotificationByClassAndType(int classId, NotificationType type)
@@ -56,7 +64,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .Any(n =>
                     n.Type == type &&
                     n.CourseId == courseId &&
-                    n.CreatedAt >= since
+                    n.SentAt >= since
                 );
         }
 
@@ -72,5 +80,27 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 _context.SaveChanges();
             }
         }
+
+        public async Task<List<Notification>> GetNotificationsAsync(string? userId = null, string? roleName = null)
+        {
+            var query = _context.Notifications
+                .Include(n => n.Recipients)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                query = query.Where(n => n.Recipients.Any(r => r.UserId == userId));
+            }
+
+            if (!string.IsNullOrEmpty(roleName))
+            {
+                query = query.Where(n => n.Recipients.Any(r => r.RoleName == roleName));
+            }
+
+            return await query
+                .OrderByDescending(n => n.SentAt)
+                .ToListAsync();
+        }
+
     }
 }

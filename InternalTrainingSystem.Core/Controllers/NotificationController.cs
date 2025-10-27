@@ -98,24 +98,34 @@ namespace InternalTrainingSystem.Core.Controllers
             _notificationService.DeleteOldNotifications(courseId, NotificationType.Start);
 
             _notificationService.SaveNotificationAsync(new Notification
-            {
-                CourseId = courseId,
-                Type = NotificationType.Start,
-                SentAt = DateTime.Now,
-                CreatedAt = DateTime.Now,
-            });
+                {
+                    CourseId = courseId,
+                    Type = NotificationType.Start,
+                    SentAt = DateTime.Now,
+                },
+                userIds: eligiblePaged.Items.Select(u => u.Id).ToList()!
+            );
             return Ok();
         }
-
-        [HttpGet("{courseId}/notification-status/{type}")]
-        [Authorize]
-        public IActionResult CheckNotificationStatus(int courseId, NotificationType type)
+         
+        [HttpGet]
+        public async Task<IActionResult> GetNotifications([FromQuery] string? userId, [FromQuery] string? roleName)
         {
-            var notification = _notificationService.GetNotificationByCourseAndType(courseId, type);
-            if (notification == null)
-                return Ok(new { sent = false });
-
-            return Ok(new { sent = true, sentAt = notification.SentAt });
+            var notifications = await _notificationService.GetNotificationsAsync(userId, roleName);
+            return Ok(notifications.Select(n => new
+            {
+                n.Id,
+                n.Type,
+                n.Message,
+                n.SentAt,
+                Recipients = n.Recipients.Select(r => new
+                {
+                    r.UserId,
+                    r.RoleName,
+                    r.IsRead,
+                    r.ReadAt
+                })
+            }));
         }
     }
 }

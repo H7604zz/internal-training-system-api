@@ -413,8 +413,8 @@ namespace InternalTrainingSystem.Core.Controllers
 
         }
 
-        [HttpPost("{courseId}/finalize-enrollments")]
-        [Authorize(Roles = UserRoles.TrainingDepartment)]
+        [HttpPost("{courseCode}/finalize-enrollments")]
+        //[Authorize(Roles = UserRoles.DirectManager)]
         public async Task<IActionResult> FinalizeEnrollments(string courseCode)
         {
 
@@ -437,8 +437,8 @@ namespace InternalTrainingSystem.Core.Controllers
             var eligiblePaged = _userService.GetEligibleStaff(course.CourseId, searchDto);
             var enrollmentsToAdd = new List<CourseEnrollment>();
             foreach (var user in eligiblePaged.Items)
-            { 
-                if(user.Status == EnrollmentConstants.Status.NotEnrolled)
+            {
+                if (user.Status == EnrollmentConstants.Status.NotEnrolled)
                 {
                     enrollmentsToAdd.Add(new CourseEnrollment
                     {
@@ -451,16 +451,20 @@ namespace InternalTrainingSystem.Core.Controllers
                 }
             }
             if (enrollmentsToAdd.Any())
-            {
+            { 
                 await _courseEnrollmentService.AddRangeAsync(enrollmentsToAdd);
             }
 
-            await _notificationService.SaveNotificationAsync(new Notification
-            {
-                CourseId = course.CourseId,
-                Type = NotificationType.CourseFinalized,
-                SentAt = DateTime.Now,
-            });
+            await _notificationService.SaveNotificationAsync(
+                new Notification
+                {
+                    CourseId = course.CourseId,
+                    Message = $"Danh sách nhân viên trong khóa học khoá học {course.CourseName} đã được hoàn tất.",
+                    Type = NotificationType.CourseFinalized,
+                    SentAt = DateTime.Now,
+                },
+                roleNames: new List<string> { UserRoles.TrainingDepartment }
+            );
 
             await _hub.Clients.Group($"finalize-enrollments-{course.Code}").SendAsync("ReceiveNotification", new
             {

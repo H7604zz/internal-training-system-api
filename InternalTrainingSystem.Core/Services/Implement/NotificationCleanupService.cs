@@ -34,7 +34,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 var cutoffDate = DateTime.Now.AddDays(-14);
 
                 var oldNotifications = await context.Notifications
-                    .Where(n => n.CreatedAt < cutoffDate)
+                    .Where(n => n.SentAt < cutoffDate)
                     .ToListAsync();
 
                 if (oldNotifications.Any())
