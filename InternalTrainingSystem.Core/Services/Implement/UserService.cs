@@ -142,11 +142,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public async Task<bool> CreateUserAsync(CreateUserDto req)
         {
-            
-
-            // Validate role
-            var roleName = string.IsNullOrWhiteSpace(req.RoleName) ? "Staff" : req.RoleName.Trim();
-            // ✅ Kiểm tra EmployeeId đã tồn tại chưa
+            // Kiểm tra EmployeeId đã tồn tại chưa
             var existingUser = await _userManager.Users
                 .FirstOrDefaultAsync(u => u.EmployeeId == req.EmployeeId);
 
@@ -176,20 +172,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (!createResult.Succeeded)
                 return false;
 
-            // Đảm bảo chỉ 1 role
-            if (!await _roleManager.RoleExistsAsync(roleName))
-                await _roleManager.CreateAsync(new IdentityRole(roleName));
-
-            var currentRoles = await _userManager.GetRolesAsync(user);
-            if (currentRoles.Any())
-                await _userManager.RemoveFromRolesAsync(user, currentRoles);
-
-            var addRoleResult = await _userManager.AddToRoleAsync(user, roleName);
+            var addRoleResult = await _userManager.AddToRoleAsync(user, req.RoleName!);
             if (!addRoleResult.Succeeded)
                 return false;
-
-            // Bắt đổi mật khẩu lần đầu
-            await _userManager.AddClaimAsync(user, new Claim("MustChangePassword", "true"));
 
             // Link xác nhận email
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -224,7 +209,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     <b>Phòng IT</b></p>
                 </body>
                 </html>";
-            await _emailSender.SendEmailAsync(user.Email!, subject, body);
+
+            Hangfire.BackgroundJob.Enqueue(() => _emailSender.SendEmailAsync(
+                    user.Email!,
+                    subject,
+                    body
+            ));
 
             return true;
         }
