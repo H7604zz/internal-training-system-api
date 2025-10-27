@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -59,7 +60,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     EmployeeId = user.EmployeeId,
                     FullName = user.FullName,
                     Email = user.Email!,
-                    Phone = user.PhoneNumber!,
+                    PhoneNumber = user.PhoneNumber!,
                     Department = user.Department?.Name,
                     Position = user.Position,
                     CurrentRole = roles.FirstOrDefault(),
@@ -74,46 +75,72 @@ namespace InternalTrainingSystem.Core.Controllers
                 return BadRequest();
             }
         }
-        
+
         /// <summary>
-        /// Update current user profile
+        /// Cập nhật thông tin người dùng (tên và sđt)
         /// </summary>
-        [HttpPut()]
+        [HttpPatch("update-profile")]
         [Authorize]
-        public async Task<ActionResult<ApiResponseDto>> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto)
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto)
         {
             try
             {
+                // Lấy ID người dùng từ token
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Unauthorized();
+                    return Unauthorized("Không xác định được người dùng hiện tại.");
                 }
 
+                // Tìm user
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user == null)
                 {
-                    return NotFound();
+                    return NotFound("Không tìm thấy người dùng.");
                 }
 
-                // Update only allowed fields
+                // Validate FullName
+                if (string.IsNullOrWhiteSpace(updateProfileDto.FullName))
+                {
+                    return BadRequest("Họ tên không được để trống.");
+                }
+
+                // Validate PhoneNumber
+                if (!string.IsNullOrWhiteSpace(updateProfileDto.PhoneNumber))
+                {
+                    var phone = updateProfileDto.PhoneNumber.Trim();
+
+                    // Kiểm tra đúng 10 chữ số
+                    if (!Regex.IsMatch(phone, @"^\d{10}$"))
+                    {
+                        return BadRequest("Số điện thoại phải gồm đúng 10 chữ số");
+                    }
+
+                    user.PhoneNumber = phone;
+                }
+                else
+                {
+                    user.PhoneNumber = null;
+                }
+
+                // Cập nhật thông tin
                 user.FullName = updateProfileDto.FullName.Trim();
-                user.PhoneNumber = string.IsNullOrWhiteSpace(updateProfileDto.PhoneNumber) ? null : updateProfileDto.PhoneNumber.Trim();
 
                 var result = await _userManager.UpdateAsync(user);
                 if (!result.Succeeded)
                 {
-                    var errors = result.Errors.Select(e => e.Description).ToList();
-                    return BadRequest();
+                    var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                    return BadRequest($"Cập nhật thất bại: {errors}");
                 }
 
-                return Ok();
+                return Ok("Cập nhật thông tin thành công.");
             }
             catch (Exception ex)
             {
-                return BadRequest($"Error updating profile: {ex.Message}");
+                return BadRequest($"Đã xảy ra lỗi khi cập nhật hồ sơ: {ex.Message}");
             }
         }
+
 
         [HttpGet("by-role")]
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
