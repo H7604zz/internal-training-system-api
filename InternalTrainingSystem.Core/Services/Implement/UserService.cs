@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using InternalTrainingSystem.Core.Utils;
@@ -21,15 +22,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
         private readonly ApplicationDbContext _context;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IEmailSender _emailSender;
         private readonly IConfiguration _config;
 
-        public UserService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IEmailSender emailSender, IConfiguration config)
+        public UserService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IConfiguration config)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
-            _emailSender = emailSender;
             _config = config;
         }
 
@@ -222,7 +221,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     <b>Phòng IT</b></p>
                 </body>
                 </html>";
-            await _emailSender.SendEmailAsync(user.Email!, subject, body);
+            await EmailHelper.SendEmailAsync(user.Email!, subject, body);
 
             return true;
         }
