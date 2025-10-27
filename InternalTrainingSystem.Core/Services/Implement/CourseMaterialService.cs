@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Constants;
+﻿using ClosedXML.Excel;
+using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
@@ -338,6 +339,114 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             await _context.SaveChangesAsync(ct);
             return true;
+        }
+        public async Task<Lesson> CreateQuizLessonFromExcelAsync(CreateQuizLessonRequest req, CancellationToken ct = default)
+        {
+            // 1. Kiểm tra module tồn tại & lấy CourseId
+            var module = await _context.CourseModules
+                .Include(m => m.Course)
+                .FirstOrDefaultAsync(m => m.Id == req.ModuleId, ct);
+
+            if (module == null)
+                throw new ArgumentException("Module not found.");
+
+            if (req.ExcelFile == null || req.ExcelFile.Length == 0)
+                throw new ArgumentException("Excel file is required.");
+
+            var ext = Path.GetExtension(req.ExcelFile.FileName).ToLowerInvariant();
+            if (ext != ".xlsx" && ext != ".xls")
+                throw new ArgumentException("Only .xlsx or .xls is allowed for quiz import.");
+
+            // 2. Tạo Quiz rỗng trước
+            var quiz = new Quiz
+            {
+                // giả sử Quiz có các field như:
+                // QuizId (identity)
+                Title = string.IsNullOrWhiteSpace(req.QuizTitle) ? req.Title : req.QuizTitle,
+                CourseId = module.CourseId,
+                CreatedDate = DateTime.UtcNow,
+                IsActive = true
+            };
+
+            _context.Quizzes.Add(quiz);
+            await _context.SaveChangesAsync(ct); // để có QuizId
+
+            // 3. Đọc file Excel và build câu hỏi + đáp án
+            using (var stream = req.ExcelFile.OpenReadStream())
+            using (var workbook = new XLWorkbook(stream))
+            {
+                // Lấy sheet đầu tiên
+                var ws = workbook.Worksheets.First();
+
+                // Giả định hàng đầu tiên là header
+                // QuestionText | OptionA | OptionB | OptionC | OptionD | CorrectOption | Score
+                var firstDataRow = 2;
+                var lastRow = ws.LastRowUsed().RowNumber();
+
+                for (int row = firstDataRow; row <= lastRow; row++)
+                {
+                    var questionText = ws.Cell(row, 1).GetString().Trim();
+                    var optA = ws.Cell(row, 2).GetString().Trim();
+                    var optB = ws.Cell(row, 3).GetString().Trim();
+                    var optC = ws.Cell(row, 4).GetString().Trim();
+                    var optD = ws.Cell(row, 5).GetString().Trim();
+                    var correctOpt = ws.Cell(row, 6).GetString().Trim().ToUpperInvariant(); // "A"/"B"/"C"/"D"
+                    var scoreVal = ws.Cell(row, 7).TryGetValue<double>(out var pts) ? pts : 1.0;
+
+                    if (string.IsNullOrWhiteSpace(questionText))
+                        continue; // bỏ qua dòng trống
+
+                    // 3.1 tạo Question
+                    var question = new Question
+                    {
+                        // QuestionId (identity)
+                        QuizId = quiz.QuizId,
+                        QuestionText = questionText,
+                        Points = (int)Math.Round(pts)
+                    };
+                    _context.Questions.Add(question);
+                    await _context.SaveChangesAsync(ct); // để có QuestionId
+
+                    // 3.2 tạo các Answer
+                    // Helper local func
+                    async Task AddAnswer(string text, bool isCorrect)
+                    {
+                        if (string.IsNullOrWhiteSpace(text)) return;
+                        var ans = new Answer
+                        {
+                            QuestionId = question.QuestionId,
+                            AnswerText = text,
+                            IsCorrect = isCorrect
+                        };
+                        _context.Answers.Add(ans);
+                        await _context.SaveChangesAsync(ct);
+                    }
+
+                    await AddAnswer(optA, correctOpt == "A");
+                    await AddAnswer(optB, correctOpt == "B");
+                    await AddAnswer(optC, correctOpt == "C");
+                    await AddAnswer(optD, correctOpt == "D");
+                }
+            }
+
+            // 4. Tạo Lesson type = Quiz, link tới quiz vừa tạo
+            var lesson = new Lesson
+            {
+                ModuleId = req.ModuleId,
+                Title = string.IsNullOrWhiteSpace(req.Title) ? quiz.Title : req.Title,
+                Type = LessonType.Quiz,
+                OrderIndex = req.OrderIndex,
+                QuizId = quiz.QuizId,
+
+                // Quiz lesson không cần ContentUrl / ContentHtml
+                ContentUrl = null,
+                ContentHtml = null
+            };
+
+            _context.Lessons.Add(lesson);
+            await _context.SaveChangesAsync(ct);
+
+            return lesson;
         }
     }
 }

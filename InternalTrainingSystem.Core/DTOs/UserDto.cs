@@ -39,31 +39,28 @@ namespace InternalTrainingSystem.Core.DTOs
     }
     public class CreateUserDto
     {
-        [Required]
-        [StringLength(100)]
+        [Required, StringLength(100)]
+        public string? EmployeeId { get; set; } = string.Empty;
+        [Required, StringLength(100)]
         public string FullName { get; set; } = string.Empty;
 
-        [Required]
-        [EmailAddress]
+        [Required, EmailAddress, StringLength(256)]
         public string Email { get; set; } = string.Empty;
 
+        [Phone, StringLength(30)]
+        public string? Phone { get; set; }
+
         [Required]
-        [StringLength(100, MinimumLength = 6)]
-        public string Password { get; set; } = string.Empty;
-
-        [StringLength(20)]
-        public string? EmployeeId { get; set; }
-
-        [StringLength(100)]
-        public string? Department { get; set; }
+        public int DepartmentId { get; set; }
 
         [StringLength(100)]
         public string? Position { get; set; }
 
-        public DateTime? HireDate { get; set; }
-
-        public List<string> Roles { get; set; } = new List<string>();
+        // Chỉ một Role duy nhất
+        [StringLength(256)]
+        public string? RoleName { get; set; } = "Staff";
     }
+
 
     public class UpdateUserDto
     {
@@ -107,7 +104,6 @@ namespace InternalTrainingSystem.Core.DTOs
     public class UserSearchDto
     {
         public string? SearchTerm { get; set; }
-        public string? Department { get; set; }
         public string? status { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;

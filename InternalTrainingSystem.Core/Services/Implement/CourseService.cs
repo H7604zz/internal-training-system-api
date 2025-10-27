@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using ClosedXML.Excel;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
@@ -13,10 +14,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
     public class CourseService : ICourseService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IFileStorage _storage;
+        private readonly ICourseMaterialService _courseMaterialService;
+        private const double AverageRatingPass = 4.5;
 
-        public CourseService(ApplicationDbContext context)
+        public CourseService(ApplicationDbContext context, IFileStorage storage,
+        ICourseMaterialService courseMaterialService)
         {
             _context = context;
+            _storage = storage;
+            _courseMaterialService = courseMaterialService;
         }
 
         // Hàm lấy ra Course theo code
@@ -572,7 +579,248 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<Course> CreateFullCourseAsync(CreateFullCourseMetadataDto meta,
+                                IList<IFormFile> lessonFiles, string createdByUserId, CancellationToken ct = default)
+        {
+            await using var tx = await _context.Database.BeginTransactionAsync(ct);
+            try
+            {
+                var course = new Course
+                {
+                    Code = meta.CourseCode.Trim(),
+                    CourseName = meta.CourseName.Trim(),
+                    Description = meta.Description,
+                    CourseCategoryId = meta.CourseCategoryId,
+                    Duration = meta.Duration,
+                    Level = meta.Level,
+                    Status = CourseConstants.Status.Pending,
+                    CreatedDate = DateTime.UtcNow,
+                    IsOnline = meta.IsOnline,
+                    IsMandatory = meta.IsMandatory,
+                    CreatedById = createdByUserId
+                };
 
-        
+                if (meta.Departments?.Any() == true)
+                {
+                    var deps = await _context.Departments
+                        .Where(d => meta.Departments.Contains(d.Id))
+                        .ToListAsync(ct);
+
+                    if (deps.Count != meta.Departments.Count)
+                        throw new ArgumentException("Some DepartmentIds are invalid");
+
+                    foreach (var d in deps)
+                        course.Departments.Add(d);
+                }
+
+                await _context.Courses.AddAsync(course, ct);
+                await _context.SaveChangesAsync(ct); 
+
+                var fileCursor = 0;
+
+                foreach (var modSpec in meta.Modules.OrderBy(m => m.OrderIndex))
+                {
+                    var module = new CourseModule
+                    {
+                        CourseId = course.CourseId,
+                        Title = modSpec.Title.Trim(),
+                        Description = modSpec.Description,
+                        OrderIndex = modSpec.OrderIndex
+                    };
+
+                    await _context.CourseModules.AddAsync(module, ct);
+                    await _context.SaveChangesAsync(ct); 
+
+                    foreach (var lessonSpec in modSpec.Lessons.OrderBy(l => l.OrderIndex))
+                    {
+                        Lesson newLesson;
+
+                        if (lessonSpec.Type == LessonType.Quiz && lessonSpec.IsQuizExcel)
+                        {
+                            if (fileCursor >= lessonFiles.Count)
+                                throw new ArgumentException("Thiếu file Excel cho lesson Quiz.");
+
+                            var excelFile = lessonFiles[fileCursor++];
+
+                            var quizId = await ImportQuizFromExcelInternal(
+                                course.CourseId,
+                                lessonSpec.QuizTitle ?? lessonSpec.Title,
+                                excelFile,
+                                ct
+                            );
+
+                            newLesson = new Lesson
+                            {
+                                ModuleId = module.Id,
+                                Title = lessonSpec.Title.Trim(),
+                                Type = LessonType.Quiz,
+                                OrderIndex = lessonSpec.OrderIndex,
+                                QuizId = quizId
+                            };
+
+                            await _context.Lessons.AddAsync(newLesson, ct);
+                            await _context.SaveChangesAsync(ct);
+
+                            continue;
+                        }
+
+                        if (lessonSpec.UploadBinary &&
+                            (lessonSpec.Type == LessonType.File ||
+                             lessonSpec.Type == LessonType.Video ||
+                             lessonSpec.Type == LessonType.Reading))
+                        {
+                            if (fileCursor >= lessonFiles.Count)
+                                throw new ArgumentException("Thiếu file binary cho lesson UploadBinary=true.");
+
+                            var binFile = lessonFiles[fileCursor++];
+
+                            newLesson = new Lesson
+                            {
+                                ModuleId = module.Id,
+                                Title = lessonSpec.Title.Trim(),
+                                Type = lessonSpec.Type,
+                                OrderIndex = lessonSpec.OrderIndex,
+                                ContentHtml = lessonSpec.ContentHtml
+                            };
+
+                            await _context.Lessons.AddAsync(newLesson, ct);
+                            await _context.SaveChangesAsync(ct); 
+
+                            await _courseMaterialService.UploadLessonBinaryAsync(newLesson.Id, binFile, ct);
+
+                            continue;
+                        }
+
+                        newLesson = new Lesson
+                        {
+                            ModuleId = module.Id,
+                            Title = lessonSpec.Title.Trim(),
+                            Type = lessonSpec.Type,
+                            OrderIndex = lessonSpec.OrderIndex,
+                            ContentUrl = lessonSpec.ContentUrl,
+                            ContentHtml = lessonSpec.ContentHtml
+                        };
+
+                        await _context.Lessons.AddAsync(newLesson, ct);
+                        await _context.SaveChangesAsync(ct);
+                    }
+                }
+
+                await tx.CommitAsync(ct);
+                return course;
+            }
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
+            }
+        }
+        private async Task<int> ImportQuizFromExcelInternal(int courseId, string quizTitle,
+                                                            IFormFile excelFile, CancellationToken ct)
+        {
+            if (excelFile == null || excelFile.Length == 0)
+                throw new ArgumentException("Quiz Excel file is empty.");
+
+            using var stream = excelFile.OpenReadStream();
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheets.FirstOrDefault();
+            if (worksheet == null)
+                throw new ArgumentException("Invalid Excel format: no worksheet found.");
+
+            var quiz = new Quiz
+            {
+                CourseId = courseId,
+                Title = quizTitle,
+                Description = $"Imported from {excelFile.FileName}",
+                TimeLimit = 30,
+                MaxAttempts = 3,
+                PassingScore = 70,
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            _context.Quizzes.Add(quiz);
+            await _context.SaveChangesAsync(ct);
+
+            int row = 2; 
+            int order = 1;
+
+            while (!worksheet.Row(row).IsEmpty())
+            {
+                var qText = worksheet.Cell(row, 1).GetString().Trim();
+                if (string.IsNullOrWhiteSpace(qText))
+                {
+                    row++;
+                    continue;
+                }
+
+                var qType = worksheet.Cell(row, 2).GetString().Trim();
+                var points = worksheet.Cell(row, 3).GetValue<int?>() ?? 1;
+
+                var question = new Question
+                {
+                    QuizId = quiz.QuizId,
+                    QuestionText = qText,
+                    QuestionType = string.IsNullOrWhiteSpace(qType)
+                        ? QuizConstants.QuestionTypes.MultipleChoice
+                        : qType,
+                    Points = points,
+                    OrderIndex = order++,
+                    IsActive = true,
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                _context.Questions.Add(question);
+                await _context.SaveChangesAsync(ct);
+
+                var answers = new List<Answer>();
+                int col = 4;
+                int answerIndex = 1;
+                while (true)
+                {
+                    var answerText = worksheet.Cell(row, col).GetString();
+                    if (string.IsNullOrWhiteSpace(answerText))
+                        break;
+
+                    var isCorrect = false;
+                    var correctCol = col + 1;
+                    if (!worksheet.Cell(row, correctCol).IsEmpty())
+                    {
+                        var rawVal = worksheet.Cell(row, correctCol).GetString().Trim().ToLower();
+                        isCorrect = rawVal is "true" or "1" or "x" or "yes";
+                    }
+
+                    answers.Add(new Answer
+                    {
+                        QuestionId = question.QuestionId,
+                        AnswerText = answerText.Trim(),
+                        IsCorrect = isCorrect,
+                        OrderIndex = answerIndex++,
+                        IsActive = true
+                    });
+
+                    col += 2;
+                }
+
+                if (answers.Count == 0)
+                {
+                    answers.Add(new Answer
+                    {
+                        QuestionId = question.QuestionId,
+                        AnswerText = "(Essay answer)",
+                        IsCorrect = true,
+                        OrderIndex = 1
+                    });
+                }
+
+                _context.Answers.AddRange(answers);
+                await _context.SaveChangesAsync(ct);
+
+                row++;
+            }
+
+            return quiz.QuizId;
+        }
+
     }
 }

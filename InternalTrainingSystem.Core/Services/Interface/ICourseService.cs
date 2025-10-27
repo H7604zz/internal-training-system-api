@@ -20,6 +20,8 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus);
         Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason);
         Task<Course> GetCourseByCourseCodeAsync(string courseCode);
+        Task<Course> CreateFullCourseAsync(CreateFullCourseMetadataDto meta, IList<IFormFile> lessonFiles,
+                                            string createdByUserId, CancellationToken ct = default);
 
     }
 }

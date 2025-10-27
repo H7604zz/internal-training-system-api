@@ -40,7 +40,6 @@ namespace InternalTrainingSystem.Core.Controllers
                 Page = 1,
                 PageSize = int.MaxValue,
                 SearchTerm = null,
-                Department = null,
                 status = null
             };
             var eligiblePaged = _userService.GetEligibleStaff(courseId, searchDto);

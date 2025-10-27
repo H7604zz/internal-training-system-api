@@ -40,13 +40,15 @@ namespace InternalTrainingSystem.Core.Controllers
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Unauthorized(ApiResponseDto.ErrorResult("User not found"));
+                    return NotFound("User not found");
                 }
 
-                var user = await _userManager.FindByIdAsync(userId);
+                // Sử dụng UserService để lấy user profile
+                var user = await _userService.GetUserProfileAsync(userId);
+                    
                 if (user == null)
                 {
-                    return NotFound(ApiResponseDto.ErrorResult("User not found"));
+                    return NotFound("User not found");
                 }
 
                 var roles = await _userManager.GetRolesAsync(user);
@@ -54,22 +56,22 @@ namespace InternalTrainingSystem.Core.Controllers
                 var userProfile = new UserProfileDto
                 {
                     Id = user.Id,
+                    EmployeeId = user.EmployeeId,
                     FullName = user.FullName,
                     Email = user.Email!,
-                    EmployeeId = user.EmployeeId,
+                    Phone = user.PhoneNumber!,
                     Department = user.Department?.Name,
                     Position = user.Position,
-                    PhoneNumber = user.PhoneNumber,
-                    Roles = roles.ToList(),
+                    CurrentRole = roles.FirstOrDefault(),
                     IsActive = user.IsActive,
                     LastLoginDate = user.LastLoginDate
                 };
 
-                return Ok(ApiResponseDto.SuccessResult(new { user = userProfile }));
+                return Ok(userProfile);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponseDto.ErrorResult($"Error retrieving profile: {ex.Message}"));
+                return BadRequest();
             }
         }
         
@@ -153,12 +155,43 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(response);
         }
 
+        /// <summary>
+        /// API tạo mới người dùng và gửi email kích hoạt.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto req)
+        {
+            if (req == null)
+                return BadRequest("Dữ liệu đầu vào không hợp lệ.");
+
+            var success = await _userService.CreateUserAsync(req);
+
+            if (!success)
+                return BadRequest("Không thể tạo người dùng. Vui lòng kiểm tra lại dữ liệu hoặc email.");
+
+            return Ok(new
+            {
+                Message = "Tạo người dùng thành công. Email kích hoạt đã được gửi.",
+                Email = req.Email
+            });
+        }
+
         [HttpGet("courses")]
         [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> GetUserCourses([FromQuery] GetAllCoursesRequest request)
         {
             var result = await _courseEnrollmentService.GetAllCoursesEnrollmentsByStaffAsync(request);
             return Ok(result);
+
+        }
+
+        [HttpGet("roles")]
+        public IActionResult GetUserRoles()
+        {
+            var result =  _userService.GetRoles();
+            return Ok(result);
+
         }
     }
 }
+                                                            
