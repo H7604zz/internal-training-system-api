@@ -16,7 +16,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<bool> VerifyAccountAsync(string userId, string token);
         List<IdentityRole> GetRoles();
         Task<ApplicationUser?> GetUserProfileAsync(string userId);
-        Task<bool> SendPasswordResetOtpAsync(string email);
-        Task<(bool Success, string? NewPassword)> ResetPasswordWithOtpAsync(string email, string otp);
+        
     }
 }

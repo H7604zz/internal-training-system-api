@@ -24,10 +24,6 @@ namespace InternalTrainingSystem.Core.Models
 
         public DateTime? LastLoginDate { get; set; }
 
-        // Password reset properties
-        public string? PasswordResetToken { get; set; }
-        public DateTime? PasswordResetTokenExpiry { get; set; }
-
         public int? DepartmentId { get; set; }
 
         [ForeignKey(nameof(DepartmentId))]
