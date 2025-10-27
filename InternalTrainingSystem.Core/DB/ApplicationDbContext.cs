@@ -173,6 +173,10 @@ namespace InternalTrainingSystem.Core.DB
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Indexes for better performance
+            builder.Entity<ApplicationUser>()
+                .HasIndex(u => u.EmployeeId)
+                .IsUnique();
+
             builder.Entity<CourseEnrollment>()
                 .HasIndex(ce => new { ce.UserId, ce.CourseId })
                 .IsUnique();
