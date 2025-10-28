@@ -38,17 +38,17 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .FirstOrDefaultAsync(e => e.CourseId == courseId && e.UserId == userId);
         }
          
-        public bool DeleteCourseEnrollment(int courseId, string userId)
+        public async Task<bool> DeleteCourseEnrollment(int courseId, string userId)
         {
 
-            var enrollment = _context.CourseEnrollments
-             .FirstOrDefault(e => e.CourseId == courseId && e.UserId == userId);
+            var enrollment = await _context.CourseEnrollments
+             .FirstOrDefaultAsync(e => e.CourseId == courseId && e.UserId == userId);
             if (enrollment == null) return false;
 
             _context.CourseEnrollments.Remove(enrollment);
             try
             {
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return true;
             }
             catch
@@ -57,12 +57,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }
         }
 
-        public bool UpdateCourseEnrollment(CourseEnrollment courseEnrollment)
+        public async Task<bool> UpdateCourseEnrollment(CourseEnrollment courseEnrollment)
         {
             try
             {
                 _context.CourseEnrollments.Update(courseEnrollment);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return true;
             }
             catch (Exception)

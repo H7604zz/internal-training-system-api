@@ -10,9 +10,9 @@ namespace InternalTrainingSystem.Core.Services.Interface
 
         public Task<CourseEnrollment> GetCourseEnrollment(int courseId, string userId);
 
-        public bool DeleteCourseEnrollment(int courseId, string userId);
+        public Task<bool> DeleteCourseEnrollment(int courseId, string userId);
 
-        public bool UpdateCourseEnrollment(CourseEnrollment courseEnrollment);
+        public Task<bool> UpdateCourseEnrollment(CourseEnrollment courseEnrollment);
 
         public Task<PagedResult<CourseListItemDto>> GetAllCoursesEnrollmentsByStaffAsync(GetAllCoursesRequest request);
     }
