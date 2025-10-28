@@ -155,64 +155,59 @@ namespace InternalTrainingSystem.Core.Controllers
         /// </summary>
         [HttpPost("change-password")]
         [Authorize]
-        public async Task<ActionResult<ApiResponseDto>> ChangePassword([FromBody] ChangePasswordRequestDto request)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
         {
             try
             {
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => e.ErrorMessage)
-                        .ToList();
-                    return BadRequest(errors);
-                }
-
-                // Additional validation for password confirmation
-                if (request.NewPassword != request.ConfirmPassword)
-                {
-                    return BadRequest();
-                }
-
+                // Lấy user hiện tại từ token
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return Unauthorized();
+                    return Unauthorized("Không thể xác định người dùng.");
+                }
+
+                // Xác nhận mật khẩu mới và xác nhận phải khớp
+                if (request.NewPassword != request.ConfirmPassword)
+                {
+                    return BadRequest("Xác nhận mật khẩu không khớp.");
                 }
 
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user == null)
                 {
-                    return NotFound();
+                    return NotFound("Không tìm thấy người dùng.");
                 }
 
-                // Verify current password
+                // Kiểm tra mật khẩu hiện tại
                 var isCurrentPasswordValid = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
                 if (!isCurrentPasswordValid)
                 {
-                    return BadRequest(ApiResponseDto.ErrorResult("Current password is incorrect"));
+                    return BadRequest("Mật khẩu hiện tại không chính xác.");
                 }
 
-                // Check if new password is same as current password
+                // Kiểm tra mật khẩu mới khác mật khẩu cũ
                 if (request.CurrentPassword == request.NewPassword)
                 {
-                    return BadRequest(ApiResponseDto.ErrorResult("New password must be different from current password"));
+                    return BadRequest("Mật khẩu mới phải khác mật khẩu hiện tại.");
                 }
 
+                // Tiến hành đổi mật khẩu
                 var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
                 if (result.Succeeded)
                 {
-                    return Ok();
+                    return Ok("Đổi mật khẩu thành công.");
                 }
 
-                var changePasswordErrors = result.Errors.Select(e => e.Description).ToList();
-                return BadRequest();
+                // Gộp các lỗi từ Identity nếu có
+                var errorMessages = result.Errors.Select(e => e.Description);
+                return BadRequest(string.Join(", ", errorMessages));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponseDto.ErrorResult($"Error changing password: {ex.Message}"));
+                return StatusCode(500, $"Lỗi khi đổi mật khẩu: {ex.Message}");
             }
         }
+
 
         /// <summary>
         /// Logout current user

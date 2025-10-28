@@ -1,6 +1,7 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
@@ -16,7 +17,6 @@ namespace InternalTrainingSystem.Core.Controllers
     public class NotificationController : ControllerBase
     {
         private readonly IUserService _userService;
-        private readonly IEmailSender _mailService;
         private readonly ICourseService _couseService;
         private readonly INotificationService _notificationService;
         private readonly string _baseUrl;
@@ -25,7 +25,6 @@ namespace InternalTrainingSystem.Core.Controllers
             ICourseService couseService, INotificationService notificationService, IConfiguration config)
         {
             _userService = userServices;
-            _mailService = mailService;
             _couseService = couseService;
             _notificationService = notificationService;
             _baseUrl = config["ApplicationSettings:ApiBaseUrl"] ?? "http://localhost:7001";
@@ -88,7 +87,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     Cảm ơn!
                 ";
 
-                Hangfire.BackgroundJob.Enqueue(() => _mailService.SendEmailAsync(
+                Hangfire.BackgroundJob.Enqueue(() => EmailHelper.SendEmailAsync(
                     user.Email!,
                     "Thông báo mở lớp học " + course.CourseName,
                     emailContent

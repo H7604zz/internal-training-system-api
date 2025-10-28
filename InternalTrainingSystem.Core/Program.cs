@@ -3,6 +3,7 @@ using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Extensions;
 using InternalTrainingSystem.Core.Hubs;
+using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Middleware;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
@@ -39,9 +40,6 @@ builder.Services.AddHangfire(x =>
     x.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHangfireServer();
 
-builder.Services.AddScoped<ICourseService, CourseService>();
-builder.Services.AddScoped<ICategoryService, CategoryService>();
-
 // Configure Identity
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
@@ -61,13 +59,14 @@ builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 
 builder.Services.AddHostedService<NotificationCleanupService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IEmailSender, EmailSenderService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ICourseEnrollmentService, CourseEnrollmentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IClassService, ClassService>();
 builder.Services.AddScoped<ICourseMaterialService, CourseMaterialService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 // Configure JWT Authentication
 // Read from configuration instead of environment variables directly
@@ -129,10 +128,19 @@ builder.Services.AddCors(options =>
 
 // Configure settings
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
-builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection(EmailSettings.SectionName));
 builder.Services.Configure<ExternalApiKeys>(builder.Configuration.GetSection(ExternalApiKeys.SectionName));
 builder.Services.Configure<FileUploadSettings>(builder.Configuration.GetSection(FileUploadSettings.SectionName));
 builder.Services.Configure<ApplicationSettings>(builder.Configuration.GetSection(ApplicationSettings.SectionName));
+
+var emailSettings = builder.Configuration.GetSection(EmailSettings.SectionName).Get<EmailSettings>();
+
+EmailHelper.Configure(
+    emailSettings!.SmtpServer,
+    emailSettings.SmtpPort,
+    emailSettings.FromEmail,
+    emailSettings.FromName,
+    emailSettings.SmtpPassword
+);
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
