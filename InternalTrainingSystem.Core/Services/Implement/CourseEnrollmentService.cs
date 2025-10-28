@@ -16,12 +16,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             _context = context;
         }
-        public bool AddCourseEnrollment(CourseEnrollment courseEnrollment)
+        public async Task<bool> AddCourseEnrollment(CourseEnrollment courseEnrollment)
         {
             try
             {
-                _context.CourseEnrollments.Add(courseEnrollment);
-                _context.SaveChanges();
+                await _context.CourseEnrollments.AddAsync(courseEnrollment);
+                await _context.SaveChangesAsync();
                 return true;
             }
             catch
@@ -30,12 +30,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }
         }
 
-        public CourseEnrollment? GetCourseEnrollment(int courseId, string userId)
+        public async Task<CourseEnrollment?> GetCourseEnrollment(int courseId, string userId)
         {
-            return _context.CourseEnrollments
+            return await _context.CourseEnrollments
                 .Include(e => e.User)
                 .Include(e => e.Course)
-                .FirstOrDefault(e => e.CourseId == courseId && e.UserId == userId);
+                .FirstOrDefaultAsync(e => e.CourseId == courseId && e.UserId == userId);
         }
          
         public bool DeleteCourseEnrollment(int courseId, string userId)

@@ -6,9 +6,9 @@ namespace InternalTrainingSystem.Core.Services.Interface
 {
     public interface ICourseEnrollmentService
     {
-        public bool AddCourseEnrollment(CourseEnrollment courseEnrollment);
+        public Task<bool> AddCourseEnrollment(CourseEnrollment courseEnrollment);
 
-        public CourseEnrollment GetCourseEnrollment(int courseId, string userId);
+        public Task<CourseEnrollment> GetCourseEnrollment(int courseId, string userId);
 
         public bool DeleteCourseEnrollment(int courseId, string userId);
 

@@ -186,7 +186,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.DirectManager)]
         public async Task<IActionResult> ConfirmEnrollment(int courseId, string userId, [FromQuery] bool isConfirmed)
         {
-            var enrollment = _courseEnrollmentService.GetCourseEnrollment(courseId, userId);
+            var enrollment = await _courseEnrollmentService.GetCourseEnrollment(courseId, userId);
 
             if (enrollment == null)
             {
@@ -252,7 +252,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 }
             }
 
-            _courseEnrollmentService.AddCourseEnrollment(enrollment);
+            await _courseEnrollmentService.AddCourseEnrollment(enrollment);
 
             await _hub.Clients.Group($"course-{courseId}")
             .SendAsync("EnrollmentStatusChanged", new
