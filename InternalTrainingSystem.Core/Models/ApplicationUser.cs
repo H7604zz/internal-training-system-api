@@ -24,6 +24,12 @@ namespace InternalTrainingSystem.Core.Models
 
         public DateTime? LastLoginDate { get; set; }
 
+        // OTP properties for password reset
+        [StringLength(6)]
+        public string? OtpCode { get; set; }
+
+        public DateTime? OtpExpiry { get; set; }
+
         public int? DepartmentId { get; set; }
 
         [ForeignKey(nameof(DepartmentId))]
