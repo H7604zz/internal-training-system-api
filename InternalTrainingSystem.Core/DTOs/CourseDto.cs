@@ -150,4 +150,10 @@ namespace InternalTrainingSystem.Core.DTOs
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
     }
+
+    public sealed class UpdateCourseStatusRequest
+    {
+        public string NewStatus { get; set; } = default!;
+        public string? Reason { get; set; }
+    }
 }

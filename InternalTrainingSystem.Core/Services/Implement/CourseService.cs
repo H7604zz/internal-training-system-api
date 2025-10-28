@@ -474,19 +474,32 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         // Duyệt khóa học - ban giám đốc
-        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus)
+        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId,string newStatus,string? reason = null)
         {
             if (string.IsNullOrWhiteSpace(newStatus))
                 throw new ArgumentException("Trạng thái mới không hợp lệ.", nameof(newStatus));
+
+            var normalized = newStatus.Trim();
 
             var allowedStatuses = new[]
             {
                 CourseConstants.Status.Approve,
                 CourseConstants.Status.Reject
-                };
+            };
 
-            if (!allowedStatuses.Contains(newStatus, StringComparer.OrdinalIgnoreCase))
-                throw new ArgumentException($"Trạng thái '{newStatus}' không hợp lệ. Chỉ chấp nhận Approve hoặc Reject.");
+            if (!allowedStatuses.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+                throw new ArgumentException(
+                    $"Trạng thái '{newStatus}' không hợp lệ. Chỉ chấp nhận Approve hoặc Reject."
+                );
+
+            // Ràng buộc reason theo trạng thái
+            if (normalized.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase))
+            {
+                // Reject bắt buộc có reason
+                if (string.IsNullOrWhiteSpace(reason))
+                    throw new ArgumentException("Vui lòng cung cấp lý do từ chối (reason) khi Reject.", nameof(reason));
+            }
+            // Approve: reason có thể trống hoặc không => không kiểm tra/không ném lỗi
 
             var course = await _context.Courses
                 .Include(c => c.Departments)
@@ -499,17 +512,18 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (!course.Status.Equals(CourseConstants.Status.Pending, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            if (newStatus.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase))
+            if (normalized.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase))
             {
-                // ✅ Duyệt khóa học
                 course.Status = CourseConstants.Status.Approve;
-                course.UpdatedDate = DateTime.Now;
+                course.RejectionReason = null;          
             }
-            else if (newStatus.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase))
+            else // Reject
             {
-                course.Status = CourseConstants.Status.Reject; // <-- bổ sung nhánh Reject
-                course.UpdatedDate = DateTime.Now;
+                course.Status = CourseConstants.Status.Reject;
+                course.RejectionReason = reason!.Trim(); // lưu lý do từ chối
             }
+
+            course.UpdatedDate = DateTime.Now;
 
             await _context.SaveChangesAsync();
             return true;

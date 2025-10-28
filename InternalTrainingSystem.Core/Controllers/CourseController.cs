@@ -144,25 +144,50 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(items);
         }
 
-        public class UpdateCourseStatusRequest
+        
+
+        /// <summary>
+        /// Ban giám đốc duyệt/từ chối khóa học đang Pending.
+        /// </summary>
+        [HttpPatch("{courseId}/status")]
+
+        public async Task<IActionResult> UpdatePendingStatus(int courseId,[FromBody] UpdateCourseStatusRequest dto)
         {
-            public string NewStatus { get; set; } = default!;
-        }
+            if (dto is null)
+                return BadRequest(new { message = "Thiếu nội dung body." });
 
-        /// <summary>Duyệt/ Từ chối 1 course đang Pending: newStatus = "Apporove" | "Reject".</summary>
-        [HttpPut("{courseId:int}/status")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdateCourseStatusRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.NewStatus))
-                return BadRequest("newStatus không được rỗng.");
+            try
+            {
+                var ok = await _courseService.UpdatePendingCourseStatusAsync(
+                    courseId,
+                    dto.NewStatus,
+                    dto.Reason
+                );
 
-            var ok = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus);
-            if (!ok)
-                return BadRequest("Chỉ có thể cập nhật trạng thái các khóa học đang ở Pending hoặc khóa học không tồn tại.");
+                if (!ok)
+                {
+                    // Service trả false khi: không tìm thấy hoặc trạng thái hiện tại không phải Pending
+                    return Conflict(new
+                    {
+                        message = "Không thể cập nhật. Khóa học không tồn tại hoặc trạng thái hiện tại không phải Pending."
+                    });
+                }
 
-            return Ok(new { message = $"Cập nhật trạng thái thành công: {request.NewStatus}" });
+                return NoContent(); // 204
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message, param = ex.ParamName });
+            }
+            catch (Exception ex)
+            {
+                // TODO: log ex
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "Đã xảy ra lỗi máy chủ.",
+                    detail = ex.Message
+                });
+            }
         }
 
         /// <summary>Chuyển 1 course từ Active -> Deleted (xóa mềm theo status).</summary>
