@@ -23,6 +23,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Objectives { get; set; }
         public decimal? Price { get; set; }
         public int EnrollmentCount { get; set; }
+        public string CreatedBy { get; set; }
         
         public List<DepartmentDto> Departments { get; set; } = new();
     }

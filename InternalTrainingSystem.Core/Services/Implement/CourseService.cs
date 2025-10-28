@@ -405,6 +405,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 .Include(c => c.CourseCategory)
                 .Include(c => c.Departments)
                 .Include(c => c.CourseEnrollments)
+                .Include(c => c.CreatedBy)
                 .FirstOrDefaultAsync(c => c.CourseId == courseId);
 
             if (course == null)
@@ -435,6 +436,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Objectives = null, // Not available in current model
                 Price = null, // Not available in current model
                 EnrollmentCount = enrollmentCount,
+                CreatedBy = course.CreatedBy.FullName,
                 Departments = course.Departments.Select(d => new DepartmentDto
                 {
                     DepartmentId = d.Id,
