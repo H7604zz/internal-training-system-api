@@ -194,7 +194,7 @@ namespace InternalTrainingSystem.Core.Controllers
             }
             if (isConfirmed)
             {
-                var deleted = _courseEnrollmentService.DeleteCourseEnrollment(courseId, userId);
+                var deleted = await _courseEnrollmentService.DeleteCourseEnrollment(courseId, userId);
                 if (!deleted)
                     return BadRequest();
 
@@ -206,7 +206,7 @@ namespace InternalTrainingSystem.Core.Controllers
             else
             {
                 enrollment.Status = EnrollmentConstants.Status.Enrolled;
-                var updated = _courseEnrollmentService.UpdateCourseEnrollment(enrollment);
+                var updated = await _courseEnrollmentService.UpdateCourseEnrollment(enrollment);
 
                 if (!updated)
                     return BadRequest();
