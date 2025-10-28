@@ -64,15 +64,15 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
 
-        [HttpPatch("{id:int}/status")]
-        [Authorize(Roles = UserRoles.TrainingDepartment)]
-        public IActionResult ToggleStatus(int id, [FromBody] ToggleStatusDto dto)
-        {
-            var ok = _courseService.ToggleStatus(id, dto.Status);
-            if (!ok) return NotFound(new { message = $"Course {id} not found" });
+        //[HttpPatch("{id:int}/status")]
+        //[Authorize(Roles = UserRoles.TrainingDepartment)]
+        //public IActionResult ToggleStatus(int id, [FromBody] ToggleStatusDto dto)
+        //{
+        //    var ok = _courseService.ToggleStatus(id, dto.Status);
+        //    if (!ok) return NotFound(new { message = $"Course {id} not found" });
 
-            return Ok(new { courseId = id, isActive = dto.Status });
-        }
+        //    return Ok(new { courseId = id, isActive = dto.Status });
+        //}
 
         [HttpGet("search")]
         public async Task<ActionResult<PagedResult<CourseListItemDto>>> Search([FromQuery] CourseSearchRequest req,

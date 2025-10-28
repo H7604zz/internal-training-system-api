@@ -489,7 +489,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             if (!allowedStatuses.Contains(normalized, StringComparer.OrdinalIgnoreCase))
                 throw new ArgumentException(
-                    $"Trạng thái '{newStatus}' không hợp lệ. Chỉ chấp nhận Approve hoặc Reject."
+                    $"Trạng thái '{newStatus}' không hợp lệ. Chỉ chấp nhận Approve hoặc Reject"
                 );
 
             // Ràng buộc reason theo trạng thái
