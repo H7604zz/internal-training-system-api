@@ -232,7 +232,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 Type = dto.Type,
                 OrderIndex = dto.OrderIndex,
                 ContentUrl = dto.ContentUrl,
-                ContentHtml = dto.ContentHtml,
                 QuizId = dto.QuizId
             };
 
@@ -263,7 +262,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             entity.Type = dto.Type;
             entity.OrderIndex = dto.OrderIndex;
             entity.ContentUrl = dto.ContentUrl;
-            entity.ContentHtml = dto.ContentHtml;
             entity.QuizId = dto.QuizId;
 
             await _context.SaveChangesAsync(ct);
@@ -280,49 +278,101 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         }
 
         public async Task<(string url, string relativePath)> UploadLessonBinaryAsync(
-    int lessonId, IFormFile file, CancellationToken ct = default)
+    int lessonId,
+    IFormFile file,
+    CancellationToken ct = default)
         {
             var lesson = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId, ct);
-            if (lesson == null) throw new ArgumentException("Lesson not found.");
+            if (lesson == null)
+                throw new ArgumentException("Lesson not found.");
 
             if (lesson.Type is not (LessonType.File or LessonType.Video or LessonType.Reading))
-                throw new InvalidOperationException("Only lessons with Type=File, Video, or Reading can have a binary upload.");
+                throw new InvalidOperationException(
+                    "This lesson type does not support binary upload. Only File / Video / Reading can upload binary data.");
 
             if (file == null || file.Length == 0)
                 throw new ArgumentException("Empty file.");
 
             var ext = Path.GetExtension(file.FileName);
-            var contentType = file.ContentType ?? "";
+            var contentType = string.IsNullOrWhiteSpace(file.ContentType)
+                ? "application/octet-stream"
+                : file.ContentType;
 
-            if (lesson.Type == LessonType.File || lesson.Type == LessonType.Reading)
+            switch (lesson.Type)
             {
-                if (file.Length > LessonContentConstraints.MaxDocBytes)
-                    throw new ArgumentException($"File too large. Max {LessonContentConstraints.MaxDocBytes / (1024 * 1024)} MB.");
+                case LessonType.File:
+                case LessonType.Reading:
+                    if (file.Length > LessonContentConstraints.MaxDocBytes)
+                    {
+                        throw new ArgumentException(
+                            $"File too large. Max {LessonContentConstraints.MaxDocBytes / (1024 * 1024)} MB.");
+                    }
 
-                if (!LessonContentConstraints.IsAllowedDoc(ext, contentType))
-                    throw new ArgumentException("Only PDF/DOC/DOCX are allowed.");
-            }
-            else if (lesson.Type == LessonType.Video)
-            {
-                if (file.Length > LessonContentConstraints.MaxVideoBytes)
-                    throw new ArgumentException($"Video too large. Max {LessonContentConstraints.MaxVideoBytes / (1024 * 1024)} MB.");
+                    if (!LessonContentConstraints.IsAllowedDoc(ext, contentType))
+                    {
+                        throw new ArgumentException("Only PDF/DOC/DOCX are allowed.");
+                    }
+                    break;
 
-                if (!LessonContentConstraints.IsAllowedVideo(ext, contentType))
-                    throw new ArgumentException("Only MP4/MOV/M4V/WEBM are allowed.");
+                case LessonType.Video:
+                    // MP4/MOV/M4V/WEBM...
+                    if (file.Length > LessonContentConstraints.MaxVideoBytes)
+                    {
+                        throw new ArgumentException(
+                            $"Video too large. Max {LessonContentConstraints.MaxVideoBytes / (1024 * 1024)} MB.");
+                    }
+
+                    if (!LessonContentConstraints.IsAllowedVideo(ext, contentType))
+                    {
+                        throw new ArgumentException("Only MP4/MOV/M4V/WEBM are allowed.");
+                    }
+                    break;
             }
 
             var subFolder = $"uploads/lessons/{lessonId}";
             var (url, relativePath) = await _storage.SaveAsync(file, subFolder, ct);
 
-            lesson.ContentUrl = url;
-            lesson.FilePath = relativePath;
+            lesson.ContentUrl = url;          
+            lesson.FilePath = relativePath;   
             lesson.MimeType = contentType;
             lesson.SizeBytes = file.Length;
 
             await _context.SaveChangesAsync(ct);
+
             return (url, relativePath);
         }
+        public async Task<(string url, string relativePath)> UploadLessonAttachmentAsync(
+    int lessonId,
+    IFormFile attachmentFile,
+    CancellationToken ct = default)
+        {
+            var lesson = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId, ct);
+            if (lesson == null)
+                throw new ArgumentException("Lesson not found.");
 
+            if (attachmentFile == null || attachmentFile.Length == 0)
+                throw new ArgumentException("Empty attachment file.");
+
+            var ext = Path.GetExtension(attachmentFile.FileName);
+            var contentType = string.IsNullOrWhiteSpace(attachmentFile.ContentType)
+                ? "application/octet-stream"
+                : attachmentFile.ContentType;
+
+            // doc/pdf/ppt, v.v.
+            if (!LessonContentConstraints.IsAllowedDoc(ext, contentType))
+                throw new ArgumentException("Attachment must be a document (PDF/DOC/DOCX...).");
+
+            var subFolder = $"uploads/lessons/{lessonId}/attachments";
+            var (url, relativePath) = await _storage.SaveAsync(attachmentFile, subFolder, ct);
+
+            lesson.AttachmentUrl = url;
+            lesson.AttachmentFilePath = relativePath;
+            lesson.AttachmentMimeType = contentType;
+            lesson.AttachmentSizeBytes = attachmentFile.Length;
+
+            await _context.SaveChangesAsync(ct);
+            return (url, relativePath);
+        }
 
         public async Task<bool> ClearLessonFileAsync(int lessonId, CancellationToken ct = default)
         {
@@ -440,7 +490,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
                 // Quiz lesson không cần ContentUrl / ContentHtml
                 ContentUrl = null,
-                ContentHtml = null
             };
 
             _context.Lessons.Add(lesson);
