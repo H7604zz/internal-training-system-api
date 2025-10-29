@@ -470,12 +470,17 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             await _context.SaveChangesAsync();
             return true;
         }
-        public async Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta,
-                                IList<IFormFile> lessonFiles, string createdByUserId, CancellationToken ct = default)
+        public async Task<Course> CreateCourseAsync(
+    CreateCourseMetadataDto meta,
+    IList<IFormFile> lessonFiles,
+    string createdByUserId,
+    CancellationToken ct = default)
         {
             await using var tx = await _context.Database.BeginTransactionAsync(ct);
+
             try
             {
+                // 1. Course
                 var course = new Course
                 {
                     Code = meta.CourseCode.Trim(),
@@ -507,8 +512,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 await _context.Courses.AddAsync(course, ct);
                 await _context.SaveChangesAsync(ct);
 
-                var fileCursor = 0;
-
+                // 2. Modules + Lessons
                 foreach (var modSpec in meta.Modules.OrderBy(m => m.OrderIndex))
                 {
                     var module = new CourseModule
@@ -524,14 +528,17 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
                     foreach (var lessonSpec in modSpec.Lessons.OrderBy(l => l.OrderIndex))
                     {
-                        Lesson newLesson;
-
+                        // Quiz Excel
                         if (lessonSpec.Type == LessonType.Quiz && lessonSpec.IsQuizExcel)
                         {
-                            if (fileCursor >= lessonFiles.Count)
-                                throw new ArgumentException("Thiếu file Excel cho lesson Quiz.");
+                            if (lessonSpec.MainFileIndex is null ||
+                                lessonSpec.MainFileIndex < 0 ||
+                                lessonSpec.MainFileIndex >= lessonFiles.Count)
+                            {
+                                throw new ArgumentException("Thiếu hoặc sai file Excel cho lesson Quiz.");
+                            }
 
-                            var excelFile = lessonFiles[fileCursor++];
+                            var excelFile = lessonFiles[lessonSpec.MainFileIndex.Value];
 
                             var quizId = await ImportQuizFromExcelInternal(
                                 course.CourseId,
@@ -540,60 +547,56 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 ct
                             );
 
-                            newLesson = new Lesson
+                            var quizLesson = new Lesson
                             {
                                 ModuleId = module.Id,
                                 Title = lessonSpec.Title.Trim(),
+                                Description = lessonSpec.Description,
                                 Type = LessonType.Quiz,
                                 OrderIndex = lessonSpec.OrderIndex,
                                 QuizId = quizId
                             };
 
-                            await _context.Lessons.AddAsync(newLesson, ct);
+                            await _context.Lessons.AddAsync(quizLesson, ct);
                             await _context.SaveChangesAsync(ct);
 
                             continue;
                         }
 
-                        if (lessonSpec.UploadBinary &&
-                            (lessonSpec.Type == LessonType.File ||
-                             lessonSpec.Type == LessonType.Video ||
-                             lessonSpec.Type == LessonType.Reading))
-                        {
-                            if (fileCursor >= lessonFiles.Count)
-                                throw new ArgumentException("Thiếu file binary cho lesson UploadBinary=true.");
-
-                            var binFile = lessonFiles[fileCursor++];
-
-                            newLesson = new Lesson
-                            {
-                                ModuleId = module.Id,
-                                Title = lessonSpec.Title.Trim(),
-                                Type = lessonSpec.Type,
-                                OrderIndex = lessonSpec.OrderIndex,
-                                ContentHtml = lessonSpec.ContentHtml
-                            };
-
-                            await _context.Lessons.AddAsync(newLesson, ct);
-                            await _context.SaveChangesAsync(ct);
-
-                            await _courseMaterialService.UploadLessonBinaryAsync(newLesson.Id, binFile, ct);
-
-                            continue;
-                        }
-
-                        newLesson = new Lesson
+                        var lessonEntity = new Lesson
                         {
                             ModuleId = module.Id,
                             Title = lessonSpec.Title.Trim(),
+                            Description = lessonSpec.Description,
                             Type = lessonSpec.Type,
                             OrderIndex = lessonSpec.OrderIndex,
-                            ContentUrl = lessonSpec.ContentUrl,
-                            ContentHtml = lessonSpec.ContentHtml
+                            ContentUrl = lessonSpec.ContentUrl 
                         };
 
-                        await _context.Lessons.AddAsync(newLesson, ct);
+                        await _context.Lessons.AddAsync(lessonEntity, ct);
                         await _context.SaveChangesAsync(ct);
+
+                        // Upload main file
+                        if (lessonSpec.MainFileIndex is not null)
+                        {
+                            var idx = lessonSpec.MainFileIndex.Value;
+                            if (idx < 0 || idx >= lessonFiles.Count)
+                                throw new ArgumentException($"MainFileIndex {idx} is out of range for lesson '{lessonSpec.Title}'.");
+
+                            var mainFile = lessonFiles[idx];
+                            await _courseMaterialService.UploadLessonBinaryAsync(lessonEntity.Id, mainFile, ct);
+                        }
+
+                        // Upload AttachmentFile
+                        if (lessonSpec.AttachmentFileIndex is not null)
+                        {
+                            var idxAttach = lessonSpec.AttachmentFileIndex.Value;
+                            if (idxAttach < 0 || idxAttach >= lessonFiles.Count)
+                                throw new ArgumentException($"AttachmentFileIndex {idxAttach} is out of range for lesson '{lessonSpec.Title}'.");
+
+                            var attachFile = lessonFiles[idxAttach];
+                            await _courseMaterialService.UploadLessonAttachmentAsync(lessonEntity.Id, attachFile, ct);
+                        }
                     }
                 }
 

@@ -79,6 +79,7 @@ namespace InternalTrainingSystem.Core.DTOs
         [Required(ErrorMessage = "Tiêu đề bài học là bắt buộc.")]
         [StringLength(200, ErrorMessage = "Tiêu đề bài học không được vượt quá 200 ký tự.")]
         public string Title { get; set; } = string.Empty;
+
         [Range(1, int.MaxValue, ErrorMessage = "OrderIndex của lesson phải >= 1.")]
         public int OrderIndex { get; set; } = 1;
 
@@ -86,11 +87,13 @@ namespace InternalTrainingSystem.Core.DTOs
         [Required(ErrorMessage = "Loại bài học (Type) là bắt buộc.")]
         public LessonType Type { get; set; }
 
+        public string? Description { get; set; }
+
         public string? ContentUrl { get; set; }
 
-        public string? ContentHtml { get; set; }
+        public int? MainFileIndex { get; set; }
 
-        public bool UploadBinary { get; set; } = false;
+        public int? AttachmentFileIndex { get; set; }
 
         public string? QuizTitle { get; set; }
         public bool IsQuizExcel { get; set; } = false;
