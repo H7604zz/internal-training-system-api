@@ -70,8 +70,8 @@ namespace InternalTrainingSystem.Core.Controllers
                 {
                     try
                     {
-                        // Update last login date
-                        user.LastLoginDate = DateTime.UtcNow;
+                        // Update last login date (Vietnam local time)
+                        user.LastLoginDate = DateTimeUtils.Now();
                         await _userManager.UpdateAsync(user);
 
                         // Get user roles
@@ -83,7 +83,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
                         // Calculate expiry time
                         var expireMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") ?? "60");
-                        var expiresAt = DateTime.UtcNow.AddMinutes(expireMinutes);
+                        var expiresAt = DateTimeUtils.Now().AddMinutes(expireMinutes);
 
                         var response = new LoginResponseDto
                         {
@@ -232,7 +232,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 // Blacklist the current token
                 if (!string.IsNullOrEmpty(jwtId))
                 {
-                    var expiry = DateTime.UtcNow.AddDays(7); // Token expiry time
+                    var expiry = DateTimeUtils.Now().AddDays(7); // Token expiry time (Vietnam local time)
                     await _tokenBlacklistService.BlacklistTokenAsync(jwtId, expiry);
                 }
 
@@ -372,7 +372,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
                 // Generate OTP
                 var otpCode = OtpUtils.GenerateOtp();
-                var otpExpiry = DateTime.UtcNow.AddMinutes(5); // OTP expires in 5 minutes
+                var otpExpiry = DateTimeUtils.Now().AddMinutes(5); // OTP expires in 5 minutes (Vietnam local time)
 
                 // Update user with OTP
                 user.OtpCode = otpCode;
@@ -380,7 +380,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 await _userManager.UpdateAsync(user);
 
                 // Send OTP email
-                var subject = "Mã OTP Đặt lại Mật khẩu - Hệ thống Đào tạo Năng lực";
+                var subject = "Mã OTP Đặt lại Mật khẩu - Hệ thống Đào tạo Nội bộ";
                 var htmlMessage = $@"
                     <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
                         <div style='background-color: #007bff; color: white; padding: 20px; text-align: center;'>
@@ -402,7 +402,7 @@ namespace InternalTrainingSystem.Core.Controllers
                             </ul>
                         </div>
                         <div style='background-color: #6c757d; color: white; padding: 15px; text-align: center;'>
-                            <p style='margin: 0;'>© {DateTime.Now.Year} - Hệ thống Đào tạo Năng lực</p>
+                            <p style='margin: 0;'>© {DateTime.Now.Year} - Hệ thống Đào tạo Nội bộ</p>
                             <p style='margin: 0;'>Email hỗ trợ: support@company.com</p>
                         </div>
                     </div>";
@@ -463,7 +463,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     });
                 }
 
-                if (DateTime.UtcNow > user.OtpExpiry)
+                if (DateTimeUtils.Now() > user.OtpExpiry)
                 {
                     return BadRequest(new VerifyOtpResponseDto
                     {
@@ -527,7 +527,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     return BadRequest(ApiResponseDto.ErrorResult("Phiên đặt lại mật khẩu đã hết hạn"));
                 }
 
-                if (DateTime.UtcNow > user.OtpExpiry)
+                if (DateTimeUtils.Now() > user.OtpExpiry)
                 {
                     return BadRequest(ApiResponseDto.ErrorResult("Mã OTP đã hết hạn"));
                 }
@@ -556,7 +556,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 await _userManager.UpdateAsync(user);
 
                 // Send new password via email
-                var subject = "Mật khẩu Mới - Hệ thống Đào tạo Năng lực";
+                var subject = "Mật khẩu Mới - Hệ thống Đào tạo Nội bộ";
                 var htmlMessage = $@"
                     <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
                         <div style='background-color: #28a745; color: white; padding: 20px; text-align: center;'>
@@ -586,7 +586,7 @@ namespace InternalTrainingSystem.Core.Controllers
                             </div>
                         </div>
                         <div style='background-color: #6c757d; color: white; padding: 15px; text-align: center;'>
-                            <p style='margin: 0;'>© {DateTime.Now.Year} - Hệ thống Đào tạo Năng lực</p>
+                            <p style='margin: 0;'>© {DateTime.Now.Year} - Hệ thống Đào tạo Nội bộ</p>
                             <p style='margin: 0;'>Email hỗ trợ: support@company.com</p>
                         </div>
                     </div>";
