@@ -37,7 +37,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			await _context.SaveChangesAsync();
 		}
 
-		public async Task<PagedResult<Department>> GetAllDepartments(int page, int pageSize)
+		public async Task<PagedResult<Department>> GetAllDepartmentsAsync(int page, int pageSize)
 		{
 			if (page <= 0) page = 1;
 			if (pageSize <= 0) pageSize = 10;
