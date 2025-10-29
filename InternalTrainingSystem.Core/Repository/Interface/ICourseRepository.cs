@@ -1,11 +1,10 @@
-﻿using InternalTrainingSystem.Core.DTOs;
+﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
-using Microsoft.AspNetCore.Mvc;
-using InternalTrainingSystem.Core.Configuration;
 
-namespace InternalTrainingSystem.Core.Services.Interface
+namespace InternalTrainingSystem.Core.Repository.Interface
 {
-    public interface ICourseService
+    public interface ICourseRepository
     {
         public Course? GetCourseByCourseID(int? couseId);
         Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request);
@@ -17,7 +16,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus);
         Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason);
         Task<Course> GetCourseByCourseCodeAsync(string courseCode);
-        Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta, IList<IFormFile> lessonFiles,
-                                            string createdByUserId, CancellationToken ct = default);
+        Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string createdByUserId, 
+            CancellationToken ct = default);
     }
 }

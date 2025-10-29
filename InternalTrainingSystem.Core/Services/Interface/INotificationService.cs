@@ -9,7 +9,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Notification? GetNotificationByUserAndType(string userId, NotificationType type);
         Notification? GetNotificationByClassAndType(int classId, NotificationType type);
         public bool HasRecentNotification(NotificationType type, int courseId, int days = 7);
-
-        public void DeleteOldNotifications(int courseId, NotificationType type);
+        Task DeleteOldNotificationsAsync(int courseId, NotificationType type);
     }
 }
