@@ -79,6 +79,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _courseMaterialRepo.UploadLessonBinaryAsync(lessonId, file, ct);
         }
+        public async Task<(string url, string relativePath)> UploadLessonAttachmentAsync(
+            int lessonId, IFormFile file, CancellationToken ct = default)
+        {
+            return await _courseMaterialRepo.UploadLessonAttachmentAsync(lessonId, file, ct);
+        }
 
         public async Task<bool> ClearLessonFileAsync(int lessonId, CancellationToken ct = default)
         {

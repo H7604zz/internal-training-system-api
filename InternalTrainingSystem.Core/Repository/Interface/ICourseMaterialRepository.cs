@@ -19,6 +19,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<bool> UpdateLessonAsync(int lessonId, UpdateLessonDto dto, CancellationToken ct = default);
         Task<bool> DeleteLessonAsync(int lessonId, CancellationToken ct = default);
         Task<(string url, string relativePath)> UploadLessonBinaryAsync(int lessonId, IFormFile file, CancellationToken ct = default);
+        Task<(string url, string relativePath)> UploadLessonAttachmentAsync(int lessonId, IFormFile file, CancellationToken ct = default);
         Task<bool> ClearLessonFileAsync(int lessonId, CancellationToken ct = default);
         Task<Lesson> CreateQuizLessonFromExcelAsync(CreateQuizLessonRequest req, CancellationToken ct = default);
     }
