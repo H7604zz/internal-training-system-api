@@ -1,14 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authorization;
-using InternalTrainingSystem.Core.Models;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
 using InternalTrainingSystem.Core.DTOs;
-using System.Security.Claims;
+using InternalTrainingSystem.Core.Helper;
+using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
-using System.IdentityModel.Tokens.Jwt;
 using InternalTrainingSystem.Core.Utils;
-using InternalTrainingSystem.Core.Helper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -18,21 +19,18 @@ namespace InternalTrainingSystem.Core.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IJwtService _jwtService;
-        private readonly ITokenBlacklistService _tokenBlacklistService;
+        private readonly IAuthService _authService;
         private readonly IUserService _userService;
 
         public AuthController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            IJwtService jwtService,
-            ITokenBlacklistService tokenBlacklistService,
+            IAuthService authService,
             IUserService userService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _jwtService = jwtService;
-            _tokenBlacklistService = tokenBlacklistService;
+            _authService = authService;
             _userService = userService;
         }
 
@@ -78,8 +76,8 @@ namespace InternalTrainingSystem.Core.Controllers
                         var roles = await _userManager.GetRolesAsync(user);
 
                         // Generate JWT tokens
-                        var accessToken = await _jwtService.GenerateAccessTokenAsync(user);
-                        var refreshToken = _jwtService.GenerateRefreshToken(user.Id); // Pass userId
+                        var accessToken = await _authService.GenerateAccessTokenAsync(user);
+                        var refreshToken = _authService.GenerateRefreshToken(user.Id); // Pass userId
 
                         // Calculate expiry time
                         var expireMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") ?? "60");
@@ -223,7 +221,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 var jwtId = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
 
                 // Check if token is already blacklisted
-                if (!string.IsNullOrEmpty(jwtId) && await _tokenBlacklistService.IsTokenBlacklistedAsync(jwtId))
+                if (!string.IsNullOrEmpty(jwtId) && await _authService.IsTokenBlacklistedAsync(jwtId))
                 {
                     return BadRequest(ApiResponseDto.ErrorResult("User already logged out"));
                 }
@@ -233,7 +231,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 if (!string.IsNullOrEmpty(jwtId))
                 {
                     var expiry = DateTimeUtils.Now().AddDays(7); // Token expiry time (Vietnam local time)
-                    await _tokenBlacklistService.BlacklistTokenAsync(jwtId, expiry);
+                    await _authService.BlacklistTokenAsync(jwtId, expiry);
                 }
 
                 await _signInManager.SignOutAsync();
@@ -265,7 +263,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 }
 
                 // Validate refresh token using JWT service
-                var tokenResponse = await _jwtService.RefreshTokenAsync(request.RefreshToken);
+                var tokenResponse = await _authService.RefreshTokenAsync(request.RefreshToken);
 
                 if (tokenResponse == null || !tokenResponse.Success)
                 {
@@ -320,26 +318,6 @@ namespace InternalTrainingSystem.Core.Controllers
                     Message = $"Error refreshing token: {ex.Message}"
                 });
             }
-        }
-
-        /// <summary>
-        /// API xác nhận email người dùng từ link gửi trong email.
-        /// </summary>
-        [HttpGet("verify-account")]
-        public async Task<IActionResult> VerifyAccount([FromQuery] string userId, [FromQuery] string token)
-        {
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
-                return BadRequest("Thiếu thông tin xác nhận email.");
-
-            var success = await _userService.VerifyAccountAsync(userId, token);
-
-            if (!success)
-                return BadRequest("Xác nhận email thất bại hoặc token không hợp lệ.");
-
-            return Ok(new
-            {
-                Message = "Xác nhận email thành công. Bạn có thể đăng nhập vào hệ thống."
-            });
         }
 
         /// <summary>
@@ -407,7 +385,11 @@ namespace InternalTrainingSystem.Core.Controllers
                         </div>
                     </div>";
 
-                await EmailHelper.SendEmailAsync(user.Email!, subject, htmlMessage);
+                Hangfire.BackgroundJob.Enqueue(() => EmailHelper.SendEmailAsync(
+                    user.Email!,
+                    subject,
+                    htmlMessage
+                ));
 
                 return Ok(new ForgotPasswordResponseDto
                 {
@@ -591,7 +573,11 @@ namespace InternalTrainingSystem.Core.Controllers
                         </div>
                     </div>";
 
-                await EmailHelper.SendEmailAsync(user.Email!, subject, htmlMessage);
+                Hangfire.BackgroundJob.Enqueue(() => EmailHelper.SendEmailAsync(
+                    user.Email!,
+                    subject,
+                    htmlMessage
+                ));
 
                 return Ok(ApiResponseDto.SuccessResult(null, "Đặt lại mật khẩu thành công. Mật khẩu mới đã được gửi đến email của bạn."));
             }

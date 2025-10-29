@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using System.Threading.Tasks;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -32,14 +33,12 @@ namespace InternalTrainingSystem.Core.Controllers
 
         [HttpPost("{courseId}/notify-eligible-users")]
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
-        public IActionResult NotifyEligibleUsers(int courseId)
+        public async Task<IActionResult> NotifyEligibleUsers(int courseId)
         {
             var searchDto = new UserSearchDto
             {
                 Page = 1,
                 PageSize = int.MaxValue,
-                SearchTerm = null,
-                status = null
             };
             var eligiblePaged = _userService.GetEligibleStaff(courseId, searchDto);
             if (eligiblePaged.TotalCount == 0)
@@ -96,9 +95,9 @@ namespace InternalTrainingSystem.Core.Controllers
                 ));
             }
 
-            _notificationService.DeleteOldNotifications(courseId, NotificationType.Start);
+            await _notificationService.DeleteOldNotificationsAsync(courseId, NotificationType.Start);
 
-            _notificationService.SaveNotificationAsync(new Notification
+            await _notificationService.SaveNotificationAsync(new Notification
             {
                 CourseId = courseId,
                 Type = NotificationType.Start,

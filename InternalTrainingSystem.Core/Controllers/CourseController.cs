@@ -24,14 +24,16 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IUserService _userService;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
         private readonly IHubContext<EnrollmentHub> _hub;
+        private readonly ICategoryService _categoryService;
 
         public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService, 
-            IHubContext<EnrollmentHub> hub, IUserService userService)
+            IHubContext<EnrollmentHub> hub, IUserService userService, ICategoryService categoryService)
         {
             _courseService = courseService;
             _hub = hub;
             _courseEnrollmentService = courseEnrollmentService;
             _userService = userService;
+            _categoryService = categoryService;
         } 
 
         // PUT: /api/courses/5
@@ -82,7 +84,7 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
-        [HttpGet("")]
+        [HttpGet()]
         public async Task<ActionResult<PagedResult<CourseListItemDto>>> GetAllCoursesPaged([FromQuery] GetAllCoursesRequest request)
         {
             try
@@ -96,25 +98,6 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
-        [HttpPost("by-identifiers")]
-        public async Task<ActionResult<IEnumerable<CourseListItemDto>>> GetCoursesByIdentifiers(
-            [FromBody] GetCoursesByIdentifiersRequest request)
-        {
-            try
-            {
-                if (request?.Identifiers == null || !request.Identifiers.Any())
-                {
-                    return BadRequest(new { message = "Identifiers list cannot be empty" });
-                }
-
-                var courses = await _courseService.GetCoursesByIdentifiersAsync(request.Identifiers);
-                return Ok(courses);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
-            }
-        }
 
         [HttpGet("{id:int}/detail")]
         public async Task<ActionResult<CourseDetailDto>> GetCourseDetail(int id)
@@ -140,7 +123,13 @@ namespace InternalTrainingSystem.Core.Controllers
         [ProducesResponseType(typeof(IEnumerable<CourseListItemDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<CourseListItemDto>>> GetPendingCourses()
         {
-            var items = await _courseService.GetPendingCoursesAsync();
+            var request = new GetAllCoursesRequest
+            {
+                Page = 1,
+                PageSize = int.MaxValue,
+                Status = CourseConstants.Status.Pending
+            };
+            var items = await _courseService.GetAllCoursesPagedAsync(request);
             return Ok(items);
         }
 
@@ -278,8 +267,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPost]
         [RequestSizeLimit(600 * 1024 * 1024)]
         //[Authorize(Roles = UserRoles.TrainingDepartment)]
-        public async Task<IActionResult> CreateFullCourse([FromForm] CreateFullCourseFormDto form,
-                                                           CancellationToken ct)
+        public async Task<IActionResult> CreateCourse([FromForm] CreateCourseFormDto form, CancellationToken ct)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
@@ -289,10 +277,10 @@ namespace InternalTrainingSystem.Core.Controllers
             if (string.IsNullOrWhiteSpace(form.Metadata))
                 return BadRequest(new { message = "metadata is required and must be a JSON string" });
 
-            CreateFullCourseMetadataDto meta;
+            CreateCourseMetadataDto meta;
             try
             {
-                meta = JsonSerializer.Deserialize<CreateFullCourseMetadataDto>(
+                meta = JsonSerializer.Deserialize<CreateCourseMetadataDto>(
                     form.Metadata,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                 ) ?? throw new ArgumentException("metadata invalid");
@@ -324,7 +312,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 return Conflict(new { message = $"Mã khóa học '{meta.CourseCode}' đã tồn tại. Vui lòng chọn mã khác." });
             try
             {
-                var course = await _courseService.CreateFullCourseAsync(
+                var course = await _courseService.CreateCourseAsync(
                     meta,
                     form.LessonFiles,
                     userId,
@@ -352,6 +340,13 @@ namespace InternalTrainingSystem.Core.Controllers
             var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, page, pageSize);
             return Ok(confirmedUsers);
 
+        }
+
+        [HttpGet("/categories")]
+        public ActionResult<IEnumerable<CourseCategory>> GetAll()
+        {
+            var items = _categoryService.GetCategories();
+            return Ok(items);
         }
     }
 }
