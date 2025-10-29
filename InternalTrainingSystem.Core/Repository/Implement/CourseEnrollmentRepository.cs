@@ -139,5 +139,10 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 PageSize = request.PageSize
             };
         }
+
+        public async Task AddRangeAsync(IEnumerable<CourseEnrollment> enrollments)
+        {
+            await _context.CourseEnrollments.AddRangeAsync(enrollments);
+        }
     }
 }

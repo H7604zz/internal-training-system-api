@@ -18,19 +18,14 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _notificationRepo = notificationRepo;
         }
 
-        public async Task SaveNotificationAsync(Notification notification,List<string>? userIds = null,List<string>? roleNames = null)
+        public async Task SaveNotificationAsync(Notification notification, List<string>? userIds = null, List<string>? roleNames = null)
         {
-            await _notificationRepo.SaveNotificationAsync(courseNotification);
+            await _notificationRepo.SaveNotificationAsync(notification);
         }
 
         public Notification? GetNotificationByCourseAndType(int courseId, NotificationType type)
         {
             return _notificationRepo.GetNotificationByCourseAndType(courseId, type);
-        }
-
-        public Notification? GetNotificationByUserAndType(string userId, NotificationType type)
-        {
-            return _notificationRepo.GetNotificationByUserAndType(userId, type);
         }
 
         public Notification? GetNotificationByClassAndType(int classId, NotificationType type)
@@ -50,23 +45,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public async Task<List<Notification>> GetNotificationsAsync(string? userId = null, string? roleName = null)
         {
-            var query = _context.Notifications
-                .Include(n => n.Recipients)
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(userId))
-            {
-                query = query.Where(n => n.Recipients.Any(r => r.UserId == userId));
-            }
-
-            if (!string.IsNullOrEmpty(roleName))
-            {
-                query = query.Where(n => n.Recipients.Any(r => r.RoleName == roleName));
-            }
-
-            return await query
-                .OrderByDescending(n => n.SentAt)
-                .ToListAsync();
+           return await _notificationRepo.GetNotificationsAsync(userId, roleName);
         }
 
     }

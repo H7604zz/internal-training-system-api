@@ -407,13 +407,13 @@ namespace InternalTrainingSystem.Core.Controllers
             });
 
             return Ok(ApiResponseDto.SuccessResult(null, "Danh sách nhân viên tham gia khóa học đã được chốt thành công."));
+        }
 
-            [HttpGet("/categories")]
-            public ActionResult<IEnumerable<CourseCategory>> GetAll()
-            {
-                var items = _categoryService.GetCategories();
-                return Ok(items);
-            }
+        [HttpGet("/categories")]
+        public ActionResult<IEnumerable<CourseCategory>> GetAll()
+        {
+            var items = _categoryService.GetCategories();
+            return Ok(items);
         }
     }
 }
