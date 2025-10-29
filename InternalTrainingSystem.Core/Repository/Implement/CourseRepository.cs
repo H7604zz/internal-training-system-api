@@ -528,26 +528,18 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
                     foreach (var lessonSpec in modSpec.Lessons.OrderBy(l => l.OrderIndex))
                     {
-                        // Quiz Excel
+                        Lesson newLesson;
+
+                        // CASE 1: QUIZ (Excel import)
                         if (lessonSpec.Type == LessonType.Quiz && lessonSpec.IsQuizExcel)
                         {
-                            if (lessonSpec.MainFileIndex is null ||
-                                lessonSpec.MainFileIndex < 0 ||
-                                lessonSpec.MainFileIndex >= lessonFiles.Count)
-                            {
+                            if (lessonSpec.MainFileIndex is null || lessonSpec.MainFileIndex < 0 || lessonSpec.MainFileIndex >= lessonFiles.Count)
                                 throw new ArgumentException("Thiếu hoặc sai file Excel cho lesson Quiz.");
-                            }
 
                             var excelFile = lessonFiles[lessonSpec.MainFileIndex.Value];
+                            var quizId = await ImportQuizFromExcelInternal(course.CourseId, lessonSpec.QuizTitle ?? lessonSpec.Title, excelFile, ct);
 
-                            var quizId = await ImportQuizFromExcelInternal(
-                                course.CourseId,
-                                lessonSpec.QuizTitle ?? lessonSpec.Title,
-                                excelFile,
-                                ct
-                            );
-
-                            var quizLesson = new Lesson
+                            newLesson = new Lesson
                             {
                                 ModuleId = module.Id,
                                 Title = lessonSpec.Title.Trim(),
@@ -557,26 +549,46 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 QuizId = quizId
                             };
 
-                            await _context.Lessons.AddAsync(quizLesson, ct);
+                            await _context.Lessons.AddAsync(newLesson, ct);
                             await _context.SaveChangesAsync(ct);
-
                             continue;
                         }
 
-                        var lessonEntity = new Lesson
+                        //  CASE 2: VIDEO (URL)
+                        if (lessonSpec.Type == LessonType.Video)
+                        {
+                            if (string.IsNullOrWhiteSpace(lessonSpec.ContentUrl))
+                                throw new ArgumentException($"Lesson '{lessonSpec.Title}' là Video nhưng chưa có ContentUrl.");
+
+                            newLesson = new Lesson
+                            {
+                                ModuleId = module.Id,
+                                Title = lessonSpec.Title.Trim(),
+                                Description = lessonSpec.Description,
+                                Type = LessonType.Video,
+                                OrderIndex = lessonSpec.OrderIndex,
+                                ContentUrl = lessonSpec.ContentUrl
+                            };
+
+                            await _context.Lessons.AddAsync(newLesson, ct);
+                            await _context.SaveChangesAsync(ct);
+                            continue;
+                        }
+
+                        // CASE 3: FILE/READING 
+                        newLesson = new Lesson
                         {
                             ModuleId = module.Id,
                             Title = lessonSpec.Title.Trim(),
                             Description = lessonSpec.Description,
                             Type = lessonSpec.Type,
-                            OrderIndex = lessonSpec.OrderIndex,
-                            ContentUrl = lessonSpec.ContentUrl 
+                            OrderIndex = lessonSpec.OrderIndex
                         };
 
-                        await _context.Lessons.AddAsync(lessonEntity, ct);
+                        await _context.Lessons.AddAsync(newLesson, ct);
                         await _context.SaveChangesAsync(ct);
 
-                        // Upload main file
+                        // Upload file chính nếu có
                         if (lessonSpec.MainFileIndex is not null)
                         {
                             var idx = lessonSpec.MainFileIndex.Value;
@@ -584,10 +596,10 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 throw new ArgumentException($"MainFileIndex {idx} is out of range for lesson '{lessonSpec.Title}'.");
 
                             var mainFile = lessonFiles[idx];
-                            await _courseMaterialService.UploadLessonBinaryAsync(lessonEntity.Id, mainFile, ct);
+                            await _courseMaterialService.UploadLessonBinaryAsync(newLesson.Id, mainFile, ct);
                         }
 
-                        // Upload AttachmentFile
+                        // Upload tài liệu đính kèm nếu có
                         if (lessonSpec.AttachmentFileIndex is not null)
                         {
                             var idxAttach = lessonSpec.AttachmentFileIndex.Value;
@@ -595,9 +607,10 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 throw new ArgumentException($"AttachmentFileIndex {idxAttach} is out of range for lesson '{lessonSpec.Title}'.");
 
                             var attachFile = lessonFiles[idxAttach];
-                            await _courseMaterialService.UploadLessonAttachmentAsync(lessonEntity.Id, attachFile, ct);
+                            await _courseMaterialService.UploadLessonAttachmentAsync(newLesson.Id, attachFile, ct);
                         }
                     }
+
                 }
 
                 await tx.CommitAsync(ct);
