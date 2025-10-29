@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <Folder Include="DB\Migrations\" />
+    <Folder Include="Repository\Implement\" />
   </ItemGroup>
 
 </Project>
