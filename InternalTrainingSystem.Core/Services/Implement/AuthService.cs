@@ -1,27 +1,23 @@
+using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.IdentityModel.Tokens;
-using InternalTrainingSystem.Core.Models;
-using Microsoft.AspNetCore.Identity;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
-    public interface IJwtService
-    {
-        Task<string> GenerateAccessTokenAsync(ApplicationUser user);
-        string GenerateRefreshToken();
-        string GenerateRefreshToken(string userId);
-        ClaimsPrincipal? ValidateToken(string token);
-        Task<TokenResponseDto> RefreshTokenAsync(string refreshToken);
-    }
 
-    public class JwtService : IJwtService
+    public class AuthService : IAuthService
     {
         private readonly IConfiguration _configuration;
         private readonly UserManager<ApplicationUser> _userManager;
+        private static readonly ConcurrentDictionary<string, DateTime> _blacklistedTokens = new();
 
-        public JwtService(IConfiguration configuration, UserManager<ApplicationUser> userManager)
+        public AuthService(IConfiguration configuration, UserManager<ApplicationUser> userManager)
         {
             _configuration = configuration;
             _userManager = userManager;
@@ -264,16 +260,31 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 return string.Empty;
             }
         }
-    }
+        public Task BlacklistTokenAsync(string tokenId, DateTime expiry)
+        {
+            _blacklistedTokens.TryAdd(tokenId, expiry);
+            return Task.CompletedTask;
+        }
 
-    public class TokenResponseDto
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public string? UserId { get; set; }
-        public string AccessToken { get; set; } = string.Empty;
-        public string RefreshToken { get; set; } = string.Empty;
-        public DateTime ExpiresAt { get; set; }
-        public string TokenType { get; set; } = "Bearer";
+        public Task<bool> IsTokenBlacklistedAsync(string tokenId)
+        {
+            return Task.FromResult(_blacklistedTokens.ContainsKey(tokenId));
+        }
+
+        public Task CleanupExpiredTokensAsync()
+        {
+            var now = DateTime.UtcNow;
+            var expiredTokens = _blacklistedTokens
+                .Where(kvp => kvp.Value <= now)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var tokenId in expiredTokens)
+            {
+                _blacklistedTokens.TryRemove(tokenId, out _);
+            }
+
+            return Task.CompletedTask;
+        }
     }
 }

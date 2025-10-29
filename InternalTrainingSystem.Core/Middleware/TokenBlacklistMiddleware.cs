@@ -38,7 +38,7 @@ namespace InternalTrainingSystem.Core.Middleware
                     if (!string.IsNullOrEmpty(jwtId))
                     {
                         using var scope = _serviceProvider.CreateScope();
-                        var blacklistService = scope.ServiceProvider.GetRequiredService<ITokenBlacklistService>();
+                        var blacklistService = scope.ServiceProvider.GetRequiredService<IAuthService>();
                         
                         if (await blacklistService.IsTokenBlacklistedAsync(jwtId))
                         {

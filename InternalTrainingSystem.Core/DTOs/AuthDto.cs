@@ -69,6 +69,41 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Otp { get; set; } = string.Empty;
     }
 
+    public class ForgotPasswordResponseDto
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
+    public class VerifyOtpRequestDto
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(6, MinimumLength = 6)]
+        public string Otp { get; set; } = string.Empty;
+    }
+
+    public class VerifyOtpResponseDto
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string? ResetToken { get; set; }
+    }
+
+    public class TokenResponseDto
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string? UserId { get; set; }
+        public string AccessToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
+        public string TokenType { get; set; } = "Bearer";
+    }
+
     public class ApiResponseDto
     {
         public bool Success { get; set; }

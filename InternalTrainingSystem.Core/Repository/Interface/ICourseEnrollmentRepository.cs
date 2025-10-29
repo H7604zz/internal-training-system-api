@@ -2,9 +2,9 @@
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 
-namespace InternalTrainingSystem.Core.Services.Interface
+namespace InternalTrainingSystem.Core.Repository.Interface
 {
-    public interface ICourseEnrollmentService
+    public interface ICourseEnrollmentRepository
     {
         public Task<bool> AddCourseEnrollment(CourseEnrollment courseEnrollment);
 
@@ -15,7 +15,5 @@ namespace InternalTrainingSystem.Core.Services.Interface
         public Task<bool> UpdateCourseEnrollment(CourseEnrollment courseEnrollment);
 
         public Task<PagedResult<CourseListItemDto>> GetAllCoursesEnrollmentsByStaffAsync(GetAllCoursesRequest request);
-
-        public Task AddRangeAsync(IEnumerable<CourseEnrollment> enrollments);
     }
 }

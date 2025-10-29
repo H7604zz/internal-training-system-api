@@ -6,6 +6,8 @@ using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Middleware;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Repository.Implement;
+using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -53,11 +55,18 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-// Register Services
-builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
+// Register Repository
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<ICourseEnrollmentRepository, CourseEnrollmentRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IClassRepository, ClassRepository>();
+builder.Services.AddScoped<ICourseMaterialRepository, CourseMaterialRepository>();
+builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
-builder.Services.AddHostedService<NotificationCleanupService>();
+// Register Services
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ICourseEnrollmentService, CourseEnrollmentService>();
@@ -67,6 +76,7 @@ builder.Services.AddScoped<ICourseMaterialService, CourseMaterialService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddSingleton<IFileStorage, S3FileStorage>();
 
 // Configure JWT Authentication
 // Read from configuration instead of environment variables directly
@@ -151,15 +161,6 @@ builder.Services.AddSwaggerGen(c =>
 
 
 builder.Services.AddHttpContextAccessor();
-var provider = builder.Configuration["STORAGE_PROVIDER"];
-if (string.Equals(provider, "S3", StringComparison.OrdinalIgnoreCase))
-{
-    builder.Services.AddScoped<IFileStorage, S3FileStorage>();
-}
-else
-{
-    builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
-}
 
 var app = builder.Build();
 

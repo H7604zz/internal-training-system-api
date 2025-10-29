@@ -113,7 +113,7 @@ namespace InternalTrainingSystem.Core.DTOs
     }
 
     // Metadata Create Full Course 
-    public class CreateFullCourseMetadataDto
+    public class CreateCourseMetadataDto
     {
         [Required(ErrorMessage = "Mã khóa học là bắt buộc.")]
         [StringLength(50, ErrorMessage = "Mã khóa học không được vượt quá 50 ký tự.")]
@@ -144,7 +144,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public List<NewModuleSpecDto> Modules { get; set; } = new();
     }
 
-    public class CreateFullCourseFormDto
+    public class CreateCourseFormDto
     {
         [FromForm(Name = "metadata")]
         public string Metadata { get; set; } = string.Empty;

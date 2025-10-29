@@ -1,13 +1,11 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 
-namespace InternalTrainingSystem.Core.Services.Interface
+namespace InternalTrainingSystem.Core.Repository.Interface
 {
-    public interface IUserService
+    public interface IUserRepository
     {
         public PagedResult<EligibleStaffResponse> GetEligibleStaff(int courseId, UserSearchDto searchDto);
         public PagedResult<StaffConfirmCourseResponse> GetStaffConfirmCourse(int courseId, int page, int pageSize);
