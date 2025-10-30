@@ -87,13 +87,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
 				Name = department.Name,
 				CourseDetail = department.Courses?.Select(c => new CourseDetailDto
 				{
-					CourseId = c.CourseId,
+					Code = c.Code,
 					CourseName = c.CourseName
 				}).ToList() ?? new List<CourseDetailDto>(),
 
 				userDetail = department.Users?.Select(u => new UserProfileDto
 				{
-					Id = u.Id,
+					EmployeeId = u.EmployeeId,
 					FullName = u.FullName
 				}).ToList() ?? new List<UserProfileDto>(),
 
