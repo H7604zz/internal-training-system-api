@@ -20,6 +20,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 {
                     DepartmentId = d.Id,
                     DepartmentName = d.Name,
+                    Description = d.Description,
                 })
                 .ToListAsync();
         }
