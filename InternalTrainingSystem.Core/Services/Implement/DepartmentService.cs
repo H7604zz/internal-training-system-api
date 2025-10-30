@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Wordprocessing;
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -80,8 +81,23 @@ namespace InternalTrainingSystem.Core.Services.Implement
 			var department = await _departmentRepo.GetDepartmentCourseAndEmployeeAsync(input.Id);
 			if (department == null)
 				throw new KeyNotFoundException("Department not found");
+			if (!string.IsNullOrEmpty(input.Search) &&
+				!department.Name.Contains(input.Search, StringComparison.OrdinalIgnoreCase))
+			{
+				return null;
+			}
 
-			var pagedCourses = department.Courses?
+			var filteredCourses = department.Courses?
+					.Where(c => string.IsNullOrEmpty(input.Search) ||
+											c.CourseName.Contains(input.Search, StringComparison.OrdinalIgnoreCase))
+					.ToList() ?? new List<Course>();
+
+			var filteredUsers = department.Users?
+					.Where(u => string.IsNullOrEmpty(input.Search) ||
+											u.FullName.Contains(input.Search, StringComparison.OrdinalIgnoreCase))
+					.ToList() ?? new List<ApplicationUser>();
+
+			var pagedCourses = filteredCourses
 					.Skip((input.Page - 1) * input.PageSize)
 					.Take(input.PageSize)
 					.Select(e => new CourseDetailDto
@@ -89,9 +105,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
 						CourseId = e.CourseId,
 						CourseName = e.CourseName
 					})
-					.ToList() ?? new List<CourseDetailDto>();
+					.ToList();
 
-			var pagedUsers = department.Users?
+			var pagedUsers = filteredUsers
 					.Skip((input.Page - 1) * input.PageSize)
 					.Take(input.PageSize)
 					.Select(u => new UserProfileDto
@@ -99,7 +115,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 						Id = u.Id,
 						FullName = u.FullName
 					})
-					.ToList() ?? new List<UserProfileDto>();
+					.ToList();
 
 			var departmentCourseAndEmployeeDto = new DepartmenCourseAndEmployeeDto
 			{
