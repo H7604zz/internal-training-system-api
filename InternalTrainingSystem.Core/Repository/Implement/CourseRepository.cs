@@ -318,51 +318,61 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 PageSize = request.PageSize
             };
         }
-        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId)
+        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default)
         {
             var course = await _context.Courses
                 .Include(c => c.CourseCategory)
                 .Include(c => c.Departments)
-                .Include(c => c.CourseEnrollments)
-                .Include(c => c.CreatedBy)
-                .FirstOrDefaultAsync(c => c.CourseId == courseId);
+                .Include(c => c.Modules)
+                    .ThenInclude(m => m.Lessons)
+                .FirstOrDefaultAsync(c => c.CourseId == courseId, ct);
 
             if (course == null)
-            {
                 return null;
-            }
-
-            // Calculate enrollment count
-            var enrollmentCount = course.CourseEnrollments?.Count ?? 0;
-
-            // For now, we'll use a default rating of 4.5. 
-            // In the future, this should be calculated from actual ratings
 
             return new CourseDetailDto
             {
                 CourseId = course.CourseId,
-                CourseName = course.CourseName,
                 Code = course.Code,
+                CourseName = course.CourseName,
                 Description = course.Description,
+                CategoryName = course.CourseCategory.CategoryName,
                 Duration = course.Duration,
                 Level = course.Level,
-                CategoryName = course.CourseCategory?.CategoryName ?? "Unknown",
-                CategoryId = course.CourseCategoryId,
                 Status = course.Status,
+                IsOnline = course.IsOnline,
+                IsMandatory = course.IsMandatory,
                 CreatedDate = course.CreatedDate,
                 UpdatedDate = course.UpdatedDate,
-                Prerequisites = null, // Not available in current model
-                Objectives = null, // Not available in current model
-                Price = null, // Not available in current model
-                EnrollmentCount = enrollmentCount,
-                CreatedBy = course.CreatedBy.FullName,
                 Departments = course.Departments.Select(d => new DepartmentDto
                 {
                     DepartmentId = d.Id,
                     DepartmentName = d.Name
-                }).ToList()
+                }).ToList(),
+                Modules = course.Modules
+                    .OrderBy(m => m.OrderIndex)
+                    .Select(m => new ModuleDetailDto
+                    {
+                        Id = m.Id,
+                        Title = m.Title,
+                        Description = m.Description,
+                        OrderIndex = m.OrderIndex,
+                        Lessons = m.Lessons
+                            .OrderBy(l => l.OrderIndex)
+                            .Select(l => new LessonListItemDto
+                            {
+                                Id = l.Id,
+                                Title = l.Title,
+                                Description = l.Description,
+                                Type = l.Type,
+                                OrderIndex = l.OrderIndex,
+                                ContentUrl = l.ContentUrl,
+                                QuizId = l.QuizId
+                            }).ToList()
+                    }).ToList()
             };
         }
+
 
         // Duyệt khóa học - ban giám đốc
         public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus)

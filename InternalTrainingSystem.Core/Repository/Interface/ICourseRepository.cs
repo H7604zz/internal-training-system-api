@@ -8,7 +8,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
     {
         public Course? GetCourseByCourseID(int? couseId);
         Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request);
-        Task<CourseDetailDto?> GetCourseDetailAsync(int courseId);
+        Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default);
         Task<bool> DeleteCourseAsync(int id);
         Task<Course?> UpdateCourseAsync(UpdateCourseDto dto);
         public bool ToggleStatus(int id, string status);

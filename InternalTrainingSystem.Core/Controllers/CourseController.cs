@@ -99,23 +99,20 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
 
-        [HttpGet("{id:int}/detail")]
-        public async Task<ActionResult<CourseDetailDto>> GetCourseDetail(int id)
+        /// <summary>
+        /// Lấy chi tiết khóa học theo ID.
+        /// </summary>
+        /// <param name="id">CourseId</param>
+        [HttpGet("{id:int}")]
+        [ProducesResponseType(typeof(CourseDetailDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetCourseDetail([FromRoute][Required] int id, CancellationToken ct)
         {
-            try
-            {
-                var course = await _courseService.GetCourseDetailAsync(id);
-                if (course == null)
-                {
-                    return NotFound(new { message = "Course not found" });
-                }
+            var dto = await _courseService.GetCourseDetailAsync(id, ct);
+            if (dto is null)
+                return NotFound(new { message = $"Course with ID {id} not found." });
 
-                return Ok(course);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
-            }
+            return Ok(dto);
         }
 
         /// <summary>Hiển thị các course có status = Pending (Ban giám đốc duyệt).</summary>
