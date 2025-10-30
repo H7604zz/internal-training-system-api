@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Extensions;
+using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Middleware;
 using InternalTrainingSystem.Core.Models;
@@ -128,9 +129,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(origin => true)
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -157,11 +159,12 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "Internal Training System API", Version = "v1" });
 });
 
+
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-app.MapHub<EnrollmentHub>("/hubs/enrollment");
+app.MapHub<NotificationHub>("/hubs/notifications");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

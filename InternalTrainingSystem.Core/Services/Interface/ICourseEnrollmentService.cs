@@ -15,5 +15,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         public Task<bool> UpdateCourseEnrollment(CourseEnrollment courseEnrollment);
 
         public Task<PagedResult<CourseListItemDto>> GetAllCoursesEnrollmentsByStaffAsync(GetAllCoursesRequest request);
+
+        public Task AddRangeAsync(IEnumerable<CourseEnrollment> enrollments);
     }
 }

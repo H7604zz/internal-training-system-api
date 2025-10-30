@@ -8,7 +8,7 @@ namespace InternalTrainingSystem.Core.Models
         [Key]
         public int EnrollmentId { get; set; }
 
-        public DateTime EnrollmentDate { get; set; } = DateTime.UtcNow;
+        public DateTime EnrollmentDate { get; set; } = DateTime.Now;
 
         public DateTime? CompletionDate { get; set; }
 

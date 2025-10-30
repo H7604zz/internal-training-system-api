@@ -20,7 +20,7 @@ namespace InternalTrainingSystem.Core.Models
         [StringLength(200)]
         public string? ExcuseReason { get; set; } // Lý do xin phép vắng mặt
 
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedDate { get; set; }
 

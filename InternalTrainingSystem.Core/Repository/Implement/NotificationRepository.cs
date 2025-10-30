@@ -1,6 +1,7 @@
 ﻿using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
+using Microsoft.EntityFrameworkCore;
 
 namespace InternalTrainingSystem.Core.Repository.Implement
 {
@@ -32,12 +33,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .FirstOrDefault(n => n.CourseId == courseId && n.Type == type);
         }
 
-        public Notification? GetNotificationByUserAndType(string userId, NotificationType type)
-        {
-            return _context.Notifications
-                .FirstOrDefault(n => n.UserId == userId && n.Type == type);
-        }
-
         public Notification? GetNotificationByClassAndType(int classId, NotificationType type)
         {
             return _context.Notifications
@@ -52,7 +47,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Any(n =>
                     n.Type == type &&
                     n.CourseId == courseId &&
-                    n.CreatedAt >= since
+                    n.SentAt >= since
                 );
         }
 
@@ -67,6 +62,27 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 _context.Notifications.RemoveRange(oldNotis);
                await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<List<Notification>> GetNotificationsAsync(string? userId = null, string? roleName = null)
+        {
+            var query = _context.Notifications
+                .Include(n => n.Recipients)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                query = query.Where(n => n.Recipients.Any(r => r.UserId == userId));
+            }
+
+            if (!string.IsNullOrEmpty(roleName))
+            {
+                query = query.Where(n => n.Recipients.Any(r => r.RoleName == roleName));
+            }
+
+            return await query
+                .OrderByDescending(n => n.SentAt)
+                .ToListAsync();
         }
     }
 }

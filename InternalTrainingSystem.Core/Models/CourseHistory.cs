@@ -15,7 +15,7 @@ namespace InternalTrainingSystem.Core.Models
         [StringLength(500)]
         public string? Description { get; set; }
 
-        public DateTime ActionDate { get; set; } = DateTime.UtcNow;
+        public DateTime ActionDate { get; set; } = DateTime.Now;
 
         // Foreign Keys
         [Required]

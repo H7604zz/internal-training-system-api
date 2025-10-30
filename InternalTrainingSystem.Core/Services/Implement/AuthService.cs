@@ -56,7 +56,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                     new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+                    new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.Now.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
                 };
 
                 // Add roles as claims
@@ -69,7 +69,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     issuer: issuer,
                     audience: audience,
                     claims: claims,
-                    expires: DateTime.UtcNow.AddMinutes(expireMinutes),
+                    expires: DateTime.Now.AddMinutes(expireMinutes),
                     signingCredentials: credentials
                 );
 
@@ -208,7 +208,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     _refreshTokenStore.Remove(refreshToken);
                     
                     var expireMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") ?? "60");
-                    var expiresAt = DateTime.UtcNow.AddMinutes(expireMinutes);
+                    var expiresAt = DateTime.Now.AddMinutes(expireMinutes);
 
                     return new TokenResponseDto
                     {
