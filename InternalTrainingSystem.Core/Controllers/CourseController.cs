@@ -24,6 +24,7 @@ namespace InternalTrainingSystem.Core.Controllers
     {
         private readonly ICourseService _courseService;
         private readonly IUserService _userService;
+        private readonly IClassService _classService;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
         private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hub;
@@ -38,7 +39,8 @@ namespace InternalTrainingSystem.Core.Controllers
             _userService = userService;
             _categoryService = categoryService;
             _notificationService = notificationService;
-        }
+            _classService = classService;
+        } 
 
         // PUT: /api/courses/5
         [HttpPut("{id:int}")]
@@ -338,7 +340,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet("{courseId}/confirmed-staff")]
-        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var notice = _notificationService.GetNotificationByCourseAndType(courseId, NotificationType.CourseFinalized);
@@ -420,5 +422,22 @@ namespace InternalTrainingSystem.Core.Controllers
             var items = _categoryService.GetCategories();
             return Ok(items);
         }
+
+        [HttpGet("/{courseId}/classes")]
+        public async Task<IActionResult> GetClassesByCourse(int courseId)
+        {
+            var classList = await _classService.GetClassesByCourseAsync(courseId);
+
+            if (!classList.Any())
+                return NotFound(new { success = false, message = "Không tìm thấy lớp học cho khóa học này." });
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Tìm thấy {classList.Count} lớp học thuộc khóa học.",
+                data = classList
+            });
+        }
+
     }
 }

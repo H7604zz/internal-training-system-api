@@ -1,3 +1,4 @@
+﻿using InternalTrainingSystem.Core.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -15,15 +16,19 @@ namespace InternalTrainingSystem.Core.Models
         [StringLength(500)]
         public string? Description { get; set; }
 
-        public DateTime StartDate { get; set; }
+        [Required]
+        public DateTime Date { get; set; }
 
-        public DateTime EndDate { get; set; }
+        [Required]
+        public TimeSpan StartTime { get; set; }
+        [Required]
+        public TimeSpan EndTime { get; set; }
 
         [StringLength(100)]
         public string? Location { get; set; }
 
         [StringLength(20)]
-        public string Status { get; set; } = "Scheduled"; // Scheduled, InProgress, Completed, Cancelled
+        public string Status { get; set; } = ScheduleConstants.Status.Scheduled; // Scheduled, InProgress, Completed, Cancelled
 
         public int MaxParticipants { get; set; } = 0; // 0 means unlimited
 

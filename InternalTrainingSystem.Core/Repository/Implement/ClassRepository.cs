@@ -1,4 +1,5 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
@@ -12,201 +13,326 @@ namespace InternalTrainingSystem.Core.Repository.Implement
     public class ClassRepository : IClassRepository
     {
         private readonly ApplicationDbContext _context;
-        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ClassRepository(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor)
+        public ClassRepository(ApplicationDbContext context)
         {
             _context = context;
-            _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<PagedResult<ClassDto>> GetClassesAsync(GetAllClassesRequest request)
+        public async Task<(bool Success, List<ClassDto>? Data)> CreateClassesAsync(
+                            CreateClassRequestDto request,
+                            List<StaffConfirmCourseResponse> confirmedUsers)
         {
-            try
-            {
-                var query = _context.Classes
-                    .Include(c => c.Course)
-                    .Include(c => c.Mentor)
-                    .Include(c => c.Capacity)
-                    .Where(c => c.IsActive)
-                    .AsQueryable();
+            var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == request.CourseId);
+            if (course == null) return (false, null);
 
-                // Lọc theo từ khóa (tìm theo tên lớp, tên khóa học, tên mentor)
-                if (!string.IsNullOrWhiteSpace(request.Search))
+            if (request.NumberOfClasses <= 0 || request.MaxMembers <= 0)
+                return (false, null);
+
+            // Shuffle users
+            var rnd = new Random();
+            var shuffledUsers = confirmedUsers.OrderBy(x => rnd.Next()).ToList();
+
+            // Prepare classes
+            var createdClasses = new List<Class>();
+            for (int i = 1; i <= request.NumberOfClasses; i++)
+            {
+                var newClass = new Class
                 {
-                    string keyword = request.Search.Trim().ToLower();
-                    query = query.Where(c =>
-                        c.ClassName.ToLower().Contains(keyword) ||
-                        (c.Course != null && c.Course.CourseName.ToLower().Contains(keyword)) ||
-                        (c.Mentor != null && c.Mentor.FullName.ToLower().Contains(keyword))
-                    );
+                    ClassName = $"Lớp {course.Code}-{i}",
+                    CourseId = request.CourseId,
+                    Capacity = request.MaxMembers,
+                    Status = ClassConstants.Status.Created,
+                    IsActive = false,
+                    CreatedDate = DateTime.UtcNow
+                };
+                createdClasses.Add(newClass);
+            }
+
+            var availableQueue = new Queue<int>(
+                Enumerable.Range(0, createdClasses.Count)
+            );
+
+            int userIndex = 0;
+            while (userIndex < shuffledUsers.Count && availableQueue.Count > 0)
+            {
+                var classIdx = availableQueue.Dequeue();
+                var targetClass = createdClasses[classIdx];
+
+                var user = shuffledUsers[userIndex];
+                var appUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+                if (appUser != null)
+                {
+                    targetClass.Employees.Add(appUser);
+                    userIndex++;
+                }
+                else
+                {
+                    userIndex++;
                 }
 
-                // Tổng số bản ghi
-                int totalCount = await query.CountAsync();
-
-                // Phân trang và ánh xạ sang DTO trong một query
-                var items = await query
-                    .OrderByDescending(c => c.CreatedDate)
-                    .Skip((request.Page - 1) * request.PageSize)
-                    .Take(request.PageSize)
-                    .Select(c => new ClassDto
-                    {
-                        ClassId = c.ClassId,
-                        ClassName = c.ClassName,
-                        CourseId = c.CourseId,
-                        CourseName = c.Course != null ? c.Course.CourseName : null,
-                        MentorId = c.MentorId,
-                        MentorName = c.Mentor != null ? c.Mentor.FullName : null,
-                        Employees = c.Employees
-                            .Select(s => new ClassEmployeeDto
-                            {
-                                EmployeeId = s.Id,
-                                FullName = s.FullName,
-                                Email = s.Email
-                            }).ToList(),
-                        CreatedDate = c.CreatedDate,
-                        IsActive = c.IsActive
-                    })
-                    .ToListAsync();
-
-                // Trả về kết quả phân trang
-                return new PagedResult<ClassDto>
+                if (targetClass.Employees.Count < targetClass.Capacity)
                 {
-                    Items = items,
-                    TotalCount = totalCount,
-                    Page = request.Page,
-                    PageSize = request.PageSize
+                    availableQueue.Enqueue(classIdx);
+                }
+            }
+
+            _context.Classes.AddRange(createdClasses);
+            await _context.SaveChangesAsync();
+
+            var classDtos = createdClasses.Select(c => new ClassDto
+            {
+                ClassId = c.ClassId,
+                ClassName = c.ClassName,
+                CourseId = c.CourseId,
+                CourseName = c.Course?.CourseName,
+                MentorId = c.MentorId!,
+                MentorName = c.Mentor != null ? c.Mentor.FullName : null,
+                TotalMembers = c.Employees.Count,
+                Employees = c.Employees.Select(e => new ClassEmployeeDto
+                {
+                    EmployeeId = e.Id,
+                    FullName = e.FullName,
+                    Email = e.Email
+                }).ToList(),
+                CreatedDate = c.CreatedDate,
+                IsActive = c.IsActive
+            }).ToList();
+
+            return (true, classDtos);
+        }
+
+        public async Task<(bool Success, string Message, int Count)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
+        {
+            var classEntity = await _context.Classes
+                .Include(c => c.Employees)
+                .FirstOrDefaultAsync(c => c.ClassId == request.ClassId);
+
+            if (classEntity == null)
+                return (false, "Không tìm thấy lớp học.", 0);
+
+            var instructor = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.MentorId);
+            if (instructor == null)
+                return (false, "Không tìm thấy giảng viên.", 0);
+
+            if (request.WeeklySchedules == null || request.WeeklySchedules.Count == 0)
+                return (false, "Chưa có buổi học trong tuần đầu.", 0);
+
+            var allSchedules = new List<Schedule>();
+
+            for (int week = 0; week < request.NumberOfWeeks; week++)
+            {
+                var baseDate = request.StartWeek.AddDays(7 * week);
+
+                foreach (var item in request.WeeklySchedules)
+                {
+                    if (!Enum.TryParse<DayOfWeek>(item.DayOfWeek, true, out var day))
+                        return (false, $"Ngày '{item.DayOfWeek}' không hợp lệ.", 0);
+
+                    var date = baseDate.AddDays((int)day - (int)request.StartWeek.DayOfWeek);
+                    if (date < baseDate)
+                        date = date.AddDays(7);
+
+                    var classMemberIds = classEntity.Employees.Select(e => e.Id).ToList();
+
+                    var start = item.StartTime;
+                    var end = item.EndTime;
+
+                    var conflictSchedules = await _context.Schedules
+                        .Include(s => s.Class)
+                        .ThenInclude(c => c.Employees)
+                        .Where(s =>
+                            s.Date == date &&
+                            (
+                                (s.StartTime <= start && s.EndTime > start) ||
+                                (s.StartTime < end && s.EndTime >= end) ||   
+                                (s.StartTime >= start && s.EndTime <= end) 
+                            ) &&
+                            s.Class!.Employees.Any(e => classMemberIds.Contains(e.Id))
+                        )
+                        .ToListAsync();
+
+                    if (conflictSchedules.Count > 0)
+                    {
+                        var conflictedStudents = conflictSchedules
+                            .SelectMany(s => s.Class!.Employees)
+                            .Where(e => classMemberIds.Contains(e.Id))
+                            .Select(e => e.FullName)
+                            .Distinct()
+                            .ToList();
+
+                        var conflictList = string.Join(", ", conflictedStudents.Take(5));
+                        return (false, $"Lịch học bị trùng cho các học viên: {conflictList}...", 0);
+                    }
+
+                    allSchedules.Add(new Schedule
+                    {
+                        Description = item.Description,
+                        Date = date,
+                        StartTime = item.StartTime,
+                        EndTime = item.EndTime,
+                        Location = item.Location,
+                        IsOnline = false,
+                        CourseId = request.CourseId,
+                        InstructorId = request.MentorId,
+                        ClassId = request.ClassId,
+                        Status = ScheduleConstants.Status.Scheduled,
+                        CreatedDate = DateTime.UtcNow
+                    });
+                }
+            }
+
+            _context.Schedules.AddRange(allSchedules);
+            classEntity.Status = ClassConstants.Status.Scheduled;
+            classEntity.IsActive = true;
+            classEntity.MentorId = request.MentorId;
+            _context.Classes.Update(classEntity);
+            await _context.SaveChangesAsync();
+
+            return (true, $"Đã tạo {allSchedules.Count} buổi học cho {request.NumberOfWeeks} tuần.", allSchedules.Count);
+        }
+
+        public async Task<ClassScheduleResponse> GetClassScheduleAsync(int classId)
+        {
+            var schedule = await _context.Schedules
+                .Include(s => s.Course)
+                .Include(s => s.Class)
+                .Where(s => s.ClassId == classId)
+                .Select(s => new ScheduleItemResponseDto
+                {
+                    ScheduleId = s.ScheduleId,
+                    ClassId = s.ClassId,
+                    ClassName = s.Class!.ClassName,
+                    MentorId = s.InstructorId,
+                    Mentor = s.Instructor.FullName,
+                    CourseCode = s.Course.Code!,
+                    CourseName = s.Course.CourseName!,
+                    DayOfWeek = s.Date,
+                    StartTime = s.StartTime,
+                    EndTime = s.EndTime,
+                    Location = s.Location
+                })
+                .ToListAsync();
+
+            return new ClassScheduleResponse
+            {
+                Success = true,
+                Message = "Lấy lịch học thành công",
+                Schedules = schedule
+            };
+        }
+
+        public async Task<UserScheduleResponse> GetUserScheduleAsync(string staffId)
+        {
+            var staffClasses = await _context.Classes
+                .Include(c => c.Employees)
+                .Where(c => c.Employees.Any(e => e.Id == staffId))
+                .Select(c => c.ClassId)
+                .ToListAsync();
+
+            if (staffClasses == null || staffClasses.Count == 0)
+            {
+                return new UserScheduleResponse
+                {
+                    Success = false,
+                    Message = "Nhân viên chưa được xếp vào lớp nào.",
+                    Schedules = new List<ScheduleItemResponseDto>()
                 };
             }
-            catch (Exception ex)
+
+            var schedules = await _context.Schedules
+                .Include(s => s.Course)
+                .Include(s => s.Class)
+                .Include(s => s.Instructor)
+                .Where(s => s.ClassId != null && staffClasses.Contains(s.ClassId.Value))
+                .OrderBy(s => s.Date)
+                .ThenBy(s => s.StartTime)
+                .Select(s => new ScheduleItemResponseDto
+                {
+                    ScheduleId = s.ScheduleId,
+                    ClassId = s.ClassId,
+                    ClassName = s.Class!.ClassName,
+                    MentorId = s.InstructorId,
+                    Mentor = s.Instructor.FullName,
+                    CourseCode = s.Course.Code!,
+                    CourseName = s.Course.CourseName!,
+                    DayOfWeek = s.Date,
+                    StartTime = s.StartTime,
+                    EndTime = s.EndTime,
+                    Location = s.Location
+                })
+                .ToListAsync();
+
+            return new UserScheduleResponse
             {
-                throw;
-            }
+                Success = true,
+                Message = "Lấy lịch học thành công",
+                Schedules = schedules
+            };
         }
 
-        public async Task<List<ClassDto>> CreateClassesAsync(CreateClassesDto createClassesDto)
+        public async Task<List<ClassEmployeeDto>> GetUserByClassAsync(int classId)
         {
-            try
+            var classEntity = await _context.Classes
+                .Include(c => c.Employees)
+                .FirstOrDefaultAsync(c => c.ClassId == classId);
+
+            if (classEntity == null)
+                return new List<ClassEmployeeDto>();
+
+            return classEntity.Employees.Select(e => new ClassEmployeeDto
             {
-                // Lấy currentUserId từ claims
-                var currentUserId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                EmployeeId = e.Id,
+                FullName = e.FullName,
+                Email = e.Email
+            }).ToList();
+        }
 
-                if (string.IsNullOrEmpty(currentUserId))
-                {
-                    // Lấy user đầu tiên trong database để làm CreatedBy
-                    var firstUser = await _context.Users.FirstOrDefaultAsync(u => u.IsActive);
-                    if (firstUser == null)
-                    {
-                        throw new InvalidOperationException("No active users found in system");
-                    }
-                    currentUserId = firstUser.Id;
-                }
+        public async Task<ClassDto?> GetClassDetailAsync(int classId)
+        {
+            var classEntity = await _context.Classes
+                .Include(c => c.Course)
+                .Include(c => c.Mentor)
+                .Include(c => c.Employees)
+                .FirstOrDefaultAsync(c => c.ClassId == classId);
 
-                var createdClasses = new List<ClassDto>();
+            if (classEntity == null)
+                return null;
 
-                using var transaction = await _context.Database.BeginTransactionAsync();
-
-                try
-                {
-                    foreach (var classRequest in createClassesDto.Classes)
-                    {
-                        // Check if course exists
-                        var course = await _context.Courses
-                            .FirstOrDefaultAsync(c => c.CourseId == classRequest.CourseId && c.Status == Constants.CourseConstants.Status.Pending);
-                        if (course == null)
-                        {
-                            throw new ArgumentException($"Course with ID {classRequest.CourseId} not found or inactive");
-                        }
-
-                        // Check if mentor exists
-                        var mentor = await _context.Users
-                            .FirstOrDefaultAsync(u => u.Id == classRequest.MentorId && u.IsActive);
-                        if (mentor == null)
-                        {
-                            throw new ArgumentException($"Mentor with ID {classRequest.MentorId} not found or inactive");
-                        }
-
-                        // Validate all staff IDs exist
-                        foreach (var staffId in classRequest.EmployeeIds)
-                        {
-                            var staffExists = await _context.Users.AnyAsync(u => u.Id == staffId && u.IsActive);
-                            if (!staffExists)
-                            {
-                                throw new ArgumentException($"Staff with ID {staffId} not found or inactive");
-                            }
-                        }
-
-                        // Create class
-                        var classEntity = new Class
-                        {
-                            ClassName = $"{course.CourseName}",
-                            CourseId = classRequest.CourseId,
-                            MentorId = classRequest.MentorId,
-                            StartDate = DateTime.UtcNow,
-                            Capacity = classRequest.EmployeeIds.Count,
-                            Status = "Active",
-                            CreatedById = currentUserId,
-                            CreatedDate = DateTime.UtcNow,
-                            IsActive = true
-                        };
-
-                        _context.Classes.Add(classEntity);
-                        await _context.SaveChangesAsync();
-
-                        // Add all staff members to the class using many-to-many relationship
-                        var staffUsers = await _context.Users
-                            .Where(u => classRequest.EmployeeIds.Contains(u.Id) && u.IsActive)
-                            .ToListAsync();
-
-                        foreach (var staff in staffUsers)
-                        {
-                            classEntity.Employees.Add(staff);
-                        }
-
-                        await _context.SaveChangesAsync();
-
-                        // Get created class with all info
-                        var createdClass = await _context.Classes
-                            .Include(c => c.Course)
-                            .Include(c => c.Mentor)
-                            .Include(c => c.Employees)
-                            .FirstOrDefaultAsync(c => c.ClassId == classEntity.ClassId);
-
-                        var classDto = new ClassDto
-                        {
-                            ClassId = createdClass!.ClassId,
-                            ClassName = createdClass.ClassName,
-                            CourseId = createdClass.CourseId,
-                            CourseName = createdClass.Course?.CourseName,
-                            MentorId = createdClass.MentorId,
-                            MentorName = createdClass.Mentor?.FullName,
-                            Employees = createdClass.Employees?.Select(s => new ClassEmployeeDto
-                            {
-                                EmployeeId = s.Id,
-                                FullName = s.FullName,
-                                Email = s.Email
-                            }).ToList() ?? new List<ClassEmployeeDto>(),
-                            CreatedDate = createdClass.CreatedDate,
-                            IsActive = createdClass.IsActive
-                        };
-
-                        createdClasses.Add(classDto);
-                    }
-
-                    await transaction.CommitAsync();
-                    return createdClasses;
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
-            catch (Exception ex)
+            return new ClassDto
             {
-                throw;
-            }
+                ClassId = classEntity.ClassId,
+                ClassName = classEntity.ClassName,
+                CourseId = classEntity.CourseId,
+                CourseName = classEntity.Course?.CourseName,
+                MentorId = classEntity.MentorId!,
+                MentorName = classEntity.Mentor?.FullName,
+                TotalMembers = classEntity.Employees.Count,
+                IsActive = classEntity.IsActive,
+                Status = classEntity.Status,
+                CreatedDate = classEntity.CreatedDate,
+            };
+        }
+
+        public async Task<List<ClassDto>> GetClassesByCourseAsync(int courseId)
+        {
+            var classes = await _context.Classes
+                .Include(c => c.Mentor)
+                .Include(c => c.Employees)
+                .Where(c => c.CourseId == courseId)
+                .ToListAsync();
+
+            return classes.Select(c => new ClassDto
+            {
+                ClassId = c.ClassId,
+                ClassName = c.ClassName,
+                MentorId = c.MentorId!,
+                MentorName = c.Mentor?.FullName,
+                IsActive = c.IsActive,
+                Status = c.Status,
+                CreatedDate = c.CreatedDate,
+                TotalMembers = c.Employees.Count
+            }).ToList();
         }
     }
 }
