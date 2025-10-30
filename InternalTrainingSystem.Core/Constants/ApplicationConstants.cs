@@ -22,7 +22,7 @@
     {
         public static class Status
         {
-            public const string Active = "Active";
+            public const string Created = "Created";
             public const string Completed = "Completed";
             public const string Cancelled = "Cancelled";
             public const string Scheduled = "Scheduled";
@@ -149,7 +149,9 @@
             {
                 "application/pdf",
                 "application/msword",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "text/plain", 
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation" 
             };
 
         // Videos
