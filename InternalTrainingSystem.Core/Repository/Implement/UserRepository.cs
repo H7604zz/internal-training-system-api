@@ -213,24 +213,45 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .FirstOrDefaultAsync(u => u.Id == userId);
         }
 
-        public async Task<List<UserAttendanceResponse>> GetUserAttendanceByClassAsync(int classId, string userId)
+        public async Task<List<UserAttendanceResponse>> GetUserAttendanceSummaryAsync(string userId)
         {
-            var query = from s in _context.Schedules
-                        where s.ClassId == classId
-                        join a in _context.Attendances
-                            on new { s.ScheduleId, UserId = userId } equals new { a.ScheduleId, a.UserId } into attendanceGroup
-                        from a in attendanceGroup.DefaultIfEmpty()
-                        orderby s.Date
-                        select new UserAttendanceResponse
-                        {
-                            ScheduleId = s.ScheduleId,
-                            ScheduleDate = s.Date,
-                            Location = s.Location,
-                            Status = a != null ? a.Status : AttendanceConstants.Status.NotYet,
-                            CheckOutTime = a.CheckOutTime
-                        };
+            var classes = await _context.Classes
+                .Include(c => c.Course)
+                .Include(c => c.Schedules)
+                .Include(c => c.Employees)
+                .Where(c => c.Employees.Any(e => e.Id == userId))
+                .ToListAsync();
 
-            return await query.ToListAsync();
+            var result = new List<UserAttendanceResponse>();
+
+            foreach (var cls in classes)
+            {
+                var scheduleIds = cls.Schedules.Select(s => s.ScheduleId).ToList();
+
+                var attendances = await _context.Attendances
+                    .Where(a => scheduleIds.Contains(a.ScheduleId) && a.UserId == userId)
+                    .ToListAsync();
+
+                int totalSessions = cls.Schedules.Count;
+                int absentDays = attendances.Count(a => a.Status == AttendanceConstants.Status.Absent);
+
+                double attendanceRate = totalSessions > 0
+                    ? Math.Round((double)absentDays / totalSessions * 100, 2)
+                    : 0;
+
+                result.Add(new UserAttendanceResponse
+                {
+                    ClassId = cls.ClassId,
+                    ClassName = cls.ClassName,
+                    CourseCode = cls.Course?.Code!,
+                    CourseName = cls.Course?.CourseName!,
+                    TotalSessions = totalSessions,
+                    AbsentDays = absentDays,
+                    AttendanceRate = attendanceRate
+                });
+            }
+
+            return result;
         }
     }
 }

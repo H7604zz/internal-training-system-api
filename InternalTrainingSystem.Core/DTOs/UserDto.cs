@@ -120,13 +120,14 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class UserAttendanceResponse
     {
-        public int ScheduleId { get; set; }
-        public DateTime ScheduleDate { get; set; }
-        public string? Location { get; set; }
-        public string Status { get; set; } = string.Empty;
-        public DateTime? CheckOutTime { get; set; }
+        public int ClassId { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+        public string CourseCode { get; set; } = string.Empty;
+        public string CourseName { get; set; } = string.Empty;
+        public int TotalSessions { get; set; }
+        public int AbsentDays { get; set; }
+        public double AttendanceRate { get; set; }
     }
-
 
     public class ApiResponseDto<T>
     {

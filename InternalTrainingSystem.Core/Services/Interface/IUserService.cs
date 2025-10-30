@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
@@ -16,6 +17,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         List<IdentityRole> GetRoles();
         Task<ApplicationUser?> GetUserProfileAsync(string userId);
 
-        Task<List<UserAttendanceResponse>> GetUserAttendanceByClassAsync(int classId, string userId);
+        Task<List<UserAttendanceResponse>> GetUserAttendanceSummaryAsync(string userId);
     }
 }
