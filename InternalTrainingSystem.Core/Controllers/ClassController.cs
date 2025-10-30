@@ -7,6 +7,7 @@ using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using static InternalTrainingSystem.Core.DTOs.AttendanceDto;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -16,11 +17,13 @@ namespace InternalTrainingSystem.Core.Controllers
     {
         private readonly IClassService _classService;
         private readonly IUserService _userService;
+        private readonly IAttendanceService _attendanceService;
 
-        public ClassController(IClassService classService, IUserService userService)
+        public ClassController(IClassService classService, IUserService userService, IAttendanceService attendanceService)
         {
             _classService = classService;
             _userService = userService;
+            _attendanceService = attendanceService;
         }
 
         [HttpPost]
@@ -104,5 +107,42 @@ namespace InternalTrainingSystem.Core.Controllers
                 data = classDetail
             });
         }
+
+        [HttpPost("{scheduleId}/attendance")]
+        public async Task<IActionResult> MarkAttendance(int scheduleId, [FromBody] List<AttendanceRequest> attendanceList)
+        {
+            if (attendanceList == null || !attendanceList.Any())
+                return BadRequest(new { success = false, message = "Danh sách điểm danh trống." });
+
+            await _attendanceService.MarkAttendanceAsync(scheduleId, attendanceList);
+
+            return Ok(new { success = true, message = "Điểm danh thành công." });
+        }
+
+        [HttpPut("{scheduleId}/attendance")]
+        public async Task<IActionResult> UpdateAttendance(int scheduleId, [FromBody] List<AttendanceRequest> attendanceList)
+        {
+            if (attendanceList == null || !attendanceList.Any())
+                return BadRequest(new { success = false, message = "Danh sách điểm danh trống." });
+
+            var result = await _attendanceService.UpdateAttendanceAsync(scheduleId, attendanceList);
+
+            if (!result)
+                return NotFound(new { success = false, message = "Không tìm thấy dữ liệu điểm danh cần cập nhật." });
+
+            return Ok(new { success = true, message = "Cập nhật điểm danh thành công." });
+        }
+
+        [HttpGet("schedules/{scheduleId}/attendance")]
+        public async Task<IActionResult> GetAttendanceBySchedule(int scheduleId)
+        {
+            var attendances = await _attendanceService.GetAttendanceByScheduleAsync(scheduleId);
+
+            if (attendances == null || !attendances.Any())
+                return NotFound(new { success = false, message = "Không tìm thấy thông tin điểm danh cho buổi học này." });
+
+            return Ok(attendances);
+        }
+
     }
 }

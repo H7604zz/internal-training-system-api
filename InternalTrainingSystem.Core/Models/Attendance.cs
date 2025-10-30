@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using InternalTrainingSystem.Core.Constants;
 
 namespace InternalTrainingSystem.Core.Models
 {
@@ -10,7 +11,7 @@ namespace InternalTrainingSystem.Core.Models
         public DateTime? CheckOutTime { get; set; }
 
         [StringLength(20)]
-        public string Status { get; set; } = "Present"; // Present, Absent, Late, LeftEarly
+        public string Status { get; set; } = AttendanceConstants.Status.NotYet; // Present, Absent, Late, LeftEarly
 
         [StringLength(500)]
         public string? Notes { get; set; } // Ghi chú về tình trạng điểm danh
