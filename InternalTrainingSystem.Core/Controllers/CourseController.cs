@@ -341,6 +341,11 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
+            var notice = _notificationService.GetNotificationByCourseAndType(courseId, NotificationType.CourseFinalized);
+            if (notice != null)
+            {
+                return Ok("Danh sách nhân viên chưa được chốt !!!");
+            }
             var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, page, pageSize);
             return Ok(confirmedUsers);
 
