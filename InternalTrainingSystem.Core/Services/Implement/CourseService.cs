@@ -8,6 +8,7 @@ using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Security.Claims;
 
 namespace InternalTrainingSystem.Core.Services.Implement
@@ -31,9 +32,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _courseRepo.DeleteCourseAsync(id);
         }
 
-        public async Task<Course?> UpdateCourseAsync(UpdateCourseDto dto)
+        public async Task<Course> UpdateCourseAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId, CancellationToken ct = default)
         {
-           return await _courseRepo.UpdateCourseAsync(dto);
+           return await _courseRepo.UpdateCourseAsync( courseId,  meta,  lessonFiles,  updatedByUserId,  ct = default);
         }
 
         public bool ToggleStatus(int id, string status)
