@@ -65,6 +65,19 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			return department;
 		}
 
+		public async Task<Department> GetDepartmentCourseAndEmployeeAsync(int departmentId)
+		{
+			var department = await _context.Departments
+							.Include(d => d.Users) 
+							.Include(d => d.Courses)   
+							.FirstOrDefaultAsync(d => d.Id == departmentId);
+			if(department == null)
+			{
+				throw new KeyNotFoundException("department not found");
+			}
+			return department;
+		}
+
 		public async Task<List<DepartmentDto>> GetDepartments()
 		{
 			return await _context.Departments
