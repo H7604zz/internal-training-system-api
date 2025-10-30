@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
@@ -72,6 +73,45 @@ namespace InternalTrainingSystem.Core.Services.Implement
 				Description = department.Description
 			};
 			return departmentDto;
+		}
+
+		public async Task<DepartmenCourseAndEmployeeDto?> GetDepartmentCourseAndEmployeeAsync(DepartmentCourseAndEmployeeInput input)
+		{
+			var department = await _departmentRepo.GetDepartmentCourseAndEmployeeAsync(input.Id);
+			if (department == null)
+				throw new KeyNotFoundException("Department not found");
+
+			var pagedCourses = department.Courses?
+					.Skip((input.Page - 1) * input.PageSize)
+					.Take(input.PageSize)
+					.Select(e => new CourseDetailDto
+					{
+						CourseId = e.CourseId,
+						CourseName = e.CourseName
+					})
+					.ToList() ?? new List<CourseDetailDto>();
+
+			var pagedUsers = department.Users?
+					.Skip((input.Page - 1) * input.PageSize)
+					.Take(input.PageSize)
+					.Select(u => new UserProfileDto
+					{
+						Id = u.Id,
+						FullName = u.FullName
+					})
+					.ToList() ?? new List<UserProfileDto>();
+
+			var departmentCourseAndEmployeeDto = new DepartmenCourseAndEmployeeDto
+			{
+				Id = department.Id,
+				Name = department.Name,
+				CourseDetail = pagedCourses,
+				userDetail = pagedUsers,
+				TotalCourses = department.Courses?.Count ?? 0, 
+				TotalUsers = department.Users?.Count ?? 0      
+			};
+
+			return departmentCourseAndEmployeeDto;
 		}
 
 		public async Task<List<DepartmentDto>> GetDepartments()
