@@ -414,7 +414,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 Message = "Danh sách nhân viên trong khóa học đã được chốt, vui lòng xem xét."
             });
 
-            return Ok(ApiResponseDto.SuccessResult(null, "Danh sách nhân viên tham gia khóa học đã được chốt thành công."));
+            return Ok("Danh sách nhân viên tham gia khóa học đã được chốt thành công.");
         }
 
         [HttpGet("/categories")]

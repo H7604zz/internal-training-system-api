@@ -22,6 +22,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string EmployeeId { get; set; } = string.Empty;
         public string? FullName { get; set; }
         public string? Email { get; set; }
+        public int? AbsentNumberDay { get; set; }
     }
 
     public class CreateClassRequestDto

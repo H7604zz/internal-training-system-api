@@ -15,5 +15,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<bool> CreateUserAsync(CreateUserDto req);
         List<IdentityRole> GetRoles();
         Task<ApplicationUser?> GetUserProfileAsync(string userId);
+
+        Task<List<UserAttendanceResponse>> GetUserAttendanceByClassAsync(int classId, string userId);
     }
 }

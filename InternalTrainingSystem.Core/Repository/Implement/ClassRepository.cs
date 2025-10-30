@@ -275,17 +275,28 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         {
             var classEntity = await _context.Classes
                 .Include(c => c.Employees)
+                .Include(c => c.Schedules)
                 .FirstOrDefaultAsync(c => c.ClassId == classId);
 
             if (classEntity == null)
                 return new List<ClassEmployeeDto>();
 
-            return classEntity.Employees.Select(e => new ClassEmployeeDto
+            var scheduleIds = classEntity.Schedules.Select(s => s.ScheduleId).ToList();
+
+            var attendances = await _context.Attendances
+                .Where(a => scheduleIds.Contains(a.ScheduleId))
+                .ToListAsync();
+
+            var result = classEntity.Employees.Select(e => new ClassEmployeeDto
             {
                 EmployeeId = e.Id,
                 FullName = e.FullName,
-                Email = e.Email
+                Email = e.Email,
+                AbsentNumberDay = attendances
+            .Count(a => a.UserId == e.Id && a.Status == AttendanceConstants.Status.Absent)
             }).ToList();
+
+            return result;
         }
 
         public async Task<ClassDto?> GetClassDetailAsync(int classId)

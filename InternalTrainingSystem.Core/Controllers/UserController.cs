@@ -223,6 +223,23 @@ namespace InternalTrainingSystem.Core.Controllers
             });
         }
 
+        [HttpGet("{classId}/attendance")]
+        [Authorize(Roles = UserRoles.Staff)]
+        public async Task<IActionResult> GetUserAttendanceByClass(int classId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return NotFound("User not found");
+            }
+
+            var result = await _userService.GetUserAttendanceByClassAsync(classId, userId);
+
+            if (result == null || !result.Any())
+                return NotFound(new { success = false, message = "Không có dữ liệu điểm danh cho lớp này." });
+
+            return Ok(result);
+        }
     }
 }
                                                             

@@ -1,11 +1,9 @@
-﻿using InternalTrainingSystem.Core.DTOs;
-using InternalTrainingSystem.Core.Models;
-using static InternalTrainingSystem.Core.DTOs.AttendanceDto;
+﻿using static InternalTrainingSystem.Core.DTOs.AttendanceDto;
 
-namespace InternalTrainingSystem.Core.Repository.Interface
+namespace InternalTrainingSystem.Core.Services.Interface
 {
-	public interface IAttendanceRepository
-	{
+    public interface IAttendanceService
+    {
         Task MarkAttendanceAsync(int scheduleId, List<AttendanceRequest> list);
         Task<bool> UpdateAttendanceAsync(int scheduleId, List<AttendanceRequest> list);
         Task<List<AttendanceResponse>> GetAttendanceByScheduleAsync(int scheduleId);

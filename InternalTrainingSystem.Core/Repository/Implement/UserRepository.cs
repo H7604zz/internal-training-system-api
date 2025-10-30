@@ -212,5 +212,25 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Include(u => u.Department)
                 .FirstOrDefaultAsync(u => u.Id == userId);
         }
+
+        public async Task<List<UserAttendanceResponse>> GetUserAttendanceByClassAsync(int classId, string userId)
+        {
+            var query = from s in _context.Schedules
+                        where s.ClassId == classId
+                        join a in _context.Attendances
+                            on new { s.ScheduleId, UserId = userId } equals new { a.ScheduleId, a.UserId } into attendanceGroup
+                        from a in attendanceGroup.DefaultIfEmpty()
+                        orderby s.Date
+                        select new UserAttendanceResponse
+                        {
+                            ScheduleId = s.ScheduleId,
+                            ScheduleDate = s.Date,
+                            Location = s.Location,
+                            Status = a != null ? a.Status : AttendanceConstants.Status.NotYet,
+                            CheckOutTime = a.CheckOutTime
+                        };
+
+            return await query.ToListAsync();
+        }
     }
 }

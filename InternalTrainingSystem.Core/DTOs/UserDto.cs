@@ -118,6 +118,16 @@ namespace InternalTrainingSystem.Core.DTOs
         public List<ScheduleItemResponseDto> Schedules { get; set; } = new();
     }
 
+    public class UserAttendanceResponse
+    {
+        public int ScheduleId { get; set; }
+        public DateTime ScheduleDate { get; set; }
+        public string? Location { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public DateTime? CheckOutTime { get; set; }
+    }
+
+
     public class ApiResponseDto<T>
     {
         public bool Success { get; set; }
