@@ -14,15 +14,15 @@ namespace InternalTrainingSystem.Core.Repository.Implement
     {
         private readonly ApplicationDbContext _context;
         private readonly IFileStorage _storage;
-        private readonly ICourseMaterialService _courseMaterialService;
+        private readonly ICourseMaterialRepository _courseMaterialRepo;
         private const double AverageRatingPass = 4.5;
 
         public CourseRepository(ApplicationDbContext context, IFileStorage storage,
-        ICourseMaterialService courseMaterialService)
+        ICourseMaterialRepository courseMaterialRepo)
         {
             _context = context;
             _storage = storage;
-            _courseMaterialService = courseMaterialService;
+            _courseMaterialRepo = courseMaterialRepo;
         }
 
         // Hàm lấy ra Course theo code
@@ -596,7 +596,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 throw new ArgumentException($"MainFileIndex {idx} is out of range for lesson '{lessonSpec.Title}'.");
 
                             var mainFile = lessonFiles[idx];
-                            await _courseMaterialService.UploadLessonBinaryAsync(newLesson.Id, mainFile, ct);
+                            await _courseMaterialRepo.UploadLessonBinaryAsync(newLesson.Id, mainFile, ct);
                         }
 
                         // Upload tài liệu đính kèm nếu có
@@ -607,7 +607,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 throw new ArgumentException($"AttachmentFileIndex {idxAttach} is out of range for lesson '{lessonSpec.Title}'.");
 
                             var attachFile = lessonFiles[idxAttach];
-                            await _courseMaterialService.UploadLessonAttachmentAsync(newLesson.Id, attachFile, ct);
+                            await _courseMaterialRepo.UploadLessonAttachmentAsync(newLesson.Id, attachFile, ct);
                         }
                     }
 

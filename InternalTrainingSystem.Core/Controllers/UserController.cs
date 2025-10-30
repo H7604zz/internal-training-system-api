@@ -17,16 +17,19 @@ namespace InternalTrainingSystem.Core.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IClassService _classService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
 
         private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR };
 
-        public UserController(IUserService userServices, UserManager<ApplicationUser> userManager, ICourseEnrollmentService courseEnrollmentService)
+        public UserController(IUserService userServices, UserManager<ApplicationUser> userManager, 
+            ICourseEnrollmentService courseEnrollmentService, IClassService classService)
         {
             _userService = userServices;
             _userManager = userManager;
             _courseEnrollmentService = courseEnrollmentService;
+            _classService = classService;
         }
 
         /// <summary>
@@ -203,6 +206,23 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
 
         }
+
+        [HttpGet("{userId}/schedule")]
+        public async Task<IActionResult> GetStudentSchedule(string userId)
+        {
+            var result = await _classService.GetUserScheduleAsync(userId);
+
+            if (!result.Success)
+                return NotFound(new { success = false, message = result.Message });
+
+            return Ok(new
+            {
+                success = true,
+                message = result.Message,
+                schedules = result.Schedules
+            });
+        }
+
     }
 }
                                                             

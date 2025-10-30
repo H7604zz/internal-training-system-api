@@ -1,4 +1,4 @@
-﻿using Amazon.Runtime.Internal.Util;
+using Amazon.Runtime.Internal.Util;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;

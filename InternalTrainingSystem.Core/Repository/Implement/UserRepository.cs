@@ -17,16 +17,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
     public class UserRepository : IUserRepository
     {
         private readonly ApplicationDbContext _context;
-        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IConfiguration _config;
 
-        public UserRepository(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IConfiguration config)
+        public UserRepository(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
         {
             _context = context;
             _userManager = userManager;
-            _roleManager = roleManager;
-            _config = config;
         }
 
         public PagedResult<StaffConfirmCourseResponse> GetStaffConfirmCourse(int courseId, int page, int pageSize)
@@ -51,6 +47,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Take(pageSize)
                 .Select(u => new StaffConfirmCourseResponse
                 {
+                    Id = u.Id,
                     EmployeeId = u.EmployeeId,
                     FullName = u.FullName,
                     Email = u.Email!,
@@ -95,6 +92,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                         orderby u.FullName
                         select new EligibleStaffResponse
                         {
+                            Id = u.Id,
                             EmployeeId = u.EmployeeId,
                             FullName = u.FullName,
                             Email = u.Email!,
