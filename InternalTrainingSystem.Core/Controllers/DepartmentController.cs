@@ -43,7 +43,7 @@ namespace InternalTrainingSystem.Core.Controllers
 		{
 			if (!ModelState.IsValid)
 				return BadRequest(ModelState);
-			var success = await _departmentService.UpdateDepartmentAsync(dto);
+			var success = await _departmentService.UpdateDepartmentAsync(id, dto);
 			if (!success)
 				return NotFound();
 			return NoContent();

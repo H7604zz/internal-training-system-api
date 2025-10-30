@@ -79,9 +79,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
 			return await _departmentRepo.GetDepartments();
 		}
 
-		public async Task<bool> UpdateDepartmentAsync(UpdateDepartmentDto input)
+		public async Task<bool> UpdateDepartmentAsync(int id, UpdateDepartmentDto input)
 		{
-			var department = await _departmentRepo.GetDepartmentByIdAsync(input.Id);
+			var department = await _departmentRepo.GetDepartmentByIdAsync(id);
 			if (department == null)
 			{
 				throw new KeyNotFoundException("department not found");
