@@ -31,7 +31,8 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly ICategoryService _categoryService;
 
         public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
-            IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService, ICategoryService categoryService)
+            IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService,
+            ICategoryService categoryService, IClassService classService)
         {
             _courseService = courseService;
             _hub = hub;
