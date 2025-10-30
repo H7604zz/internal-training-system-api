@@ -12,6 +12,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
 		Task UpdateDepartmentAsync(Models.Department department);
 		Task DeleteDepartmentAsync(int departmentId);
 		Task<Models.Department> GetDepartmentByIdAsync(int id);
-		Task<Department> GetDepartmentCourseAndEmployeeAsync(int departmentId);
+		Task<Department> GetDepartmentCourseAndEmployeeAsync(int departmentId, string? search, int page, int pageSize);
 	}
 }

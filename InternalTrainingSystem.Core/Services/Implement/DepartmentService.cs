@@ -78,56 +78,31 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
 		public async Task<DepartmenCourseAndEmployeeDto?> GetDepartmentCourseAndEmployeeAsync(DepartmentCourseAndEmployeeInput input)
 		{
-			var department = await _departmentRepo.GetDepartmentCourseAndEmployeeAsync(input.Id);
-			if (department == null)
-				throw new KeyNotFoundException("Department not found");
-			if (!string.IsNullOrEmpty(input.Search) &&
-				!department.Name.Contains(input.Search, StringComparison.OrdinalIgnoreCase))
-			{
-				return null;
-			}
+			var department = await _departmentRepo.GetDepartmentCourseAndEmployeeAsync(
+				input.Id, input.Search, input.Page, input.PageSize);
 
-			var filteredCourses = department.Courses?
-					.Where(c => string.IsNullOrEmpty(input.Search) ||
-											c.CourseName.Contains(input.Search, StringComparison.OrdinalIgnoreCase))
-					.ToList() ?? new List<Course>();
-
-			var filteredUsers = department.Users?
-					.Where(u => string.IsNullOrEmpty(input.Search) ||
-											u.FullName.Contains(input.Search, StringComparison.OrdinalIgnoreCase))
-					.ToList() ?? new List<ApplicationUser>();
-
-			var pagedCourses = filteredCourses
-					.Skip((input.Page - 1) * input.PageSize)
-					.Take(input.PageSize)
-					.Select(e => new CourseDetailDto
-					{
-						CourseId = e.CourseId,
-						CourseName = e.CourseName
-					})
-					.ToList();
-
-			var pagedUsers = filteredUsers
-					.Skip((input.Page - 1) * input.PageSize)
-					.Take(input.PageSize)
-					.Select(u => new UserProfileDto
-					{
-						Id = u.Id,
-						FullName = u.FullName
-					})
-					.ToList();
-
-			var departmentCourseAndEmployeeDto = new DepartmenCourseAndEmployeeDto
+			var result = new DepartmenCourseAndEmployeeDto
 			{
 				Id = department.Id,
 				Name = department.Name,
-				CourseDetail = pagedCourses,
-				userDetail = pagedUsers,
-				TotalCourses = department.Courses?.Count ?? 0, 
-				TotalUsers = department.Users?.Count ?? 0      
+				CourseDetail = department.Courses?.Select(c => new CourseDetailDto
+				{
+					CourseId = c.CourseId,
+					CourseName = c.CourseName
+				}).ToList() ?? new List<CourseDetailDto>(),
+
+				userDetail = department.Users?.Select(u => new UserProfileDto
+				{
+					Id = u.Id,
+					FullName = u.FullName
+				}).ToList() ?? new List<UserProfileDto>(),
+
+				TotalCourses = department.Courses?.Count ?? 0,
+
+				TotalUsers = department.Users?.Count ?? 0
 			};
 
-			return departmentCourseAndEmployeeDto;
+			return result;
 		}
 
 		public async Task<List<DepartmentDto>> GetDepartments()

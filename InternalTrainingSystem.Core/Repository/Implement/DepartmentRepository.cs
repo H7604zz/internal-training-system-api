@@ -1,4 +1,6 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using Amazon.Runtime.Internal.Util;
+using DocumentFormat.OpenXml.Office2010.Excel;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
@@ -65,16 +67,30 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			return department;
 		}
 
-		public async Task<Department> GetDepartmentCourseAndEmployeeAsync(int departmentId)
+		public async Task<Department> GetDepartmentCourseAndEmployeeAsync(int departmentId, string? search, int page, int pageSize)
 		{
 			var department = await _context.Departments
-							.Include(d => d.Users) 
-							.Include(d => d.Courses)   
-							.FirstOrDefaultAsync(d => d.Id == departmentId);
-			if(department == null)
-			{
-				throw new KeyNotFoundException("department not found");
-			}
+			 .FirstOrDefaultAsync(d => d.Id == departmentId);
+
+			if (department == null)
+				throw new KeyNotFoundException("Department not found");
+
+			department.Courses = await _context.Courses
+					.Where(c => c.Departments.Any(d => d.Id == departmentId) &&
+											(string.IsNullOrEmpty(search) || c.CourseName.Contains(search)))
+					.OrderBy(c => c.CourseId)
+					.Skip((page - 1) * pageSize)
+					.Take(pageSize)
+					.ToListAsync();
+
+			department.Users = await _context.Users
+					.Where(u => u.DepartmentId == departmentId &&
+											(string.IsNullOrEmpty(search) || u.FullName.Contains(search)))
+					.OrderBy(u => u.Id)
+					.Skip((page - 1) * pageSize)
+					.Take(pageSize)
+					.ToListAsync();
+
 			return department;
 		}
 
