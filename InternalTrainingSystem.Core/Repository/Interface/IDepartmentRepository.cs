@@ -6,8 +6,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
 {
 	public interface IDepartmentRepository
 	{
-		Task<List<DepartmentDto>> GetDepartments();
-		Task<PagedResult<Models.Department>> GetAllDepartmentsAsync(int page, int pageSize);
+		Task<List<DepartmentDto>> GetDepartmentsAsync();
 		Task<Models.Department> AddDepartmentAsync(Models.Department department);
 		Task UpdateDepartmentAsync(Models.Department department);
 		Task DeleteDepartmentAsync(int departmentId);

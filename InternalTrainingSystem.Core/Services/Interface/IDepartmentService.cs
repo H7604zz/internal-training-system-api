@@ -5,9 +5,8 @@ namespace InternalTrainingSystem.Core.Services.Interface
 {
 	public interface IDepartmentService
 	{
-		Task<List<DepartmentDto>> GetDepartments();
-		Task<PagedResult<DepartmenDetailsDto>> GetAllDepartmentsAsync(DepartmentInputDto input);
-		Task<DepartmenDetailsDto?> GetDepartmentByIdAsync(int departmentId);
+		Task<List<DepartmentDto>> GetDepartmentsAsync();
+		Task<DepartmentDto?> GetDepartmentByIdAsync(int departmentId);
 		Task<DepartmenCourseAndEmployeeDto?> GetDepartmentCourseAndEmployeeAsync(DepartmentCourseAndEmployeeInput input);
 		Task<bool> UpdateDepartmentAsync(int id, UpdateDepartmentDto input);
 		Task<int> CreateDepartmentAsync(CreateDepartmentDto input);

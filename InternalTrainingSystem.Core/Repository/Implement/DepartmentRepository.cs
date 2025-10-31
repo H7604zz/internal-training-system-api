@@ -37,24 +37,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			await _context.SaveChangesAsync();
 		}
 
-		public async Task<PagedResult<Department>> GetAllDepartmentsAsync(int page, int pageSize)
-		{
-			if (page <= 0) page = 1;
-			if (pageSize <= 0) pageSize = 10;
-			var query = _context.Departments;
-			var totalItems = await query.CountAsync();
-			var departments = await query.Skip((page - 1)*pageSize)
-				.Take(pageSize)
-				.ToListAsync();
-			return new PagedResult<Department>
-			{
-				Items = departments,
-				TotalCount = totalItems,
-				Page = page,
-				PageSize = pageSize
-			};
-		}
-
 		public async Task<Models.Department> GetDepartmentByIdAsync(int id)
 		{
 			var department = await _context.Departments.FindAsync(id);
@@ -78,7 +60,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			return department;
 		}
 
-		public async Task<List<DepartmentDto>> GetDepartments()
+		public async Task<List<DepartmentDto>> GetDepartmentsAsync()
 		{
 			return await _context.Departments
 					.Select(d => new DepartmentDto

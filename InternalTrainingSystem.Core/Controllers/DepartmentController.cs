@@ -15,26 +15,21 @@ namespace InternalTrainingSystem.Core.Controllers
 			_departmentService = departmentService;
 		}
 
-
 		[HttpGet]
-		public async Task<IActionResult> GetAllDepartments()
+		public async Task<IActionResult> GetDepartments()
 		{
-			var departments = await _departmentService.GetDepartments();
+			var departments = await _departmentService.GetDepartmentsAsync();
 
 			return Ok(departments);
 		}
-		[HttpGet("details")]
+
+		[HttpGet("/{id}detail")]
 		public async Task<IActionResult> GetDepartmentCourseAndEmployee([FromQuery] DepartmentCourseAndEmployeeInput input)
 		{
 			var department = await _departmentService.GetDepartmentCourseAndEmployeeAsync(input);
 			return Ok(department);
 		}
-		[HttpGet("get-all")]
-		public async Task<IActionResult> GetPaged([FromQuery] DepartmentInputDto input)
-		{
-			var result = await _departmentService.GetAllDepartmentsAsync(input);
-			return Ok(result);
-		}
+
 		[HttpPost]
 		public async Task<IActionResult> CreateDepartment([FromBody] CreateDepartmentDto input)
 		{
@@ -44,6 +39,7 @@ namespace InternalTrainingSystem.Core.Controllers
 			var id = await _departmentService.CreateDepartmentAsync(input);
 			return Ok(new { Id = id});
 		}
+
 		[HttpPut("{id:int}")]
 		public async Task<IActionResult> Update(int id, [FromBody] UpdateDepartmentDto dto)
 		{
@@ -54,6 +50,7 @@ namespace InternalTrainingSystem.Core.Controllers
 				return NotFound();
 			return NoContent();
 		}
+
 		[HttpDelete("{id:int}")]
 		public async Task<IActionResult> Delete(int id)
 		{

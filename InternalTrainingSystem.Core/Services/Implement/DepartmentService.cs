@@ -42,35 +42,17 @@ namespace InternalTrainingSystem.Core.Services.Implement
 			return true;
 		}
 
-		public async Task<PagedResult<DepartmenDetailsDto>> GetAllDepartmentsAsync(DepartmentInputDto input)
-		{
-			var result = await _departmentRepo.GetAllDepartmentsAsync(input.Page, input.PageSize);
-			var departmentDtos = result.Items.Select(department => new DepartmenDetailsDto
-			{
-				Id = department.Id,
-				Name = department.Name,
-				Description = department.Description
-			}).ToList();
-			return new PagedResult<DepartmenDetailsDto>
-			{
-				Items = departmentDtos,
-				TotalCount = result.TotalCount,
-				Page = result.Page,
-				PageSize = result.PageSize
-			};
-		}
-
-		public async Task<DepartmenDetailsDto?> GetDepartmentByIdAsync(int departmentId)
+		public async Task<DepartmentDto?> GetDepartmentByIdAsync(int departmentId)
 		{
 			var department = await _departmentRepo.GetDepartmentByIdAsync(departmentId);
 			if (department == null)
 			{
 				throw new KeyNotFoundException("department not found");
 			}
-			var departmentDto = new DepartmenDetailsDto
-			{
-				Id = department.Id,
-				Name =  department.Name,
+			var departmentDto = new DepartmentDto
+            {
+				DepartmentId = department.Id,
+				DepartmentName =  department.Name,
 				Description = department.Description
 			};
 			return departmentDto;
@@ -130,9 +112,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
 			return departmentCourseAndEmployeeDto;
 		}
 
-		public async Task<List<DepartmentDto>> GetDepartments()
+		public async Task<List<DepartmentDto>> GetDepartmentsAsync()
 		{
-			return await _departmentRepo.GetDepartments();
+			return await _departmentRepo.GetDepartmentsAsync();
 		}
 
 		public async Task<bool> UpdateDepartmentAsync(int id, UpdateDepartmentDto input)
