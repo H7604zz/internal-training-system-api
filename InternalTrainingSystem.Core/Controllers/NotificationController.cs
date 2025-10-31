@@ -97,7 +97,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
             await _notificationService.DeleteOldNotificationsAsync(courseId, NotificationType.Start);
 
-            _notificationService.SaveNotificationAsync(new Notification
+            await _notificationService.SaveNotificationAsync(new Notification
                 {
                     CourseId = courseId,
                     Type = NotificationType.Start,
