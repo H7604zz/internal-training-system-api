@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 
-namespace InternalTrainingSystem.Core.Configuration
+namespace InternalTrainingSystem.Core.Hubs
 {
-    public class EnrollmentHub : Hub
+    public class NotificationHub : Hub
     {
         public async Task JoinGroup(string groupName)
         {

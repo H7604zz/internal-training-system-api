@@ -20,7 +20,7 @@ namespace InternalTrainingSystem.Core.Models
 
         public bool IsActive { get; set; } = true;
 
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public DateTime? LastLoginDate { get; set; }
 

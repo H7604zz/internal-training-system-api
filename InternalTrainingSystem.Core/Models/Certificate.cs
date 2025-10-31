@@ -19,7 +19,7 @@ namespace InternalTrainingSystem.Core.Models
         [MaxLength(500)]
         public string? FilePath { get; set; }
 
-        public DateTime IssueDate { get; set; } = DateTime.UtcNow;
+        public DateTime IssueDate { get; set; } = DateTime.Now;
 
         public DateTime? ExpirationDate { get; set; }
 

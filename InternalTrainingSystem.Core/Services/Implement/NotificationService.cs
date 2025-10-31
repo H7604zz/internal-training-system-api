@@ -18,19 +18,14 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _notificationRepo = notificationRepo;
         }
 
-        public async Task SaveNotificationAsync(Notification courseNotification)
+        public async Task SaveNotificationAsync(Notification notification, List<string>? userIds = null, List<string>? roleNames = null)
         {
-            await _notificationRepo.SaveNotificationAsync(courseNotification);
+            await _notificationRepo.SaveNotificationAsync(notification);
         }
 
         public Notification? GetNotificationByCourseAndType(int courseId, NotificationType type)
         {
             return _notificationRepo.GetNotificationByCourseAndType(courseId, type);
-        }
-
-        public Notification? GetNotificationByUserAndType(string userId, NotificationType type)
-        {
-            return _notificationRepo.GetNotificationByUserAndType(userId, type);
         }
 
         public Notification? GetNotificationByClassAndType(int classId, NotificationType type)
@@ -47,5 +42,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
            await _notificationRepo.DeleteOldNotificationsAsync(courseId, type);
         }
+
+        public async Task<List<Notification>> GetNotificationsAsync(string? userId = null, string? roleName = null)
+        {
+           return await _notificationRepo.GetNotificationsAsync(userId, roleName);
+        }
+
     }
 }

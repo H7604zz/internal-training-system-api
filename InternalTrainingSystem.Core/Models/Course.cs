@@ -29,7 +29,7 @@ namespace InternalTrainingSystem.Core.Models
 
         public string Status { get; set; } = CourseConstants.Status.Pending;
 
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedDate { get; set; }
 

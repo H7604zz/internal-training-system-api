@@ -9,7 +9,7 @@ namespace InternalTrainingSystem.Core.Models
         [Key]
         public int ParticipantId { get; set; }
 
-        public DateTime RegisteredDate { get; set; } = DateTime.UtcNow;
+        public DateTime RegisteredDate { get; set; } = DateTime.Now;
 
         [StringLength(20)]
         public string Status { get; set; } = ScheduleConstants.ParticipantStatus.Registered; // Registered, Attended, NoShow, Cancelled

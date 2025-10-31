@@ -109,7 +109,7 @@
         {
             public const string Present = "Present";
             public const string Absent = "Absent";
-            public const string Excused = "Excused";
+            public const string NotYet = "NotYet";
         }
     }
 
