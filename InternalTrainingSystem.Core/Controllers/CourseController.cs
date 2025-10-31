@@ -104,8 +104,6 @@ namespace InternalTrainingSystem.Core.Controllers
         /// </summary>
         /// <param name="id">CourseId</param>
         [HttpGet("{id:int}")]
-        [ProducesResponseType(typeof(CourseDetailDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCourseDetail([FromRoute][Required] int id, CancellationToken ct)
         {
             var dto = await _courseService.GetCourseDetailAsync(id, ct);

@@ -354,6 +354,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     .Select(m => new ModuleDetailDto
                     {
                         Id = m.Id,
+                        CourseId=m.CourseId,
                         Title = m.Title,
                         Description = m.Description,
                         OrderIndex = m.OrderIndex,
@@ -362,6 +363,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             .Select(l => new LessonListItemDto
                             {
                                 Id = l.Id,
+                                ModuleId = l.ModuleId,
                                 Title = l.Title,
                                 Description = l.Description,
                                 Type = l.Type,
