@@ -10,7 +10,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
 		Task<DepartmenDetailsDto?> GetDepartmentByIdAsync(int departmentId);
 		Task<DepartmenCourseAndEmployeeDto?> GetDepartmentCourseAndEmployeeAsync(DepartmentCourseAndEmployeeInput input);
 		Task<bool> UpdateDepartmentAsync(int id, UpdateDepartmentDto input);
-		Task<int> CreateDepartmentAsync(CreateDepartmentDto input);
+		Task<bool> CreateDepartmentAsync(CreateDepartmentDto input);
 		Task<bool> DeleteDepartmentAsync(int departmentId);
 	}
 }
