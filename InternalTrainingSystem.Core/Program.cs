@@ -29,12 +29,7 @@ builder.Configuration.LoadEnvironmentVariables();
 builder.Services.OverrideWithEnvironmentVariables(builder.Configuration);
 
 // Add services to the container.
-builder.Services.AddControllers()
-     .AddJsonOptions(options =>
-     {
-         options.JsonSerializerOptions.DefaultIgnoreCondition =
-             System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-     });
+builder.Services.AddControllers();
 
 // Configure Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
