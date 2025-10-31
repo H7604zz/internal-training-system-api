@@ -17,81 +17,118 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			_context = context;
 		}
 
-		public async Task<Models.Department> AddDepartmentAsync(Models.Department department)
+		public async Task<bool> CreateDepartmentAsync(CreateDepartmentDto department)
 		{
 			if (department == null)
 			{
-				throw new ArgumentNullException(nameof(department));
+				return false;
 			}
-			await _context.Departments.AddAsync(department);
+			var departmentEntity = new Department
+			{
+				Name = department.Name,
+				Description = department.Description
+			};
+			await _context.Departments.AddAsync(departmentEntity);
 			await _context.SaveChangesAsync();
-			return department;
+			return true;
 		}
 
-		public async Task DeleteDepartmentAsync(int departmentId)
+		public async Task<bool> DeleteDepartmentAsync(int departmentId)
 		{
 			var department = await _context.Departments.FindAsync(departmentId);
 			if (department == null)
 			{
-				throw new KeyNotFoundException("Department not found");
+				return false;
 			}
 			_context.Departments.Remove(department);
 			await _context.SaveChangesAsync();
+			return true;
 		}
 
-		public async Task<PagedResult<Department>> GetAllDepartmentsAsync(int page, int pageSize)
+		public async Task<PagedResult<DepartmenDetailsDto>> GetAllDepartmentsAsync(DepartmentInputDto input)
 		{
-			if (page <= 0) page = 1;
-			if (pageSize <= 0) pageSize = 10;
-			var query = _context.Departments;
+			if (input.Page <= 0) input.Page = 1;
+			if (input.PageSize <= 0) input.PageSize = 10;
+			var query = _context.Departments.AsQueryable();
 			var totalItems = await query.CountAsync();
-			var departments = await query.Skip((page - 1)*pageSize)
-				.Take(pageSize)
+			var departmentDto = await query
+				.Skip((input.Page - 1) * input.PageSize)
+				.Take(input.PageSize)
+				.Select(x => new DepartmenDetailsDto
+				{
+					Id = x.Id,
+					Name = x.Name,
+					Description = x.Description
+				})
 				.ToListAsync();
-			return new PagedResult<Department>
+
+			return new PagedResult<DepartmenDetailsDto>
 			{
-				Items = departments,
+				Items = departmentDto,
 				TotalCount = totalItems,
-				Page = page,
-				PageSize = pageSize
+				Page = input.Page,
+				PageSize = input.PageSize
 			};
 		}
 
-		public async Task<Models.Department> GetDepartmentByIdAsync(int id)
+		public async Task<DepartmenDetailsDto> GetDepartmentByIdAsync(int id)
 		{
 			var department = await _context.Departments.FindAsync(id);
 			if (department == null)
 			{
-				throw new KeyNotFoundException("Department not found");
+				throw new KeyNotFoundException("Department is null");
 			}
-			return department;
+			var departmentDto = new DepartmenDetailsDto
+			{
+				Id = department.Id,
+				Name = department.Name,
+				Description = department.Description
+			};
+			return departmentDto;
 		}
 
-		public async Task<Department> GetDepartmentCourseAndEmployeeAsync(int departmentId, string? search, int page, int pageSize)
+		public async Task<DepartmenCourseAndEmployeeDto> GetDepartmentCourseAndEmployeeAsync(DepartmentCourseAndEmployeeInput input)
 		{
 			var department = await _context.Departments
-			 .FirstOrDefaultAsync(d => d.Id == departmentId);
+			 .FirstOrDefaultAsync(d => d.Id == input.Id);
 
 			if (department == null)
 				throw new KeyNotFoundException("Department not found");
 
-			department.Courses = await _context.Courses
-					.Where(c => c.Departments.Any(d => d.Id == departmentId) &&
-											(string.IsNullOrEmpty(search) || c.CourseName.Contains(search)))
+			var courses = await _context.Courses
+					.Where(c => c.Departments.Any(d => d.Id == input.Id) &&
+											(string.IsNullOrEmpty(input.Search) || c.CourseName.Contains(input.Search)))
 					.OrderBy(c => c.CourseId)
-					.Skip((page - 1) * pageSize)
-					.Take(pageSize)
+					.Skip((input.Page - 1) * input.PageSize)
+					.Take(input.PageSize)
+					.Select(c => new CourseDetailDto
+					{
+						Code = c.Code,
+						CourseName = c.CourseName
+					})
 					.ToListAsync();
 
-			department.Users = await _context.Users
-					.Where(u => u.DepartmentId == departmentId &&
-											(string.IsNullOrEmpty(search) || u.FullName.Contains(search)))
+			var users = await _context.Users
+					.Where(u => u.DepartmentId == input.Id &&
+											(string.IsNullOrEmpty(input.Search) || u.FullName.Contains(input.Search)))
 					.OrderBy(u => u.Id)
-					.Skip((page - 1) * pageSize)
-					.Take(pageSize)
+					.Skip((input.Page - 1) * input.PageSize)
+					.Take(input.PageSize)
+					.Select(u => new UserProfileDto
+					{
+						EmployeeId = u.EmployeeId,
+						FullName = u.FullName
+					})
 					.ToListAsync();
-
-			return department;
+			return new DepartmenCourseAndEmployeeDto
+			{
+				Id = department.Id,
+				Name = department.Name,
+				CourseDetail = courses,
+				userDetail = users,
+				TotalCourses = await _context.Courses.CountAsync(c => c.Departments.Any(d => d.Id == input.Id)),
+				TotalUsers = await _context.Users.CountAsync(u => u.DepartmentId == input.Id)
+			};
 		}
 
 		public async Task<List<DepartmentDto>> GetDepartments()
@@ -105,16 +142,17 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 					.ToListAsync();
 		}
 
-		public async Task UpdateDepartmentAsync(Models.Department department)
+		public async Task<bool> UpdateDepartmentAsync(int id, UpdateDepartmentDto department)
 		{
-			var existingDepartment = await _context.Departments.FindAsync(department.Id);
+			var existingDepartment = await _context.Departments.FindAsync(id);
 			if (existingDepartment == null)
 			{
-				throw new KeyNotFoundException("Department not found");
+				return false;
 			}
 			existingDepartment.Name = department.Name;
 			existingDepartment.Description = department.Description;
 			await _context.SaveChangesAsync();
+			return true;
 		}
 	}
 }
