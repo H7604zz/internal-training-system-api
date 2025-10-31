@@ -57,9 +57,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _courseRepo.GetAllCoursesPagedAsync(request);
         }
 
-        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId)
+        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default)
         {
-            return await _courseRepo.GetCourseDetailAsync(courseId);
+            return await _courseRepo.GetCourseDetailAsync(courseId,ct);
         }
 
         // Duyệt khóa học - ban giám đốc

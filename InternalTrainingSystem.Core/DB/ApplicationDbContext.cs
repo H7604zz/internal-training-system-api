@@ -33,6 +33,7 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<Lesson> Lessons { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<LessonProgress> LessonProgresses { get; set; }
+        public DbSet<NotificationRecipient> NotificationRecipients { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -117,6 +118,12 @@ namespace InternalTrainingSystem.Core.DB
                 .HasForeignKey(ua => ua.AnswerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Notification relationships
+            builder.Entity<Notification>()
+               .HasMany(n => n.Recipients)
+               .WithOne(r => r.Notification)
+               .HasForeignKey(r => r.NotificationId);
+
             // Schedule relationships
             builder.Entity<Schedule>()
                 .HasOne(s => s.Course)
@@ -166,6 +173,10 @@ namespace InternalTrainingSystem.Core.DB
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Indexes for better performance
+            builder.Entity<ApplicationUser>()
+                .HasIndex(u => u.EmployeeId)
+                .IsUnique();
+
             builder.Entity<CourseEnrollment>()
                 .HasIndex(ce => new { ce.UserId, ce.CourseId })
                 .IsUnique();
@@ -338,10 +349,6 @@ namespace InternalTrainingSystem.Core.DB
 
             builder.Entity<Class>()
                 .HasIndex(cl => new { cl.StartDate, cl.EndDate });
-
-            builder.Entity<Notification>()
-                  .HasIndex(n => new { n.Type, n.CourseId, n.UserId, n.ClassId})
-                  .IsUnique(false);
 
             // Department relationships
             builder.Entity<Department>(e =>

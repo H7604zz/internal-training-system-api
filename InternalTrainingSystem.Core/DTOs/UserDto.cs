@@ -4,6 +4,7 @@ namespace InternalTrainingSystem.Core.DTOs
 {
     public class EligibleStaffResponse
     {
+        public string? Id { get; set; }
         public string? EmployeeId { get; set; }
         public required string FullName { get; set; }
         public required string Email { get; set; }
@@ -18,6 +19,7 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class StaffConfirmCourseResponse
     {
+        public string? Id { get; set; }
         public string? EmployeeId { get; set; }
         public required string FullName { get; set; }
         public required string Email { get; set; }
@@ -103,10 +105,28 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class UserSearchDto
     {
-        public string? SearchTerm { get; set; }
-        public string? status { get; set; }
+        public string? Search { get; set; }
+        public string? Status { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
+    }
+
+    public class UserScheduleResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public List<ScheduleItemResponseDto> Schedules { get; set; } = new();
+    }
+
+    public class UserAttendanceResponse
+    {
+        public int ClassId { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+        public string CourseCode { get; set; } = string.Empty;
+        public string CourseName { get; set; } = string.Empty;
+        public int TotalSessions { get; set; }
+        public int AbsentDays { get; set; }
+        public double AttendanceRate { get; set; }
     }
 
     public class ApiResponseDto<T>

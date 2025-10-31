@@ -9,7 +9,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
     {
         public Course? GetCourseByCourseID(int? couseId);
         Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request);
-        Task<CourseDetailDto?> GetCourseDetailAsync(int courseId);
+        Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default);
         Task<bool> DeleteCourseAsync(int id);
         Task<Course> UpdateCourseAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId, CancellationToken ct = default);
         public bool ToggleStatus(int id, string status);

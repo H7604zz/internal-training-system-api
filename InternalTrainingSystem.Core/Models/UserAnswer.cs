@@ -15,7 +15,7 @@ namespace InternalTrainingSystem.Core.Models
 
         public int Points { get; set; } = 0;
 
-        public DateTime AnsweredAt { get; set; } = DateTime.UtcNow;
+        public DateTime AnsweredAt { get; set; } = DateTime.Now;
 
         // Foreign Keys
         [Required]

@@ -23,7 +23,7 @@ namespace InternalTrainingSystem.Core.Models
         [StringLength(50)]
         public string Action { get; set; } = string.Empty; // Added, Removed, Modified
 
-        public DateTime ActionDate { get; set; } = DateTime.UtcNow;
+        public DateTime ActionDate { get; set; } = DateTime.Now;
 
         [StringLength(450)]
         public string? ActionBy { get; set; } // UserId của người thực hiện thay đổi

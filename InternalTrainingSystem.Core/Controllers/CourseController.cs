@@ -1,6 +1,8 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
@@ -22,19 +24,24 @@ namespace InternalTrainingSystem.Core.Controllers
     {
         private readonly ICourseService _courseService;
         private readonly IUserService _userService;
+        private readonly IClassService _classService;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
-        private readonly IHubContext<EnrollmentHub> _hub;
+        private readonly INotificationService _notificationService;
+        private readonly IHubContext<NotificationHub> _hub;
         private readonly ICategoryService _categoryService;
 
-        public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService, 
-            IHubContext<EnrollmentHub> hub, IUserService userService, ICategoryService categoryService)
+        public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
+            IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService,
+            ICategoryService categoryService, IClassService classService)
         {
             _courseService = courseService;
             _hub = hub;
             _courseEnrollmentService = courseEnrollmentService;
             _userService = userService;
             _categoryService = categoryService;
-        }
+            _notificationService = notificationService;
+            _classService = classService;
+        } 
 
         // PUT: /api/courses/{id}
         [HttpPut("{id}")]
@@ -163,28 +170,23 @@ namespace InternalTrainingSystem.Core.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest( new { message = "Internal server error", error = ex.Message });
+                return BadRequest(new { message = "Internal server error", error = ex.Message });
             }
         }
 
 
-        [HttpGet("{id:int}/detail")]
-        public async Task<ActionResult<CourseDetailDto>> GetCourseDetail(int id)
+        /// <summary>
+        /// Lấy chi tiết khóa học theo ID.
+        /// </summary>
+        /// <param name="id">CourseId</param>
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetCourseDetail([FromRoute][Required] int id, CancellationToken ct)
         {
-            try
-            {
-                var course = await _courseService.GetCourseDetailAsync(id);
-                if (course == null)
-                {
-                    return NotFound(new { message = "Course not found" });
-                }
+            var dto = await _courseService.GetCourseDetailAsync(id, ct);
+            if (dto is null)
+                return NotFound(new { message = $"Course with ID {id} not found." });
 
-                return Ok(course);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
-            }
+            return Ok(dto);
         }
 
         /// <summary>Hiển thị các course có status = Pending (Ban giám đốc duyệt).</summary>
@@ -207,7 +209,7 @@ namespace InternalTrainingSystem.Core.Controllers
             public string NewStatus { get; set; } = default!;
         }
 
-        /// <summary>Duyệt/ Từ chối 1 course đang Pending: newStatus = "Apporove" | "Reject".</summary>
+        /// <summary>Duyệt 1 course đang Pending: newStatus = "Apporove".</summary>
         [HttpPut("{courseId:int}/status")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -289,8 +291,8 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 CourseId = course.CourseId,
                 UserId = userId,
-                EnrollmentDate = DateTime.UtcNow,
-                LastAccessedDate = DateTime.UtcNow
+                EnrollmentDate = DateTime.Now,
+                LastAccessedDate = DateTime.Now
             };
 
             if (course.IsOnline || course.IsMandatory)
@@ -403,12 +405,80 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet("{courseId}/confirmed-staff")]
-        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
+            var notice = _notificationService.GetNotificationByCourseAndType(courseId, NotificationType.CourseFinalized);
+            if (notice != null)
+            {
+                return Ok("Danh sách nhân viên chưa được chốt !!!");
+            }
             var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, page, pageSize);
             return Ok(confirmedUsers);
 
+        }
+
+        [HttpPost("{courseCode}/finalize-enrollments")]
+        //[Authorize(Roles = UserRoles.DirectManager)]
+        public async Task<IActionResult> FinalizeEnrollments(string courseCode)
+        {
+
+            var course = await _courseService.GetCourseByCourseCodeAsync(courseCode);
+            if (course == null) return BadRequest();
+
+            var existingNotification = _notificationService.GetNotificationByCourseAndType(course.CourseId, NotificationType.CourseFinalized);
+
+            if (existingNotification != null)
+            {
+                return Ok(ApiResponseDto.SuccessResult(new { sent = false }, "Thông báo đã được gửi trước đó."));
+            }
+
+            var searchDto = new UserSearchDto
+            {
+                Page = 1,
+                PageSize = int.MaxValue,
+            };
+
+            var eligiblePaged = _userService.GetEligibleStaff(course.CourseId, searchDto);
+            var enrollmentsToAdd = new List<CourseEnrollment>();
+            foreach (var user in eligiblePaged.Items)
+            {
+                if (user.Status == EnrollmentConstants.Status.NotEnrolled)
+                {
+                    enrollmentsToAdd.Add(new CourseEnrollment
+                    {
+                        CourseId = course.CourseId,
+                        UserId = user.Id!,
+                        Status = EnrollmentConstants.Status.Enrolled,
+                        EnrollmentDate = DateTime.Now,
+                        LastAccessedDate = DateTime.Now
+                    });
+                }
+            }
+            if (enrollmentsToAdd.Any())
+            { 
+                await _courseEnrollmentService.AddRangeAsync(enrollmentsToAdd);
+            }
+
+            await _notificationService.SaveNotificationAsync(
+                new Notification
+                {
+                    CourseId = course.CourseId,
+                    Message = $"Danh sách nhân viên trong khóa học khoá học {course.CourseName} đã được hoàn tất.",
+                    Type = NotificationType.CourseFinalized,
+                    SentAt = DateTime.Now,
+                },
+                roleNames: new List<string> { UserRoles.TrainingDepartment }
+            );
+
+            await _hub.Clients.Group($"finalize-enrollments-{course.Code}").SendAsync("ReceiveNotification", new
+            {
+                CourseId = course.Code,
+                Type = "EnrollmentsFinalized",
+                Message = "Danh sách nhân viên trong khóa học đã được chốt, vui lòng xem xét."
+            });
+
+            return Ok("Danh sách nhân viên tham gia khóa học đã được chốt thành công.");
         }
 
         [HttpGet("/categories")]
@@ -417,5 +487,22 @@ namespace InternalTrainingSystem.Core.Controllers
             var items = _categoryService.GetCategories();
             return Ok(items);
         }
+
+        [HttpGet("/{courseId}/classes")]
+        public async Task<IActionResult> GetClassesByCourse(int courseId)
+        {
+            var classList = await _classService.GetClassesByCourseAsync(courseId);
+
+            if (!classList.Any())
+                return NotFound(new { success = false, message = "Không tìm thấy lớp học cho khóa học này." });
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Tìm thấy {classList.Count} lớp học thuộc khóa học.",
+                data = classList
+            });
+        }
+
     }
 }
