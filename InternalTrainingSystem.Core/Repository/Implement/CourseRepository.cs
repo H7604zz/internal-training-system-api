@@ -351,9 +351,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 Status = course.Status,
                 CreatedDate = course.CreatedDate,
                 UpdatedDate = course.UpdatedDate,
-                Prerequisites = null, // Not available in current model
-                Objectives = null, // Not available in current model
-                Price = null, // Not available in current model
                 EnrollmentCount = enrollmentCount,
                 CreatedBy = course.CreatedBy.FullName,
                 Departments = course.Departments.Select(d => new DepartmentDto

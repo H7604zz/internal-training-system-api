@@ -13,17 +13,13 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Description { get; set; }
         public int Duration { get; set; }
         public string Level { get; set; } = string.Empty;
-        public string? Department { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public string? Status { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public int? CategoryId { get; set; }
-        public string? Prerequisites { get; set; }
-        public string? Objectives { get; set; }
-        public decimal? Price { get; set; }
         public int EnrollmentCount { get; set; }
-        public string CreatedBy { get; set; }
+        public string? CreatedBy { get; set; }
         
         public List<DepartmentDto> Departments { get; set; } = new();
     }

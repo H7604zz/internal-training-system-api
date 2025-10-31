@@ -23,10 +23,10 @@ namespace InternalTrainingSystem.Core.Controllers
 			return Ok(departments);
 		}
 
-		[HttpGet("/{id}detail")]
-		public async Task<IActionResult> GetDepartmentCourseAndEmployee([FromQuery] DepartmentCourseAndEmployeeInput input)
+		[HttpGet("/{id}")]
+		public async Task<IActionResult> GetDepartmentDetail(int id)
 		{
-			var department = await _departmentService.GetDepartmentCourseAndEmployeeAsync(input);
+			var department = await _departmentService.GetDepartmentByIdAsync(id);
 			return Ok(department);
 		}
 
