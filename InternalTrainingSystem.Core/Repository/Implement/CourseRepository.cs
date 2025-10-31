@@ -355,10 +355,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
                     Status = c.Status,
-                    Departments = c.Departments.Select(d => new DepartmentDto
+                    Departments = c.Departments.Select(d => new DepartmentListDto
                     {
                         DepartmentId = d.Id,
-                        DepartmentName = d.Name
+                        DepartmentName = d.Name,
+                        Description = d.Description,
                     }).ToList(),
                     CreatedBy = c.CreatedBy != null ? c.CreatedBy.UserName : string.Empty,
                     UpdatedDate = c.UpdatedDate,
@@ -447,10 +448,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
                     Status = c.Status,
-                    Departments = c.Departments.Select(d => new DepartmentDto
+                    Departments = c.Departments.Select(d => new DepartmentListDto
                     {
                         DepartmentId = d.Id,
-                        DepartmentName = d.Name
+                        DepartmentName = d.Name,
+                        Description = d.Description,
                     }).ToList(),
                     CreatedBy = c.CreatedBy != null ? c.CreatedBy.UserName : string.Empty,
                     UpdatedDate = c.UpdatedDate,
@@ -492,7 +494,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 IsMandatory = course.IsMandatory,
                 CreatedDate = course.CreatedDate,
                 UpdatedDate = course.UpdatedDate,
-                Departments = course.Departments.Select(d => new DepartmentDto
+                Departments = course.Departments.Select(d => new DepartmentListDto
                 {
                     DepartmentId = d.Id,
                     DepartmentName = d.Name
@@ -502,7 +504,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     .Select(m => new ModuleDetailDto
                     {
                         Id = m.Id,
-                        CourseId=m.CourseId,
+                        CourseId = m.CourseId,
                         Title = m.Title,
                         Description = m.Description,
                         OrderIndex = m.OrderIndex,
@@ -522,7 +524,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     }).ToList()
             };
         }
-
 
         // Duyệt khóa học - ban giám đốc
         public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus)

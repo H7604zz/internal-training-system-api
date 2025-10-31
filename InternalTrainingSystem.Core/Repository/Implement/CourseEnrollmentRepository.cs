@@ -120,10 +120,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     IsMandatory = e.Course.IsMandatory,
                     CreatedDate = e.Course.CreatedDate,
                     Status = e.Status,
-                    Departments = e.Course.Departments.Select(d => new DepartmentDto
+                    Departments = e.Course.Departments.Select(d => new DepartmentListDto
                     {
                         DepartmentId = d.Id,
-                        DepartmentName = d.Name
+                        DepartmentName = d.Name,
+                        Description = d.Description,
                     }).ToList(),
                     CreatedBy = e.Course.CreatedBy != null ? e.Course.CreatedBy.UserName : string.Empty,
                     UpdatedDate = e.Course.UpdatedDate,
