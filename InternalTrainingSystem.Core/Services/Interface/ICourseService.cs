@@ -14,7 +14,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<Course> UpdateCourseAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId, CancellationToken ct = default);
         public bool ToggleStatus(int id, string status);
         Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default);
-        Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus);
+        Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus, string? rejectReason = null);
         Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason);
         Task<Course> GetCourseByCourseCodeAsync(string courseCode);
         Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta, IList<IFormFile> lessonFiles,

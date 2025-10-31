@@ -74,47 +74,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
         }
 
-        //public async Task<Course?> UpdateCourseAsync(UpdateCourseDto dto)
-        //{
-        //    var course = await _context.Courses
-        //        .Include(c => c.Departments)
-        //        .FirstOrDefaultAsync(c => c.CourseId == dto.CourseId);
-
-        //    if (course == null)
-        //        return null;
-
-        //    course.CourseName = dto.CourseName.Trim();
-        //    course.Description = dto.Description;
-        //    course.CourseCategoryId = dto.CourseCategoryId;
-        //    course.Duration = dto.Duration;
-        //    course.Level = dto.Level;
-        //    course.Status = dto.Status ?? course.Status;
-        //    course.UpdatedDate = DateTime.UtcNow;
-
-        //    if (dto.Departments != null)
-        //    {
-        //        var existingDepartments = course.Departments.ToList();
-
-        //        var newDepartments = await _context.Departments
-        //            .Where(d => dto.Departments.Contains(d.Id))
-        //            .ToListAsync();
-
-        //        foreach (var oldDept in existingDepartments)
-        //        {
-        //            if (!newDepartments.Any(nd => nd.Id == oldDept.Id))
-        //                course.Departments.Remove(oldDept);
-        //        }
-
-        //        foreach (var newDept in newDepartments)
-        //        {
-        //            if (!course.Departments.Any(d => d.Id == newDept.Id))
-        //                course.Departments.Add(newDept);
-        //        }
-        //    }
-
-        //    await _context.SaveChangesAsync();
-        //    return course;
-        //}
+        
         public async Task<Course> UpdateCourseAsync(int courseId,UpdateCourseMetadataDto meta,IList<IFormFile> lessonFiles,string updatedByUserId, CancellationToken ct = default)
         {
             await using var tx = await _context.Database.BeginTransactionAsync(ct);
@@ -252,7 +212,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             if (idx < 0 || idx >= lessonFiles.Count)
                                 throw new ArgumentException($"MainFileIndex {idx} out of range for lesson '{lessonSpec.Title}'.");
 
-                            await _courseMaterialService.UploadLessonBinaryAsync(lesson.Id, lessonFiles[idx],ct);
+                            await _courseMaterialRepo.UploadLessonBinaryAsync(lesson.Id, lessonFiles[idx],ct);
                         }
 
                         if (lessonSpec.AttachmentFileIndex is not null)
@@ -261,7 +221,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             if (idxAttach < 0 || idxAttach >= lessonFiles.Count)
                                 throw new ArgumentException($"AttachmentFileIndex {idxAttach} out of range for lesson '{lessonSpec.Title}'.");
 
-                            await _courseMaterialService.UploadLessonAttachmentAsync(lesson.Id, lessonFiles[idxAttach],ct);
+                            await _courseMaterialRepo.UploadLessonAttachmentAsync(lesson.Id, lessonFiles[idxAttach],ct);
                         }
 
                         // Quiz (Excel)
@@ -301,9 +261,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
         }
 
-
-
-
         public bool ToggleStatus(int id, string status)
         {
             var course = _context.Courses.Find(id);
@@ -316,6 +273,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
             return false;
         }
+
         public async Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default)
         {
             var page = req.Page <= 0 ? 1 : req.Page;
@@ -565,7 +523,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
 
         // Duyệt khóa học - ban giám đốc
-        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus)
+        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus, string? rejectReason = null)
         {
             if (string.IsNullOrWhiteSpace(newStatus))
                 throw new ArgumentException("Trạng thái mới không hợp lệ.", nameof(newStatus));
@@ -574,7 +532,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             {
                 CourseConstants.Status.Approve,
                 CourseConstants.Status.Reject
-                };
+            };
 
             if (!allowedStatuses.Contains(newStatus, StringComparer.OrdinalIgnoreCase))
                 throw new ArgumentException($"Trạng thái '{newStatus}' không hợp lệ. Chỉ chấp nhận Approve hoặc Reject.");
@@ -586,20 +544,31 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             if (course == null)
                 return false;
 
-            // Chỉ cho phép xử lý khi đang Pending
+            // Chỉ xử lý khi khóa học đang ở trạng thái Pending
             if (!course.Status.Equals(CourseConstants.Status.Pending, StringComparison.OrdinalIgnoreCase))
                 return false;
 
+            // Cập nhật trạng thái
             if (newStatus.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase))
             {
-                // ✅ Duyệt khóa học
                 course.Status = CourseConstants.Status.Approve;
-                course.UpdatedDate = DateTime.UtcNow;
+                course.RejectionReason = null; // ✅ Nếu duyệt thì không có lý do
             }
+            else if (newStatus.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(rejectReason))
+                    throw new ArgumentException("Phải cung cấp lý do khi từ chối khóa học.", nameof(rejectReason));
+
+                course.Status = CourseConstants.Status.Reject;
+                course.RejectionReason = rejectReason.Trim();
+            }
+
+            course.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;
         }
+
 
         //Update reject conmeback
         public async Task<bool> UpdateDraftAndResubmitAsync(int courseId, UpdateCourseRejectDto dto)

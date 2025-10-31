@@ -209,26 +209,36 @@ namespace InternalTrainingSystem.Core.Controllers
             public string NewStatus { get; set; } = default!;
         }
 
-        /// <summary>Duyệt 1 course đang Pending: newStatus = "Apporove".</summary>
-        [HttpPut("{courseId:int}/status")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdateCourseStatusRequest request)
+        [HttpPatch("update-pending-status/{courseId}")]
+        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId,[FromQuery] string newStatus,[FromBody] string? rejectReason = null)
         {
-            if (request == null || string.IsNullOrWhiteSpace(request.NewStatus))
-                return BadRequest("newStatus không được rỗng.");
+            try
+            {
+                var result = await _courseService.UpdatePendingCourseStatusAsync(courseId, newStatus, rejectReason);
 
-            var ok = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus);
-            if (!ok)
-                return BadRequest("Chỉ có thể cập nhật trạng thái các khóa học đang ở Pending hoặc khóa học không tồn tại.");
+                if (!result)
+                    return BadRequest("Không thể cập nhật trạng thái. Có thể khóa học không tồn tại hoặc không ở trạng thái Pending.");
 
-            return Ok(new { message = $"Cập nhật trạng thái thành công: {request.NewStatus}" });
+                return Ok(new
+                {
+                    message = $"Cập nhật trạng thái khóa học {courseId} thành công: {newStatus}",
+                    reason = rejectReason
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi nếu cần
+                return StatusCode(500, "Đã xảy ra lỗi khi cập nhật trạng thái khóa học.");
+            }
         }
 
         /// <summary>Chuyển 1 course từ Active -> Deleted (xóa mềm theo status).</summary>
         [HttpPatch("{courseId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        
         public async Task<IActionResult> DeleteActiveCourse(int courseId, [FromBody] string? rejectReason)
         {
             if (string.IsNullOrWhiteSpace(rejectReason))
