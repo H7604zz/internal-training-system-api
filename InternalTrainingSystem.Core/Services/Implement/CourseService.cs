@@ -47,9 +47,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _courseRepo.SearchAsync(req, ct);
         }
 
-        public Course? GetCourseByCourseID(int? couseId)
+        public async Task<Course?> GetCourseByCourseIdAsync(int? couseId)
         {
-            return _courseRepo.GetCourseByCourseID(couseId);
+            return await _courseRepo.GetCourseByCourseIdAsync(couseId);
         }
 
         public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)

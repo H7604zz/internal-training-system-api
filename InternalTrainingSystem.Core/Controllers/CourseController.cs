@@ -282,7 +282,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> UpdateEnrollmentStatus(int courseId, string userId, [FromBody] EnrollmentStatusUpdateRequest request)
         {
-            var course = _courseService.GetCourseByCourseID(courseId);
+            var course = await _courseService.GetCourseByCourseIdAsync(courseId);
             if (course == null)
                 return NotFound();
 
@@ -418,19 +418,18 @@ namespace InternalTrainingSystem.Core.Controllers
 
         }
 
-        [HttpPost("{courseCode}/finalize-enrollments")]
+        [HttpPost("{courseId}/finalize-enrollments")]
         //[Authorize(Roles = UserRoles.DirectManager)]
-        public async Task<IActionResult> FinalizeEnrollments(string courseCode)
+        public async Task<IActionResult> FinalizeEnrollments(int courseId)
         {
-
-            var course = await _courseService.GetCourseByCourseCodeAsync(courseCode);
+            var course = await _courseService.GetCourseByCourseIdAsync(courseId);
             if (course == null) return BadRequest();
 
             var existingNotification = _notificationService.GetNotificationByCourseAndType(course.CourseId, NotificationType.CourseFinalized);
 
             if (existingNotification != null)
             {
-                return Ok(ApiResponseDto.SuccessResult(new { sent = false }, "Thông báo đã được gửi trước đó."));
+                return Ok("Thông báo đã được gửi trước đó.");
             }
 
             var searchDto = new UserSearchDto
