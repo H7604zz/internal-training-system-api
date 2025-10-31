@@ -43,22 +43,91 @@ namespace InternalTrainingSystem.Core.Controllers
             _classService = classService;
         } 
 
-        // PUT: /api/courses/5
-        [HttpPut("{id:int}")]
-        [Authorize(Roles = UserRoles.TrainingDepartment)]
-        public async Task<ActionResult<Course>> Update(int id, [FromBody] UpdateCourseDto dto)
+        // PUT: /api/courses/{id}
+        [HttpPut("{id}")]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(600 * 1024 * 1024)]
+        //[Authorize(Roles = UserRoles.TrainingDepartment)]
+        public async Task<IActionResult> UpdateCourse(
+            int id,
+            [FromForm] UpdateCourseFormDto form,
+            CancellationToken ct)
         {
-            if (id != dto.CourseId)
-                return BadRequest(new { message = "Course ID mismatch" });
+            // 1) Xác thực user
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
-            if (!ModelState.IsValid)
-                return ValidationProblem(ModelState);
+            // 2) Đọc & parse metadata JSON
+            if (string.IsNullOrWhiteSpace(form.Metadata))
+                return BadRequest(new { message = "metadata is required and must be a JSON string" });
 
-            var updated = await _courseService.UpdateCourseAsync(dto);
-            if (updated is null)
-                return NotFound(new { message = $"Course {id} not found" });
+            UpdateCourseMetadataDto meta;
+            try
+            {
+                meta = JsonSerializer.Deserialize<UpdateCourseMetadataDto>(
+                    form.Metadata,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                ) ?? throw new ArgumentException("metadata invalid");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Invalid metadata JSON", error = ex.Message });
+            }
 
-            return Ok(updated);
+            // 3) Validate đệ quy (object + modules + lessons)
+            var validationResults = new List<ValidationResult>();
+            var context = new ValidationContext(meta, HttpContext.RequestServices, null);
+            bool isValid = Validator.TryValidateObject(meta, context, validationResults, validateAllProperties: true);
+
+            foreach (var module in meta.Modules)
+            {
+                var mctx = new ValidationContext(module, HttpContext.RequestServices, null);
+                isValid &= Validator.TryValidateObject(module, mctx, validationResults, true);
+
+                foreach (var lesson in module.Lessons)
+                {
+                    var lctx = new ValidationContext(lesson, HttpContext.RequestServices, null);
+                    isValid &= Validator.TryValidateObject(lesson, lctx, validationResults, true);
+                }
+            }
+
+            if (!isValid)
+            {
+                var errors = validationResults
+                    .Select(r => r.ErrorMessage)
+                    .Where(msg => !string.IsNullOrWhiteSpace(msg))
+                    .ToList();
+
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
+            // 4) Gọi service update
+            try
+            {
+                var updated = await _courseService.UpdateCourseAsync(
+                    id,
+                    meta,
+                    form.LessonFiles,
+                    userId,
+                    ct);
+
+                return Ok(new { updated.CourseId, updated.CourseName });
+            }
+            catch (OperationCanceledException)
+            {
+                // Client hủy request hoặc server yêu cầu hủy
+                return StatusCode(StatusCodes.Status499ClientClosedRequest,
+                    new { message = "Request was cancelled." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
         }
 
 
