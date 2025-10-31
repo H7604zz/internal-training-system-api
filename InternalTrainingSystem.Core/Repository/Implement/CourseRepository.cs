@@ -494,17 +494,36 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 IsMandatory = course.IsMandatory,
                 CreatedDate = course.CreatedDate,
                 UpdatedDate = course.UpdatedDate,
-                EnrollmentCount = enrollmentCount,
-                CreatedBy = course.CreatedBy.FullName,
                 Departments = course.Departments.Select(d => new DepartmentListDto
                 {
                     DepartmentId = d.Id,
-                    DepartmentName = d.Name,
-                    Description = d.Description,
-                }).ToList()
+                    DepartmentName = d.Name
+                }).ToList(),
+                Modules = course.Modules
+                    .OrderBy(m => m.OrderIndex)
+                    .Select(m => new ModuleDetailDto
+                    {
+                        Id = m.Id,
+                        CourseId = m.CourseId,
+                        Title = m.Title,
+                        Description = m.Description,
+                        OrderIndex = m.OrderIndex,
+                        Lessons = m.Lessons
+                            .OrderBy(l => l.OrderIndex)
+                            .Select(l => new LessonListItemDto
+                            {
+                                Id = l.Id,
+                                ModuleId = l.ModuleId,
+                                Title = l.Title,
+                                Description = l.Description,
+                                Type = l.Type,
+                                OrderIndex = l.OrderIndex,
+                                ContentUrl = l.ContentUrl,
+                                QuizId = l.QuizId
+                            }).ToList()
+                    }).ToList()
             };
         }
-
 
         // Duyệt khóa học - ban giám đốc
         public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus)

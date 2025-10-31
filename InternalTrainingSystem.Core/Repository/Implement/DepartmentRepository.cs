@@ -61,7 +61,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<DepartmentDetailDto> GetDepartmentByIdAsync(int departmentId)
+        public async Task<DepartmentDetailDto> GetDepartmentDetailAsync(int departmentId)
         {
             var department = await _context.Departments
                 .Include(d => d.Courses)
@@ -82,6 +82,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     Code = c.Code,
                     CourseName = c.CourseName,
                     Description = c.Description,
+                    IsOnline = c.IsOnline,
+                    IsMandatory = c.IsMandatory,
                 }).ToList(),
 
                 userDetail = department.Users?.Select(u => new UserProfileDto

@@ -21,9 +21,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _departmentRepo.GetDepartmentsAsync();
         }
 
-        public async Task<DepartmentDetailDto?> GetDepartmentByIdAsync(int departmentId)
+        public async Task<DepartmentDetailDto?> GetDepartmentDetailAsync(int departmentId)
         {
-            return await _departmentRepo.GetDepartmentByIdAsync(departmentId);
+            return await _departmentRepo.GetDepartmentDetailAsync(departmentId);
         }
 
         public async Task<bool> CreateDepartmentAsync(DepartmentRequestDto department)

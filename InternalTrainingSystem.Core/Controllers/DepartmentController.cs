@@ -26,7 +26,7 @@ namespace InternalTrainingSystem.Core.Controllers
 		[HttpGet("{departmentId}")]
 		public async Task<IActionResult> GetDepartmentDetail(int departmentId)
 		{
-			var department = await _departmentService.GetDepartmentByIdAsync(departmentId);
+			var department = await _departmentService.GetDepartmentDetailAsync(departmentId);
 			return Ok(department);
 		}
 
