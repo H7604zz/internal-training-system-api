@@ -56,6 +56,12 @@
             public const string TrueFalse = "TrueFalse";
             public const string Essay = "Essay";
         }
+        public static class QuizTypes
+        {
+            public const string Lesson = "Lesson";     
+            public const string Final = "Final";      
+            
+        }
     }
 
     public static class ScheduleConstants
