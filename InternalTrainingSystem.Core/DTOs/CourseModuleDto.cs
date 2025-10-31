@@ -58,9 +58,11 @@ namespace InternalTrainingSystem.Core.DTOs
     {
         public int Id { get; set; }
         public int ModuleId { get; set; }
+        public string? Description { get; set; }
         public string Title { get; set; } = string.Empty;
         public LessonType Type { get; set; }
         public int OrderIndex { get; set; }
+        public int? QuizId { get; set; }
 
         public string? ContentUrl { get; set; }
     }
