@@ -92,6 +92,9 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     EmployeeId = u.EmployeeId,
                     FullName = u.FullName,
                     Email = u.Email!,
+                    Department = u.Department.Name,
+                    Position = u.Position,
+                    IsActive = u.IsActive,
                 }).ToList()
             };
 
