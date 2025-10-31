@@ -74,47 +74,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
         }
 
-        //public async Task<Course?> UpdateCourseAsync(UpdateCourseDto dto)
-        //{
-        //    var course = await _context.Courses
-        //        .Include(c => c.Departments)
-        //        .FirstOrDefaultAsync(c => c.CourseId == dto.CourseId);
-
-        //    if (course == null)
-        //        return null;
-
-        //    course.CourseName = dto.CourseName.Trim();
-        //    course.Description = dto.Description;
-        //    course.CourseCategoryId = dto.CourseCategoryId;
-        //    course.Duration = dto.Duration;
-        //    course.Level = dto.Level;
-        //    course.Status = dto.Status ?? course.Status;
-        //    course.UpdatedDate = DateTime.UtcNow;
-
-        //    if (dto.Departments != null)
-        //    {
-        //        var existingDepartments = course.Departments.ToList();
-
-        //        var newDepartments = await _context.Departments
-        //            .Where(d => dto.Departments.Contains(d.Id))
-        //            .ToListAsync();
-
-        //        foreach (var oldDept in existingDepartments)
-        //        {
-        //            if (!newDepartments.Any(nd => nd.Id == oldDept.Id))
-        //                course.Departments.Remove(oldDept);
-        //        }
-
-        //        foreach (var newDept in newDepartments)
-        //        {
-        //            if (!course.Departments.Any(d => d.Id == newDept.Id))
-        //                course.Departments.Add(newDept);
-        //        }
-        //    }
-
-        //    await _context.SaveChangesAsync();
-        //    return course;
-        //}
         public async Task<Course> UpdateCourseAsync(int courseId,UpdateCourseMetadataDto meta,IList<IFormFile> lessonFiles,string updatedByUserId, CancellationToken ct = default)
         {
             await using var tx = await _context.Database.BeginTransactionAsync(ct);
@@ -252,7 +211,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             if (idx < 0 || idx >= lessonFiles.Count)
                                 throw new ArgumentException($"MainFileIndex {idx} out of range for lesson '{lessonSpec.Title}'.");
 
-                            await _courseMaterialService.UploadLessonBinaryAsync(lesson.Id, lessonFiles[idx],ct);
+                            await _courseMaterialRepo.UploadLessonBinaryAsync(lesson.Id, lessonFiles[idx],ct);
                         }
 
                         if (lessonSpec.AttachmentFileIndex is not null)
@@ -261,7 +220,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             if (idxAttach < 0 || idxAttach >= lessonFiles.Count)
                                 throw new ArgumentException($"AttachmentFileIndex {idxAttach} out of range for lesson '{lessonSpec.Title}'.");
 
-                            await _courseMaterialService.UploadLessonAttachmentAsync(lesson.Id, lessonFiles[idxAttach],ct);
+                            await _courseMaterialRepo.UploadLessonAttachmentAsync(lesson.Id, lessonFiles[idxAttach],ct);
                         }
 
                         // Quiz (Excel)
@@ -300,9 +259,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 throw;
             }
         }
-
-
-
 
         public bool ToggleStatus(int id, string status)
         {
@@ -434,9 +390,13 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
         }
 
-        public Course? GetCourseByCourseID(int? couseId)
+        public async Task<Course?> GetCourseByCourseIdAsync(int? couseId)
         {
-            return _context.Courses.FirstOrDefault(c => c.CourseId == couseId);
+            return await _context.Courses
+                .Include(c => c.CourseCategory)
+                .Include(c => c.Departments)
+                .Include(c => c.CreatedBy)
+                .FirstOrDefaultAsync(c => c.CourseId == couseId);
         }
 
         public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)

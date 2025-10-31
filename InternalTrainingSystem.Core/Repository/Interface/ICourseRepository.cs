@@ -6,7 +6,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
 {
     public interface ICourseRepository
     {
-        public Course? GetCourseByCourseID(int? couseId);
+        Task<Course?> GetCourseByCourseIdAsync(int? couseId);
         Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request);
         Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default);
         Task<bool> DeleteCourseAsync(int id);
