@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Extensions;
+using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Middleware;
 using InternalTrainingSystem.Core.Models;
@@ -68,6 +69,7 @@ builder.Services.AddScoped<IClassRepository, ClassRepository>();
 builder.Services.AddScoped<ICourseMaterialRepository, CourseMaterialRepository>();
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 
 // Register Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -80,6 +82,7 @@ builder.Services.AddScoped<ICourseMaterialService, CourseMaterialService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddSingleton<IFileStorage, S3FileStorage>();
 
 // Configure JWT Authentication
@@ -133,9 +136,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(origin => true)
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -162,11 +166,12 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "Internal Training System API", Version = "v1" });
 });
 
+
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-app.MapHub<EnrollmentHub>("/hubs/enrollment");
+app.MapHub<NotificationHub>("/hubs/notifications");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

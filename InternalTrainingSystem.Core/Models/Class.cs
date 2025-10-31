@@ -19,8 +19,7 @@ namespace InternalTrainingSystem.Core.Models
         [Required]
         public int CourseId { get; set; }
 
-        [Required]
-        public string MentorId { get; set; } = string.Empty;
+        public string? MentorId { get; set; }
 
         public DateTime StartDate { get; set; }
 
@@ -30,11 +29,11 @@ namespace InternalTrainingSystem.Core.Models
         public int Capacity { get; set; } = 30; //số lượng tối đa một lớp có thể chứa
 
         [StringLength(20)]
-        public string Status { get; set; } = ClassConstants.Status.Active; // Active, Completed, Cancelled, Scheduled
+        public string Status { get; set; } = ClassConstants.Status.Created; // Created, Completed, Cancelled, Scheduled
 
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; } = false;
 
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedDate { get; set; }
 

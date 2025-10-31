@@ -14,15 +14,15 @@ namespace InternalTrainingSystem.Core.Repository.Implement
     {
         private readonly ApplicationDbContext _context;
         private readonly IFileStorage _storage;
-        private readonly ICourseMaterialService _courseMaterialService;
+        private readonly ICourseMaterialRepository _courseMaterialRepo;
         private const double AverageRatingPass = 4.5;
 
         public CourseRepository(ApplicationDbContext context, IFileStorage storage,
-        ICourseMaterialService courseMaterialService)
+        ICourseMaterialRepository courseMaterialRepo)
         {
             _context = context;
             _storage = storage;
-            _courseMaterialService = courseMaterialService;
+            _courseMaterialRepo = courseMaterialRepo;
         }
 
         // Hàm lấy ra Course theo code
@@ -74,46 +74,190 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
         }
 
-        public async Task<Course?> UpdateCourseAsync(UpdateCourseDto dto)
+        public async Task<Course> UpdateCourseAsync(int courseId,UpdateCourseMetadataDto meta,IList<IFormFile> lessonFiles,string updatedByUserId, CancellationToken ct = default)
         {
-            var course = await _context.Courses
-                .Include(c => c.Departments)
-                .FirstOrDefaultAsync(c => c.CourseId == dto.CourseId);
+            await using var tx = await _context.Database.BeginTransactionAsync(ct);
 
-            if (course == null)
-                return null;
-
-            course.CourseName = dto.CourseName.Trim();
-            course.Description = dto.Description;
-            course.CourseCategoryId = dto.CourseCategoryId;
-            course.Duration = dto.Duration;
-            course.Level = dto.Level;
-            course.Status = dto.Status ?? course.Status;
-            course.UpdatedDate = DateTime.UtcNow;
-
-            if (dto.Departments != null)
+            try
             {
-                var existingDepartments = course.Departments.ToList();
+                var course = await _context.Courses
+            .Include(c => c.Modules)
+                .ThenInclude(m => m.Lessons)
+            .Include(c => c.Departments)
+            .FirstOrDefaultAsync(c => c.CourseId == courseId, ct);
 
-                var newDepartments = await _context.Departments
-                    .Where(d => dto.Departments.Contains(d.Id))
-                    .ToListAsync();
+                if (course == null)
+                    throw new ArgumentException($"Course ID {courseId} not found.");
 
-                foreach (var oldDept in existingDepartments)
+                // 1) Cập nhật thông tin cơ bản
+                course.CourseName = meta.CourseName.Trim();
+                course.Description = meta.Description?.Trim();
+                course.CourseCategoryId = meta.CourseCategoryId;
+                course.Duration = meta.Duration;
+                course.Level = meta.Level;
+                course.IsOnline = meta.IsOnline;
+                course.IsMandatory = meta.IsMandatory;
+                course.UpdatedDate = DateTime.Now;
+                course.CreatedById = updatedByUserId;
+
+                // 2) Departments
+                course.Departments.Clear();
+                if (meta.Departments?.Any() == true)
                 {
-                    if (!newDepartments.Any(nd => nd.Id == oldDept.Id))
-                        course.Departments.Remove(oldDept);
+                    var deps = await _context.Departments.Where(d => meta.Departments.Contains(d.Id)).ToListAsync(ct);
+
+                    if (deps.Count != meta.Departments.Count)
+                        throw new ArgumentException("Some DepartmentIds are invalid");
+
+                    foreach (var d in deps)
+                        course.Departments.Add(d);
                 }
 
-                foreach (var newDept in newDepartments)
+                // 3) Modules (xóa những cái không còn)
+                var existingModules = course.Modules.ToList();
+                var metaModules = meta.Modules.OrderBy(m => m.OrderIndex).ToList();
+
+                foreach (var oldMod in existingModules)
                 {
-                    if (!course.Departments.Any(d => d.Id == newDept.Id))
-                        course.Departments.Add(newDept);
+                    // meta chỉ giữ lại module có ModuleId trùng; module mới có ModuleId = null
+                    var stillExists = metaModules.Any(m => m.ModuleId == oldMod.Id);
+                    if (!stillExists)
+                    {
+                        // xóa luôn lessons liên quan (cascade nếu đã cấu hình)
+                        _context.CourseModules.Remove(oldMod);
+                    }
                 }
+
+                await _context.SaveChangesAsync(ct);
+
+                // 4) Thêm/cập nhật modules & lessons
+                foreach (var modSpec in metaModules)
+                {
+                    CourseModule module =
+                        modSpec.ModuleId.HasValue
+                        ? existingModules.FirstOrDefault(m => m.Id == modSpec.ModuleId.Value)!
+                        : null;
+
+                    if (module == null)
+                    {
+                        // Thêm mới
+                        module = new CourseModule
+                        {
+                            CourseId = course.CourseId,
+                            Title = modSpec.Title.Trim(),
+                            Description = modSpec.Description,
+                            OrderIndex = modSpec.OrderIndex
+                        };
+                        await _context.CourseModules.AddAsync(module, ct);
+                        await _context.SaveChangesAsync(ct); // cần Id
+                    }
+                    else
+                    {
+                        // Cập nhật
+                        module.Title = modSpec.Title.Trim();
+                        module.Description = modSpec.Description;
+                        module.OrderIndex = modSpec.OrderIndex;
+                        await _context.SaveChangesAsync(ct);
+                    }
+
+                    // Đồng bộ lessons của module này
+                    var existingLessons = module.Lessons.ToList();
+                    var metaLessons = modSpec.Lessons.OrderBy(l => l.OrderIndex).ToList();
+
+                    // Xóa lessons không còn nữa
+                    foreach (var oldLesson in existingLessons)
+                    {
+                        var stillExists = metaLessons.Any(l => l.LessonId == oldLesson.Id);
+                        if (!stillExists) _context.Lessons.Remove(oldLesson);
+                    }
+                    await _context.SaveChangesAsync(ct);
+
+                    // Thêm/cập nhật từng lesson
+                    foreach (var lessonSpec in metaLessons)
+                    {
+                        Lesson lesson =
+                            lessonSpec.LessonId.HasValue
+                            ? existingLessons.FirstOrDefault(l => l.Id == lessonSpec.LessonId.Value)!
+                            : null;
+
+                        if (lesson == null)
+                        {
+                            // Thêm mới
+                            lesson = new Lesson
+                            {
+                                ModuleId = module.Id,
+                                Title = lessonSpec.Title.Trim(),
+                                Description = lessonSpec.Description,
+                                Type = lessonSpec.Type,
+                                OrderIndex = lessonSpec.OrderIndex
+                            };
+                            await _context.Lessons.AddAsync(lesson, ct);
+                            await _context.SaveChangesAsync(ct);
+                        }
+                        else
+                        {
+                            // Cập nhật
+                            lesson.Title = lessonSpec.Title.Trim();
+                            lesson.Description = lessonSpec.Description;
+                            lesson.Type = lessonSpec.Type;
+                            lesson.OrderIndex = lessonSpec.OrderIndex;
+                            await _context.SaveChangesAsync(ct);
+                        }
+
+                        // Upload file mới (nếu có)
+                        if (lessonSpec.MainFileIndex is not null)
+                        {
+                            var idx = lessonSpec.MainFileIndex.Value;
+                            if (idx < 0 || idx >= lessonFiles.Count)
+                                throw new ArgumentException($"MainFileIndex {idx} out of range for lesson '{lessonSpec.Title}'.");
+
+                            await _courseMaterialRepo.UploadLessonBinaryAsync(lesson.Id, lessonFiles[idx],ct);
+                        }
+
+                        if (lessonSpec.AttachmentFileIndex is not null)
+                        {
+                            var idxAttach = lessonSpec.AttachmentFileIndex.Value;
+                            if (idxAttach < 0 || idxAttach >= lessonFiles.Count)
+                                throw new ArgumentException($"AttachmentFileIndex {idxAttach} out of range for lesson '{lessonSpec.Title}'.");
+
+                            await _courseMaterialRepo.UploadLessonAttachmentAsync(lesson.Id, lessonFiles[idxAttach],ct);
+                        }
+
+                        // Quiz (Excel)
+                        if (lessonSpec.Type == LessonType.Quiz && lessonSpec.IsQuizExcel)
+                        {
+                            if (lessonSpec.MainFileIndex is null)
+                                throw new ArgumentException($"Lesson '{lessonSpec.Title}' requires Excel file.");
+
+                            var excelFile = lessonFiles[lessonSpec.MainFileIndex.Value];
+                            var quizId = await ImportQuizFromExcelInternal(
+                                course.CourseId,
+                                lessonSpec.QuizTitle ?? lessonSpec.Title,
+                                excelFile,ct);
+                            lesson.QuizId = quizId;
+                            await _context.SaveChangesAsync(ct);
+                        }
+
+                        // Video (URL) – đảm bảo ContentUrl có giá trị
+                        if (lessonSpec.Type == LessonType.Video)
+                        {
+                            if (string.IsNullOrWhiteSpace(lessonSpec.ContentUrl))
+                                throw new ArgumentException($"Lesson '{lessonSpec.Title}' is Video but ContentUrl is empty.");
+                            lesson.ContentUrl = lessonSpec.ContentUrl;
+                            await _context.SaveChangesAsync(ct);
+                        }
+                    }
+                }
+
+                await _context.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+                return course;
             }
-
-            await _context.SaveChangesAsync();
-            return course;
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
+            }
         }
 
         public bool ToggleStatus(int id, string status)
@@ -247,9 +391,13 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
         }
 
-        public Course? GetCourseByCourseID(int? couseId)
+        public async Task<Course?> GetCourseByCourseIdAsync(int? couseId)
         {
-            return _context.Courses.FirstOrDefault(c => c.CourseId == couseId);
+            return await _context.Courses
+                .Include(c => c.CourseCategory)
+                .Include(c => c.Departments)
+                .Include(c => c.CreatedBy)
+                .FirstOrDefaultAsync(c => c.CourseId == couseId);
         }
 
         public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)
@@ -320,37 +468,30 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 PageSize = request.PageSize
             };
         }
-        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId)
+        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default)
         {
             var course = await _context.Courses
                 .Include(c => c.CourseCategory)
                 .Include(c => c.Departments)
-                .Include(c => c.CourseEnrollments)
-                .Include(c => c.CreatedBy)
-                .FirstOrDefaultAsync(c => c.CourseId == courseId);
+                .Include(c => c.Modules)
+                    .ThenInclude(m => m.Lessons)
+                .FirstOrDefaultAsync(c => c.CourseId == courseId, ct);
 
             if (course == null)
-            {
                 return null;
-            }
-
-            // Calculate enrollment count
-            var enrollmentCount = course.CourseEnrollments?.Count ?? 0;
-
-            // For now, we'll use a default rating of 4.5. 
-            // In the future, this should be calculated from actual ratings
 
             return new CourseDetailDto
             {
                 CourseId = course.CourseId,
-                CourseName = course.CourseName,
                 Code = course.Code,
+                CourseName = course.CourseName,
                 Description = course.Description,
+                CategoryName = course.CourseCategory.CategoryName,
                 Duration = course.Duration,
                 Level = course.Level,
-                CategoryName = course.CourseCategory?.CategoryName ?? "Unknown",
-                CategoryId = course.CourseCategoryId,
                 Status = course.Status,
+                IsOnline = course.IsOnline,
+                IsMandatory = course.IsMandatory,
                 CreatedDate = course.CreatedDate,
                 UpdatedDate = course.UpdatedDate,
                 EnrollmentCount = enrollmentCount,
@@ -363,6 +504,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 }).ToList()
             };
         }
+
 
         // Duyệt khóa học - ban giám đốc
         public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus)
@@ -470,11 +612,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             await _context.SaveChangesAsync();
             return true;
         }
-        public async Task<Course> CreateCourseAsync(
-    CreateCourseMetadataDto meta,
-    IList<IFormFile> lessonFiles,
-    string createdByUserId,
-    CancellationToken ct = default)
+        public async Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta,IList<IFormFile> lessonFiles,string createdByUserId,CancellationToken ct = default)
         {
             await using var tx = await _context.Database.BeginTransactionAsync(ct);
 
@@ -596,7 +734,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 throw new ArgumentException($"MainFileIndex {idx} is out of range for lesson '{lessonSpec.Title}'.");
 
                             var mainFile = lessonFiles[idx];
-                            await _courseMaterialService.UploadLessonBinaryAsync(newLesson.Id, mainFile, ct);
+                            await _courseMaterialRepo.UploadLessonBinaryAsync(newLesson.Id, mainFile, ct);
                         }
 
                         // Upload tài liệu đính kèm nếu có
@@ -607,7 +745,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 throw new ArgumentException($"AttachmentFileIndex {idxAttach} is out of range for lesson '{lessonSpec.Title}'.");
 
                             var attachFile = lessonFiles[idxAttach];
-                            await _courseMaterialService.UploadLessonAttachmentAsync(newLesson.Id, attachFile, ct);
+                            await _courseMaterialRepo.UploadLessonAttachmentAsync(newLesson.Id, attachFile, ct);
                         }
                     }
 

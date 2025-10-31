@@ -56,5 +56,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _userRepo.GetUserProfileAsync(userId);
         }
+
+        public async Task<List<UserAttendanceResponse>> GetUserAttendanceSummaryAsync(string userId)
+        {
+            return await _userRepo.GetUserAttendanceSummaryAsync(userId);
+        }
     }
 }

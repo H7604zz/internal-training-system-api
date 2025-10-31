@@ -42,5 +42,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _courseEnrollmentRepo.GetAllCoursesEnrollmentsByStaffAsync(request);
         }
+
+        public async Task AddRangeAsync(IEnumerable<CourseEnrollment> enrollments)
+        {
+            await _courseEnrollmentRepo.AddRangeAsync(enrollments);
+        }
     }
 }

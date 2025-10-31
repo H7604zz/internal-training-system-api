@@ -44,11 +44,11 @@ namespace InternalTrainingSystem.Core.Controllers
             if (eligiblePaged.TotalCount == 0)
                 return NotFound("Không có nhân viên nào cần học khóa này.");
 
-            var course = _couseService.GetCourseByCourseID(courseId);
+            var course = await _couseService.GetCourseByCourseIdAsync(courseId);
             if (course == null)
                 return NotFound("Không tìm thấy khóa học tương ứng.");
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var sevenDaysAgo = now.AddDays(-7);
 
             if (_notificationService.HasRecentNotification(NotificationType.Start, courseId))
@@ -98,24 +98,34 @@ namespace InternalTrainingSystem.Core.Controllers
             await _notificationService.DeleteOldNotificationsAsync(courseId, NotificationType.Start);
 
             await _notificationService.SaveNotificationAsync(new Notification
-            {
-                CourseId = courseId,
-                Type = NotificationType.Start,
-                SentAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
-            });
+                {
+                    CourseId = courseId,
+                    Type = NotificationType.Start,
+                    SentAt = DateTime.Now,
+                },
+                userIds: eligiblePaged.Items.Select(u => u.Id).ToList()!
+            );
             return Ok();
         }
-
-        [HttpGet("{courseId}/notification-status/{type}")]
-        [Authorize]
-        public IActionResult CheckNotificationStatus(int courseId, NotificationType type)
+         
+        [HttpGet]
+        public async Task<IActionResult> GetNotifications([FromQuery] string? userId, [FromQuery] string? roleName)
         {
-            var notification = _notificationService.GetNotificationByCourseAndType(courseId, type);
-            if (notification == null)
-                return Ok(new { sent = false });
-
-            return Ok(new { sent = true, sentAt = notification.SentAt });
+            var notifications = await _notificationService.GetNotificationsAsync(userId, roleName);
+            return Ok(notifications.Select(n => new
+            {
+                n.Id,
+                n.Type,
+                n.Message,
+                n.SentAt,
+                Recipients = n.Recipients.Select(r => new
+                {
+                    r.UserId,
+                    r.RoleName,
+                    r.IsRead,
+                    r.ReadAt
+                })
+            }));
         }
     }
 }

@@ -17,16 +17,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
     public class UserRepository : IUserRepository
     {
         private readonly ApplicationDbContext _context;
-        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IConfiguration _config;
 
-        public UserRepository(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IConfiguration config)
+        public UserRepository(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
         {
             _context = context;
             _userManager = userManager;
-            _roleManager = roleManager;
-            _config = config;
         }
 
         public PagedResult<StaffConfirmCourseResponse> GetStaffConfirmCourse(int courseId, int page, int pageSize)
@@ -51,6 +47,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Take(pageSize)
                 .Select(u => new StaffConfirmCourseResponse
                 {
+                    Id = u.Id,
                     EmployeeId = u.EmployeeId,
                     FullName = u.FullName,
                     Email = u.Email!,
@@ -86,15 +83,16 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                   .Any(dep => dep.Id == d.Id)
                               && !_context.Certificates
                                   .Any(c => c.UserId == u.Id && c.CourseId == courseId)
-                             && (string.IsNullOrEmpty(searchDto.SearchTerm)
-                                  || u.FullName.Contains(searchDto.SearchTerm)
-                                  || u.EmployeeId!.Contains(searchDto.SearchTerm)
-                                  || u.Email!.Contains(searchDto.SearchTerm))
-                              && (string.IsNullOrEmpty(searchDto.status)
-                                  || (e != null && e.Status == searchDto.status))
+                             && (string.IsNullOrEmpty(searchDto.Search)
+                                  || u.FullName.Contains(searchDto.Search)
+                                  || u.EmployeeId!.Contains(searchDto.Search)
+                                  || u.Email!.Contains(searchDto.Search))
+                              && (string.IsNullOrEmpty(searchDto.Status)
+                                  || (e != null && e.Status == searchDto.Status))
                         orderby u.FullName
                         select new EligibleStaffResponse
                         {
+                            Id = u.Id,
                             EmployeeId = u.EmployeeId,
                             FullName = u.FullName,
                             Email = u.Email!,
@@ -213,6 +211,47 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return await _context.Users
                 .Include(u => u.Department)
                 .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+
+        public async Task<List<UserAttendanceResponse>> GetUserAttendanceSummaryAsync(string userId)
+        {
+            var classes = await _context.Classes
+                .Include(c => c.Course)
+                .Include(c => c.Schedules)
+                .Include(c => c.Employees)
+                .Where(c => c.Employees.Any(e => e.Id == userId))
+                .ToListAsync();
+
+            var result = new List<UserAttendanceResponse>();
+
+            foreach (var cls in classes)
+            {
+                var scheduleIds = cls.Schedules.Select(s => s.ScheduleId).ToList();
+
+                var attendances = await _context.Attendances
+                    .Where(a => scheduleIds.Contains(a.ScheduleId) && a.UserId == userId)
+                    .ToListAsync();
+
+                int totalSessions = cls.Schedules.Count;
+                int absentDays = attendances.Count(a => a.Status == AttendanceConstants.Status.Absent);
+
+                double attendanceRate = totalSessions > 0
+                    ? Math.Round((double)absentDays / totalSessions * 100, 2)
+                    : 0;
+
+                result.Add(new UserAttendanceResponse
+                {
+                    ClassId = cls.ClassId,
+                    ClassName = cls.ClassName,
+                    CourseCode = cls.Course?.Code!,
+                    CourseName = cls.Course?.CourseName!,
+                    TotalSessions = totalSessions,
+                    AbsentDays = absentDays,
+                    AttendanceRate = attendanceRate
+                });
+            }
+
+            return result;
         }
     }
 }
