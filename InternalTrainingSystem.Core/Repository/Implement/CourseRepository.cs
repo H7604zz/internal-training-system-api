@@ -211,10 +211,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
                     Status = c.Status,
-                    Departments = c.Departments.Select(d => new DepartmentDto
+                    Departments = c.Departments.Select(d => new DepartmentListDto
                     {
                         DepartmentId = d.Id,
-                        DepartmentName = d.Name
+                        DepartmentName = d.Name,
+                        Description = d.Description,
                     }).ToList(),
                     CreatedBy = c.CreatedBy != null ? c.CreatedBy.UserName : string.Empty,
                     UpdatedDate = c.UpdatedDate,
@@ -299,10 +300,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
                     Status = c.Status,
-                    Departments = c.Departments.Select(d => new DepartmentDto
+                    Departments = c.Departments.Select(d => new DepartmentListDto
                     {
                         DepartmentId = d.Id,
-                        DepartmentName = d.Name
+                        DepartmentName = d.Name,
+                        Description = d.Description,
                     }).ToList(),
                     CreatedBy = c.CreatedBy != null ? c.CreatedBy.UserName : string.Empty,
                     UpdatedDate = c.UpdatedDate,
@@ -353,10 +355,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 UpdatedDate = course.UpdatedDate,
                 EnrollmentCount = enrollmentCount,
                 CreatedBy = course.CreatedBy.FullName,
-                Departments = course.Departments.Select(d => new DepartmentDto
+                Departments = course.Departments.Select(d => new DepartmentListDto
                 {
                     DepartmentId = d.Id,
-                    DepartmentName = d.Name
+                    DepartmentName = d.Name,
+                    Description = d.Description,
                 }).ToList()
             };
         }

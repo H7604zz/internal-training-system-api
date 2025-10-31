@@ -21,7 +21,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public int EnrollmentCount { get; set; }
         public string? CreatedBy { get; set; }
         
-        public List<DepartmentDto> Departments { get; set; } = new();
+        public List<DepartmentListDto> Departments { get; set; } = new();
     }
 
     public class GetCoursesByIdentifiersRequest
@@ -131,7 +131,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public bool IsMandatory { get; set; }
         public DateTime CreatedDate { get; set; }
         public string? Status { get; set; } = CourseConstants.Status.Pending; // Course approval status: Pending, Approved, Rejected, Draft
-        public List<DepartmentDto> Departments { get; set; } = new();
+        public List<DepartmentListDto> Departments { get; set; } = new();
         public string? CreatedBy { get; set; } = string.Empty;
         public DateTime? UpdatedDate { get; set; }
         public string? UpdatedBy { get; set; } = string.Empty;

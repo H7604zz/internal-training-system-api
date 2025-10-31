@@ -5,10 +5,10 @@ namespace InternalTrainingSystem.Core.Services.Interface
 {
 	public interface IDepartmentService
 	{
-		Task<List<DepartmentDto>> GetDepartmentsAsync();
-		Task<DepartmentDto?> GetDepartmentByIdAsync(int departmentId);
-		Task<bool> UpdateDepartmentAsync(int id, UpdateDepartmentDto input);
-		Task<int> CreateDepartmentAsync(CreateDepartmentDto input);
+		Task<List<DepartmentListDto>> GetDepartmentsAsync();
+		Task<DepartmentDetailDto?> GetDepartmentByIdAsync(int departmentId);
+		Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto department);
+		Task<bool> CreateDepartmentAsync(DepartmentRequestDto department);
 		Task<bool> DeleteDepartmentAsync(int departmentId);
 	}
 }

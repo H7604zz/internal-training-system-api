@@ -2,15 +2,11 @@
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
-using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -54,15 +50,13 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(updated);
         }
 
-
         // DELETE: /api/courses/5
         [HttpDelete("{id}")]
         [Authorize(Roles = UserRoles.TrainingDepartment)]
         public async Task<IActionResult> DeleteCourse(int id)
         {
             var success = await _courseService.DeleteCourseAsync(id);
-            return success ? Ok(new { message = "Xóa thành công!" })
-                           : NotFound(new { message = "Không tìm thấy course!" });
+            return success ? Ok("Xóa thành công!") : NotFound("Không tìm thấy course!");
         }
 
 

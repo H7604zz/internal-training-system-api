@@ -23,41 +23,47 @@ namespace InternalTrainingSystem.Core.Controllers
 			return Ok(departments);
 		}
 
-		[HttpGet("/{id}")]
-		public async Task<IActionResult> GetDepartmentDetail(int id)
+		[HttpGet("{departmentId}")]
+		public async Task<IActionResult> GetDepartmentDetail(int departmentId)
 		{
-			var department = await _departmentService.GetDepartmentByIdAsync(id);
+			var department = await _departmentService.GetDepartmentByIdAsync(departmentId);
 			return Ok(department);
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> CreateDepartment([FromBody] CreateDepartmentDto input)
+		public async Task<IActionResult> CreateDepartment([FromBody] DepartmentRequestDto request)
 		{
 			if (!ModelState.IsValid)
 				return BadRequest(ModelState);
 
-			var id = await _departmentService.CreateDepartmentAsync(input);
-			return Ok(new { Id = id});
+            var success = await _departmentService.CreateDepartmentAsync(request);
+            if (!success)
+                return BadRequest();
+
+            return Ok();
 		}
 
-		[HttpPut("{id:int}")]
-		public async Task<IActionResult> Update(int id, [FromBody] UpdateDepartmentDto dto)
+		[HttpPut("{departmentId}")]
+		public async Task<IActionResult> Update(int departmentId, [FromBody] DepartmentRequestDto request)
 		{
 			if (!ModelState.IsValid)
 				return BadRequest(ModelState);
-			var success = await _departmentService.UpdateDepartmentAsync(id, dto);
+
+			var success = await _departmentService.UpdateDepartmentAsync(departmentId, request);
 			if (!success)
 				return NotFound();
-			return NoContent();
+
+			return Ok();
 		}
 
-		[HttpDelete("{id:int}")]
-		public async Task<IActionResult> Delete(int id)
+		[HttpDelete("{departmentId}")]
+		public async Task<IActionResult> Delete(int departmentId)
 		{
-			var success = await _departmentService.DeleteDepartmentAsync(id);
+			var success = await _departmentService.DeleteDepartmentAsync(departmentId);
 			if (!success)
 				return NotFound();
-			return NoContent();
+
+			return Ok();
 		}
 	}
 }
