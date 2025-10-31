@@ -79,5 +79,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _courseRepo.CreateCourseAsync(meta, lessonFiles, createdByUserId, ct);
         }
+        public async Task<Course> UpdateAndResubmitToPendingAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId,
+                                                                  string? resubmitNote = null, CancellationToken ct = default)
+        {
+            return await _courseRepo.UpdateAndResubmitToPendingAsync( courseId,  meta,  lessonFiles,  updatedByUserId,
+                                                                    resubmitNote = null,  ct = default);
+        }
     }
 }
