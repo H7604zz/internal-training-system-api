@@ -42,7 +42,7 @@ namespace InternalTrainingSystem.Core.Controllers
 				return BadRequest(ModelState);
 
 			var id = await _departmentService.CreateDepartmentAsync(input);
-			return Ok(new { Id = id});
+			return Ok(new { message = "Xác nhận tạo thành công!" });
 		}
 		[HttpPut("{id:int}")]
 		public async Task<IActionResult> Update(int id, [FromBody] UpdateDepartmentDto dto)
