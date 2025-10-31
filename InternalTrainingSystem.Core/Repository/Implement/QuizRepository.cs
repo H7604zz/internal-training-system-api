@@ -1,0 +1,49 @@
+﻿using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.DB;
+using InternalTrainingSystem.Core.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
+namespace InternalTrainingSystem.Core.Repository.Implement
+{
+    public class QuizRepository
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
+
+        public QuizRepository(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
+        {
+            _context = context;
+            _userManager = userManager;
+        }
+
+        public async Task<bool> CheckQuizPassedAsync(int quizId)
+        {
+            var quiz = await _context.Quizzes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.QuizId == quizId);
+
+            var attempt = await _context.QuizAttempts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.QuizId == quizId);
+
+            if (attempt == null)
+                throw new InvalidOperationException("Quiz attempt not found.");
+
+            if (attempt.Score == 0)
+                return false;
+
+            if (quiz.Title.Equals(QuizConstants.QuizTypes.Lesson))
+            {
+                if(attempt.Score<80) return false;
+            }else if (quiz.Title.Equals(QuizConstants.QuizTypes.Final))
+            {
+                if (attempt.Score < 60) return false;
+            }
+            return true;
+        }
+
+
+
+    }
+}
