@@ -2,5 +2,6 @@
 {
     public interface IQuizRepository
     {
+        Task<bool> CheckQuizPassedAsync(int quizId);
     }
 }

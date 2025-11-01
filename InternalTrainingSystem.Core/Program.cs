@@ -65,6 +65,8 @@ builder.Services.AddScoped<ICourseMaterialRepository, CourseMaterialRepository>(
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+builder.Services.AddScoped<ITrackProgressRepository, TrackProgressRepository>();
+builder.Services.AddScoped<IQuizRepository, QuizRepository>();
 
 // Register Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -79,6 +81,7 @@ builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddSingleton<IFileStorage, S3FileStorage>();
+builder.Services.AddScoped<ITrackProgressService, TrackProgressService>();
 
 // Configure JWT Authentication
 // Read from configuration instead of environment variables directly

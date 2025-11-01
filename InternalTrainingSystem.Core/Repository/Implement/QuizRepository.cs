@@ -1,12 +1,13 @@
 ﻿using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Repository.Interface;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace InternalTrainingSystem.Core.Repository.Implement
 {
-    public class QuizRepository
+    public class QuizRepository: IQuizRepository
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
