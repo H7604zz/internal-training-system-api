@@ -173,7 +173,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Lấy chi tiết khóa học theo ID.
         /// </summary>
         /// <param name="id">CourseId</param>
-        [HttpGet("{id:int}")]
+        [HttpGet("{id:int}/detail")]
         public async Task<IActionResult> GetCourseDetail([FromRoute][Required] int id, CancellationToken ct)
         {
             var dto = await _courseService.GetCourseDetailAsync(id, ct);
