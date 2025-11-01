@@ -54,5 +54,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _classRepo.GetClassesByCourseAsync(courseId);
         }
+
+        public Task<(bool Success, string Message)> SwapClassesAsync(SwapClassRequest request)
+        {
+            return _classRepo.SwapClassesAsync(request);
+        }
     }
 }

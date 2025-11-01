@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Implement;
@@ -118,6 +119,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             if (request.WeeklySchedules == null || request.WeeklySchedules.Count == 0)
                 return (false, "Chưa có buổi học trong tuần đầu.", 0);
 
+            string joinUrl =  await ZoomHelper.CreateRecurringMeetingAndGetJoinUrlAsync();
+
             var allSchedules = new List<Schedule>();
 
             for (int week = 0; week < request.NumberOfWeeks; week++)
@@ -165,6 +168,34 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                         return (false, $"Lịch học bị trùng cho các học viên: {conflictList}...", 0);
                     }
 
+                    if (!string.IsNullOrWhiteSpace(item.Location))
+                    {
+                        var roomConflicts = await _context.Schedules
+                            .Include(s => s.Class)
+                            .Where(s =>
+                                s.Date == date &&
+                                s.Location == item.Location &&
+                                s.ClassId != request.ClassId &&
+                                (
+                                    (s.StartTime <= start && s.EndTime > start) ||
+                                    (s.StartTime < end && s.EndTime >= end) ||
+                                    (s.StartTime >= start && s.EndTime <= end)
+                                )
+                            )
+                            .ToListAsync();
+
+                        if (roomConflicts.Count > 0)
+                        {
+                            var classNames = roomConflicts
+                                .Select(s => s.Class!.ClassName)
+                                .Distinct()
+                                .ToList();
+
+                            var classList = string.Join(", ", classNames.Take(3));
+                            return (false, $"Phòng '{item.Location}' đã có lớp ({classList}) trong khung giờ này.", 0);
+                        }
+                    }
+
                     allSchedules.Add(new Schedule
                     {
                         Description = item.Description,
@@ -177,7 +208,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                         InstructorId = request.MentorId,
                         ClassId = request.ClassId,
                         Status = ScheduleConstants.Status.Scheduled,
-                        CreatedDate = DateTime.UtcNow
+                        CreatedDate = DateTime.UtcNow,
+                        OnlineLink = joinUrl != null ? joinUrl : "Chưa có link học"
                     });
                 }
             }
@@ -345,5 +377,47 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 TotalMembers = c.Employees.Count
             }).ToList();
         }
+
+        public async Task<(bool Success, string Message)> SwapClassesAsync(SwapClassRequest request)
+        {
+            var user1 = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeId1);
+            var user2 = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeId2);
+
+            if (user1 == null || user2 == null)
+                return (false, "Không tìm thấy 1 hoặc cả 2 học viên.");
+
+            var class1 = await _context.Classes
+                .Include(c => c.Employees)
+                .Include(c => c.Course)
+                .FirstOrDefaultAsync(c => c.ClassName == request.ClassName1);
+
+            var class2 = await _context.Classes
+                .Include(c => c.Employees)
+                .Include(c => c.Course)
+                .FirstOrDefaultAsync(c => c.ClassName == request.ClassName2);
+
+            if (class1 == null || class2 == null)
+                return (false, "Không tìm thấy 1 hoặc cả 2 lớp học.");
+
+            if (class1.CourseId != class2.CourseId)
+                return (false, $"Hai lớp '{class1.ClassName}' và '{class2.ClassName}' không cùng một môn học, không thể đổi.");
+
+            if (!class1.Employees.Any(e => e.EmployeeId == user1.EmployeeId))
+                return (false, $"{user1.FullName} không thuộc lớp {class1.ClassName}.");
+
+            if (!class2.Employees.Any(e => e.EmployeeId == user2.EmployeeId))
+                return (false, $"{user2.FullName} không thuộc lớp {class2.ClassName}.");
+
+            class1.Employees.Remove(user1);
+            class2.Employees.Remove(user2);
+
+            class1.Employees.Add(user2);
+            class2.Employees.Add(user1);
+
+            await _context.SaveChangesAsync();
+
+            return (true, $"Đã đổi lớp giữa {user1.FullName} ({class1.ClassName}) và {user2.FullName} ({class2.ClassName}) trong môn học '{class1.Course.CourseName}'.");
+        }
+
     }
 }
