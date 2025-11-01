@@ -62,6 +62,7 @@ namespace InternalTrainingSystem.Core.Extensions
                         case "FROM_NAME":
                             envVars["EmailSettings:FromName"] = value;
                             break;
+
                         //AWS S3 settings
                         case "STORAGE_PROVIDER": 
                             envVars["STORAGE_PROVIDER"] = value; 
@@ -75,6 +76,18 @@ namespace InternalTrainingSystem.Core.Extensions
                         case "AWS_S3_PUBLIC_BASE_URL": 
                             envVars["AWS_S3_PUBLIC_BASE_URL"] = value; 
                             break;
+                       
+                        // Zoom settings
+                        case "CLIENT_ID":
+                            envVars["CLIENT_ID"] = value;
+                            break;
+                        case "CLIENT_SECRET":
+                            envVars["CLIENT_SECRET"] = value;
+                            break;
+                        case "ACCOUNT_ID":
+                            envVars["ACCOUNT_ID"] = value;
+                            break;
+                        
                         default:
                             envVars[key] = value;
                             break;
@@ -157,6 +170,11 @@ namespace InternalTrainingSystem.Core.Extensions
             OverrideIfNotEmpty("AWS_S3_BUCKET", "AWS_S3_BUCKET");
             OverrideIfNotEmpty("AWS_S3_REGION", "AWS_S3_REGION");
             OverrideIfNotEmpty("AWS_S3_PUBLIC_BASE_URL", "AWS_S3_PUBLIC_BASE_URL");
+
+            // Override zoom settings
+            OverrideIfNotEmpty("CLIENT_ID", "ZoomSettings:ClientId");
+            OverrideIfNotEmpty("CLIENT_SECRET", "ZoomSettings:ClientSecret");
+            OverrideIfNotEmpty("ACCOUNT_ID", "ZoomSettings:AccountId");
 
 
             void OverrideIfNotEmpty(string envKey, string configKey)
