@@ -7,6 +7,7 @@ using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Security.Claims;
 using static InternalTrainingSystem.Core.DTOs.AttendanceDto;
 
 namespace InternalTrainingSystem.Core.Controllers
@@ -142,6 +143,29 @@ namespace InternalTrainingSystem.Core.Controllers
                 return NotFound(new { success = false, message = "Không tìm thấy thông tin điểm danh cho buổi học này." });
 
             return Ok(attendances);
+        }
+
+        [HttpPost("change-class")]
+        //[Authorize(Roles = UserRoles.Staff)]
+        public async Task<IActionResult> SwapStudentsBetweenClasses([FromBody] SwapClassRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return NotFound("User not found");
+            }
+
+            var u = await _userService.GetUserProfileAsync(userId);
+            if (u!.EmployeeId!= request.EmployeeId1)
+            {
+                return NotFound("Không tìm thấy học viên.");
+            }
+
+            var result = await _classService.SwapClassesAsync(request);
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result.Message);
         }
 
     }
