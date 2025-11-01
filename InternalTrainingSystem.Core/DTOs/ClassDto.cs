@@ -10,7 +10,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? CourseName { get; set; }
         public string MentorId { get; set; } = string.Empty;
         public string? MentorName { get; set; }
-        public int TotalMembers { get; set; } 
+        public int MaxStudents { get; set; } 
         public List<ClassEmployeeDto> Employees { get; set; } = new List<ClassEmployeeDto>();
         public DateTime CreatedDate { get; set; }
         public bool IsActive { get; set; } = true;
@@ -29,10 +29,6 @@ namespace InternalTrainingSystem.Core.DTOs
     {
         [Required]
         public int CourseId { get; set; }
-
-        [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Số lượng tối đa phải lớn hơn 0")]
-        public int MaxMembers { get; set; }
 
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng lớp cần mở phải lớn hơn 0")]

@@ -6,6 +6,7 @@ using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -20,7 +21,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _classRepo = classRepository;
         }
 
-        public async Task<(bool Success, List<ClassDto>? Data)> CreateClassesAsync(CreateClassRequestDto request, List<StaffConfirmCourseResponse> confirmedUsers)
+        public async Task<bool> CreateClassesAsync(CreateClassRequestDto request, List<StaffConfirmCourseResponse> confirmedUsers)
         {
             return await _classRepo.CreateClassesAsync(request, confirmedUsers);
         }
@@ -58,6 +59,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public Task<(bool Success, string Message)> SwapClassesAsync(SwapClassRequest request)
         {
             return _classRepo.SwapClassesAsync(request);
+        }
+
+        public async Task<ActionResult<PagedResult<ClassDto>>> GetClassesAsync(int page, int pageSize)
+        {
+            return await _classRepo.GetClassesAsync(page, pageSize);
         }
     }
 }
