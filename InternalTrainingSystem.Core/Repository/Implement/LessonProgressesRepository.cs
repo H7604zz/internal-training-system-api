@@ -7,76 +7,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 {
     public class LessonProgressesRepository
     {
-        //private readonly ApplicationDbContext _context;
-        //private readonly UserManager<ApplicationUser> _userManager;
-        //private readonly QuizRepository _quiz;
-
-        //public LessonProgressesRepository(UserManager<ApplicationUser> userManager, ApplicationDbContext context, QuizRepository quiz)
-        //{
-        //    _context = context;
-        //    _userManager = userManager;
-        //    _quiz = quiz;
-        //}
-
-        ///// <summary>
-        ///// Kiểm tra lesson đã hoàn thành chưa:
-        ///// - Nếu có quiz: quiz phải pass (>=80)
-        ///// - Nếu không có quiz: IsDone = true
-        ///// </summary>
-        //public async Task<bool> CheckLessonPassedAsync( int lessonId, CancellationToken ct = default)
-        //{
-        //    // 1️⃣ Lấy lesson và quiz kèm theo
-        //    var lesson = await _context.Lessons
-        //        .AsNoTracking()
-        //        .FirstOrDefaultAsync(l => l.Id == lessonId, ct);
-
-        //    if (lesson == null)
-        //        throw new InvalidOperationException("Lesson not found.");
-
-        //    // 2️⃣ Lấy tiến độ bài học
-        //    var progress = await _context.LessonProgresses
-        //        .AsNoTracking()
-        //        .FirstOrDefaultAsync(p =>p.LessonId == lessonId, ct);
-
-        //    bool isDone = progress?.IsDone ?? false;
-
-        //    // 3️⃣ Nếu lesson KHÔNG có quiz → chỉ cần IsDone = true
-        //    if (lesson.QuizId == null)
-        //        return isDone;
-
-        //    // 4️⃣ Nếu lesson có quiz → kiểm tra điểm quiz
-        //    bool quizPassed = await _quiz.CheckQuizPassedAsync(lesson.QuizId.Value);
-
-        //    // 5️⃣ Kết hợp điều kiện: quizPassed + IsDone
-        //    return quizPassed && isDone;
-        //}
-
-        ///// <summary>
-        //public async Task<decimal> UpdateModuleProgressAsync(int moduleId,CancellationToken ct = default)
-        //{
-        //    // 1️⃣ Lấy lesson để xác định module và quiz
-        //    var lessonIds = await _context.Lessons
-        //                    .AsNoTracking()
-        //                    .Where(l => l.ModuleId == moduleId)
-        //                    .Select(l => l.Id)
-        //                    .ToListAsync(ct);
-
-        //    // 2️⃣ Tính % tiến độ module
-        //    var totalLessons = lessonIds.Count;
-        //    if (totalLessons == 0) return 0m;
-
-        //    var doneLessons = 0;
-        //    foreach (var lessonId in lessonIds)
-        //    {
-        //        if(!await CheckLessonPassedAsync(lessonId, ct))
-        //        {
-        //            doneLessons++;
-        //        }
-        //    }
-
-        //    var percent = Math.Round(100m * doneLessons / totalLessons, 2);
-        //    return percent;
-        //}
+        
 
     }
 }

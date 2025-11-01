@@ -201,19 +201,19 @@ namespace InternalTrainingSystem.Core.Controllers
         
 
         [HttpPatch("update-pending-status/{courseId}")]
-        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId,[FromQuery] string newStatus,[FromBody] string? rejectReason = null)
+        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdatePendingCourseStatusRequest request)
         {
             try
             {
-                var result = await _courseService.UpdatePendingCourseStatusAsync(courseId, newStatus, rejectReason);
+                var result = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus, request.RejectReason);
 
                 if (!result)
                     return BadRequest("Không thể cập nhật trạng thái. Có thể khóa học không tồn tại hoặc không ở trạng thái Pending.");
 
                 return Ok(new
                 {
-                    message = $"Cập nhật trạng thái khóa học {courseId} thành công: {newStatus}",
-                    reason = rejectReason
+                    message = $"Cập nhật trạng thái khóa học {courseId} thành công: {request.NewStatus}",
+                    reason = request.RejectReason
                 });
             }
             catch (ArgumentException ex)
