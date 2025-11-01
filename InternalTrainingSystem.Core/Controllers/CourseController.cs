@@ -4,15 +4,11 @@ using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Models;
-using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -130,15 +126,13 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
-
         // DELETE: /api/courses/5
         [HttpDelete("{id}")]
         [Authorize(Roles = UserRoles.TrainingDepartment)]
         public async Task<IActionResult> DeleteCourse(int id)
         {
             var success = await _courseService.DeleteCourseAsync(id);
-            return success ? Ok(new { message = "Xóa thành công!" })
-                           : NotFound(new { message = "Không tìm thấy course!" });
+            return success ? Ok("Xóa thành công!") : NotFound("Không tìm thấy course!");
         }
 
 
@@ -289,7 +283,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> UpdateEnrollmentStatus(int courseId, string userId, [FromBody] EnrollmentStatusUpdateRequest request)
         {
-            var course = _courseService.GetCourseByCourseID(courseId);
+            var course = await _courseService.GetCourseByCourseIdAsync(courseId);
             if (course == null)
                 return NotFound();
 
@@ -425,19 +419,18 @@ namespace InternalTrainingSystem.Core.Controllers
 
         }
 
-        [HttpPost("{courseCode}/finalize-enrollments")]
+        [HttpPost("{courseId}/finalize-enrollments")]
         //[Authorize(Roles = UserRoles.DirectManager)]
-        public async Task<IActionResult> FinalizeEnrollments(string courseCode)
+        public async Task<IActionResult> FinalizeEnrollments(int courseId)
         {
-
-            var course = await _courseService.GetCourseByCourseCodeAsync(courseCode);
+            var course = await _courseService.GetCourseByCourseIdAsync(courseId);
             if (course == null) return BadRequest();
 
             var existingNotification = _notificationService.GetNotificationByCourseAndType(course.CourseId, NotificationType.CourseFinalized);
 
             if (existingNotification != null)
             {
-                return Ok(ApiResponseDto.SuccessResult(new { sent = false }, "Thông báo đã được gửi trước đó."));
+                return Ok("Thông báo đã được gửi trước đó.");
             }
 
             var searchDto = new UserSearchDto

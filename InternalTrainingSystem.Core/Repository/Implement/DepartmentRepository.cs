@@ -1,7 +1,7 @@
-using Amazon.Runtime.Internal.Util;
-using DocumentFormat.OpenXml.Office2010.Excel;
+﻿using Azure.Core;
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;
+using InternalTrainingSystem.Core.DB.Migrations;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
@@ -9,112 +9,118 @@ using Microsoft.EntityFrameworkCore;
 
 namespace InternalTrainingSystem.Core.Repository.Implement
 {
-	public class DepartmentRepository : IDepartmentRepository
-	{
-		private readonly ApplicationDbContext _context;
-		public DepartmentRepository(ApplicationDbContext context)
-		{
-			_context = context;
-		}
+    public class DepartmentRepository : IDepartmentRepository
+    {
+        private readonly ApplicationDbContext _context;
+        public DepartmentRepository(ApplicationDbContext context)
+        {
+            _context = context;
+        }
 
-		public async Task<Models.Department> AddDepartmentAsync(Models.Department department)
-		{
-			if (department == null)
-			{
-				throw new ArgumentNullException(nameof(department));
-			}
-			await _context.Departments.AddAsync(department);
-			await _context.SaveChangesAsync();
-			return department;
-		}
+        public async Task<List<DepartmentListDto>> GetDepartmentsAsync()
+        {
+            return await _context.Departments
+                    .Select(d => new DepartmentListDto
+                    {
+                        DepartmentId = d.Id,
+                        DepartmentName = d.Name,
+                        Description = d.Description,
+                    })
+                    .ToListAsync();
+        }
 
-		public async Task DeleteDepartmentAsync(int departmentId)
-		{
-			var department = await _context.Departments.FindAsync(departmentId);
-			if (department == null)
-			{
-				throw new KeyNotFoundException("Department not found");
-			}
-			_context.Departments.Remove(department);
-			await _context.SaveChangesAsync();
-		}
+        public async Task<bool> CreateDepartmentAsync(DepartmentRequestDto request)
+        {
+            var name = request.Name?.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Tên phòng ban không được để trống.");
 
-		public async Task<PagedResult<Department>> GetAllDepartmentsAsync(int page, int pageSize)
-		{
-			if (page <= 0) page = 1;
-			if (pageSize <= 0) pageSize = 10;
-			var query = _context.Departments;
-			var totalItems = await query.CountAsync();
-			var departments = await query.Skip((page - 1)*pageSize)
-				.Take(pageSize)
-				.ToListAsync();
-			return new PagedResult<Department>
-			{
-				Items = departments,
-				TotalCount = totalItems,
-				Page = page,
-				PageSize = pageSize
-			};
-		}
+            bool exists = await _context.Departments
+                .AnyAsync(d => d.Name.ToLower() == name.ToLower());
 
-		public async Task<Models.Department> GetDepartmentByIdAsync(int id)
-		{
-			var department = await _context.Departments.FindAsync(id);
-			if (department == null)
-			{
-				throw new KeyNotFoundException("Department not found");
-			}
-			return department;
-		}
+            if (exists)
+                throw new InvalidOperationException("Tên phòng ban đã tồn tại.");
 
-		public async Task<Department> GetDepartmentCourseAndEmployeeAsync(int departmentId, string? search, int page, int pageSize)
-		{
-			var department = await _context.Departments
-			 .FirstOrDefaultAsync(d => d.Id == departmentId);
+            var department = new Models.Department
+            {
+                Name = name,
+                Description = request.Description
+            };
 
-			if (department == null)
-				throw new KeyNotFoundException("Department not found");
+            await _context.Departments.AddAsync(department);
+            return await _context.SaveChangesAsync() > 0;
+        }
 
-			department.Courses = await _context.Courses
-					.Where(c => c.Departments.Any(d => d.Id == departmentId) &&
-											(string.IsNullOrEmpty(search) || c.CourseName.Contains(search)))
-					.OrderBy(c => c.CourseId)
-					.Skip((page - 1) * pageSize)
-					.Take(pageSize)
-					.ToListAsync();
+        public async Task<bool> DeleteDepartmentAsync(int departmentId)
+        {
+            var department = await _context.Departments.FindAsync(departmentId);
+            if (department is null)
+                return false;
 
-			department.Users = await _context.Users
-					.Where(u => u.DepartmentId == departmentId &&
-											(string.IsNullOrEmpty(search) || u.FullName.Contains(search)))
-					.OrderBy(u => u.Id)
-					.Skip((page - 1) * pageSize)
-					.Take(pageSize)
-					.ToListAsync();
+            _context.Departments.Remove(department);
+            return await _context.SaveChangesAsync() > 0;
+        }
 
-			return department;
-		}
+        public async Task<DepartmentDetailDto> GetDepartmentDetailAsync(int departmentId)
+        {
+            var department = await _context.Departments
+                .Include(d => d.Courses)
+                .Include(d => d.Users)
+                .FirstOrDefaultAsync(d => d.Id == departmentId);
 
-		public async Task<List<DepartmentDto>> GetDepartments()
-		{
-			return await _context.Departments
-					.Select(d => new DepartmentDto
-					{
-						DepartmentId = d.Id,
-						DepartmentName = d.Name,
-					})
-					.ToListAsync();
-		}
+            if (department == null)
+                throw new KeyNotFoundException("Không tìm thấy phòng ban.");
 
-		public async Task UpdateDepartmentAsync(Models.Department department)
-		{
-			var existingDepartment = await _context.Departments.FindAsync(department.Id);
-			if (existingDepartment == null)
-			{
-				throw new KeyNotFoundException("Department not found");
-			}
-			existingDepartment.Name = department.Name;
-			existingDepartment.Description = department.Description;
-			await _context.SaveChangesAsync();
-		}
-	}
+            var dto = new DepartmentDetailDto
+            {
+                DepartmentId = department.Id,
+                DepartmentName = department.Name,
+                Description = department.Description,
+                CourseDetail = department.Courses?.Select(c => new CourseDetailDto
+                {
+                    CourseId = c.CourseId,
+                    Code = c.Code,
+                    CourseName = c.CourseName,
+                    Description = c.Description,
+                    IsOnline = c.IsOnline,
+                    IsMandatory = c.IsMandatory,
+                }).ToList(),
+
+                userDetail = department.Users?.Select(u => new UserProfileDto
+                {
+                    Id = u.Id,
+                    EmployeeId = u.EmployeeId,
+                    FullName = u.FullName,
+                    Email = u.Email!,
+                    Department = u.Department.Name,
+                    Position = u.Position,
+                    IsActive = u.IsActive,
+                }).ToList()
+            };
+
+            return dto;
+        }
+
+        public async Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto request)
+        {
+            var name = request.Name?.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Tên phòng ban không được để trống.");
+
+            var existingDepartment = await _context.Departments.FirstOrDefaultAsync(d => d.Id == id);
+            if (existingDepartment == null)
+                throw new KeyNotFoundException("Không tìm thấy phòng ban.");
+
+            bool nameExists = await _context.Departments
+                .AnyAsync(d => d.Id != id && d.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+            if (nameExists)
+                throw new InvalidOperationException("Tên phòng ban đã tồn tại.");
+
+            existingDepartment.Name = name;
+            existingDepartment.Description = request.Description;
+
+            return await _context.SaveChangesAsync() > 0;
+        }
+    }
 }

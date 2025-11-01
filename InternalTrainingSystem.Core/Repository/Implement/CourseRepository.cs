@@ -74,7 +74,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
         }
 
-        
         public async Task<Course> UpdateCourseAsync(int courseId,UpdateCourseMetadataDto meta,IList<IFormFile> lessonFiles,string updatedByUserId, CancellationToken ct = default)
         {
             await using var tx = await _context.Database.BeginTransactionAsync(ct);
@@ -357,10 +356,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
                     Status = c.Status,
-                    Departments = c.Departments.Select(d => new DepartmentDto
+                    Departments = c.Departments.Select(d => new DepartmentListDto
                     {
                         DepartmentId = d.Id,
-                        DepartmentName = d.Name
+                        DepartmentName = d.Name,
+                        Description = d.Description,
                     }).ToList(),
                     CreatedBy = c.CreatedBy != null ? c.CreatedBy.UserName : string.Empty,
                     UpdatedDate = c.UpdatedDate,
@@ -392,9 +392,13 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
         }
 
-        public Course? GetCourseByCourseID(int? couseId)
+        public async Task<Course?> GetCourseByCourseIdAsync(int? couseId)
         {
-            return _context.Courses.FirstOrDefault(c => c.CourseId == couseId);
+            return await _context.Courses
+                .Include(c => c.CourseCategory)
+                .Include(c => c.Departments)
+                .Include(c => c.CreatedBy)
+                .FirstOrDefaultAsync(c => c.CourseId == couseId);
         }
 
         public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)
@@ -445,10 +449,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     IsMandatory = c.IsMandatory,
                     CreatedDate = c.CreatedDate,
                     Status = c.Status,
-                    Departments = c.Departments.Select(d => new DepartmentDto
+                    Departments = c.Departments.Select(d => new DepartmentListDto
                     {
                         DepartmentId = d.Id,
-                        DepartmentName = d.Name
+                        DepartmentName = d.Name,
+                        Description = d.Description,
                     }).ToList(),
                     CreatedBy = c.CreatedBy != null ? c.CreatedBy.UserName : string.Empty,
                     UpdatedDate = c.UpdatedDate,
@@ -490,7 +495,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 IsMandatory = course.IsMandatory,
                 CreatedDate = course.CreatedDate,
                 UpdatedDate = course.UpdatedDate,
-                Departments = course.Departments.Select(d => new DepartmentDto
+                Departments = course.Departments.Select(d => new DepartmentListDto
                 {
                     DepartmentId = d.Id,
                     DepartmentName = d.Name
@@ -500,7 +505,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     .Select(m => new ModuleDetailDto
                     {
                         Id = m.Id,
-                        CourseId=m.CourseId,
+                        CourseId = m.CourseId,
                         Title = m.Title,
                         Description = m.Description,
                         OrderIndex = m.OrderIndex,
@@ -520,7 +525,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     }).ToList()
             };
         }
-
 
         // Duyệt khóa học - ban giám đốc
         public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus, string? rejectReason = null)

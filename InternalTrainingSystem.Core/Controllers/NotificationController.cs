@@ -44,7 +44,7 @@ namespace InternalTrainingSystem.Core.Controllers
             if (eligiblePaged.TotalCount == 0)
                 return NotFound("Không có nhân viên nào cần học khóa này.");
 
-            var course = _couseService.GetCourseByCourseID(courseId);
+            var course = await _couseService.GetCourseByCourseIdAsync(courseId);
             if (course == null)
                 return NotFound("Không tìm thấy khóa học tương ứng.");
 
