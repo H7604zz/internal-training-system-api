@@ -131,8 +131,7 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok("Cập nhật điểm danh thành công.");
         }
 
-
-        //lay ra thong tin dim danh cho 1 buoi hoc
+        //lay ra thong tin diem danh cho 1 buoi hoc
         [HttpGet("schedules/{scheduleId}/attendance")]
         public async Task<IActionResult> GetAttendanceBySchedule(int scheduleId)
         {

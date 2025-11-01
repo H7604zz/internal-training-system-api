@@ -11,7 +11,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public string MentorId { get; set; } = string.Empty;
         public string? MentorName { get; set; }
         public int MaxStudents { get; set; } 
-        public List<ClassEmployeeDto> Employees { get; set; } = new List<ClassEmployeeDto>();
         public DateTime CreatedDate { get; set; }
         public bool IsActive { get; set; } = true;
         public string? Status { get; set; }
