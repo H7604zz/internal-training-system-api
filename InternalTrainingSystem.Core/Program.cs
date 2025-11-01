@@ -144,8 +144,14 @@ builder.Services.Configure<ExternalApiKeys>(builder.Configuration.GetSection(Ext
 builder.Services.Configure<FileUploadSettings>(builder.Configuration.GetSection(FileUploadSettings.SectionName));
 builder.Services.Configure<ApplicationSettings>(builder.Configuration.GetSection(ApplicationSettings.SectionName));
 
-var emailSettings = builder.Configuration.GetSection(EmailSettings.SectionName).Get<EmailSettings>();
+var zoomSettings = builder.Configuration.GetSection(ZoomSettings.SectionName).Get<ZoomSettings>();
+ZoomHelper.Configure(
+    zoomSettings!.ClientId!,
+    zoomSettings.ClientSecret!,
+    zoomSettings.AccountId!
+);
 
+var emailSettings = builder.Configuration.GetSection(EmailSettings.SectionName).Get<EmailSettings>();
 EmailHelper.Configure(
     emailSettings!.SmtpServer,
     emailSettings.SmtpPort,
