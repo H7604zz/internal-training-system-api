@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Repository.Interface;
+﻿using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
 
 namespace InternalTrainingSystem.Core.Services.Implement
@@ -11,14 +12,18 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             _trackProgressRepo = trackProgressRepo;
         }
-        public Task<decimal> UpdateCourseProgressAsync(int courseId, CancellationToken ct = default)
+        public Task<decimal> UpdateCourseProgressAsync(string userId, int courseId, CancellationToken ct = default)
         {
-            return _trackProgressRepo.UpdateCourseProgressAsync(courseId, ct);
+            return _trackProgressRepo.UpdateCourseProgressAsync(userId, courseId, ct);
         }
 
-        public Task<decimal> UpdateModuleProgressAsync(int moduleId, CancellationToken ct = default)
+        public Task<decimal> UpdateModuleProgressAsync(string userId, int moduleId, CancellationToken ct = default)
         {
-            return _trackProgressRepo.UpdateModuleProgressAsync(moduleId, ct);
+            return _trackProgressRepo.UpdateModuleProgressAsync(userId, moduleId, ct);
+        }
+        public async Task<DepartmentDetailDto> TrackProgressDepartment(int departmentId)
+        {
+            return await _trackProgressRepo.TrackProgressDepartment(departmentId);
         }
     }
 }

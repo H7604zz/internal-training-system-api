@@ -36,6 +36,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? CurrentRole { get; set; }
         public bool IsActive { get; set; }
         public DateTime? LastLoginDate { get; set; }
+        public decimal ProgressPercent { get; set; }
     }
 
     public class RefreshTokenRequestDto
