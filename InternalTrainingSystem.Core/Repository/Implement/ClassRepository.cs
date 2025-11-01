@@ -6,6 +6,7 @@ using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Implement;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -20,87 +21,64 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             _context = context;
         }
 
-        public async Task<(bool Success, List<ClassDto>? Data)> CreateClassesAsync(
-                            CreateClassRequestDto request,
-                            List<StaffConfirmCourseResponse> confirmedUsers)
+        public async Task<bool> CreateClassesAsync(
+                CreateClassRequestDto request,
+                List<StaffConfirmCourseResponse> confirmedUsers)
         {
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == request.CourseId);
-            if (course == null) return (false, null);
+            if (course == null)
+                return false;
 
-            if (request.NumberOfClasses <= 0 || request.MaxMembers <= 0)
-                return (false, null);
+            if (request.NumberOfClasses <= 0)
+                return false;
 
-            // Shuffle users
+            if (confirmedUsers == null || confirmedUsers.Count == 0)
+                return false;
+
             var rnd = new Random();
             var shuffledUsers = confirmedUsers.OrderBy(x => rnd.Next()).ToList();
 
-            // Prepare classes
+            int totalUsers = shuffledUsers.Count;
+            int numClasses = request.NumberOfClasses;
+
+            int baseCount = totalUsers / numClasses;          
+            int remainder = totalUsers % numClasses;          
+
             var createdClasses = new List<Class>();
-            for (int i = 1; i <= request.NumberOfClasses; i++)
+            int userIndex = 0;
+
+            for (int i = 1; i <= numClasses; i++)
             {
+                int currentClassSize = baseCount + (i <= remainder ? 1 : 0);
+
                 var newClass = new Class
                 {
                     ClassName = $"Lớp {course.Code}-{i}",
                     CourseId = request.CourseId,
-                    Capacity = request.MaxMembers,
+                    Capacity = currentClassSize,
                     Status = ClassConstants.Status.Created,
                     IsActive = false,
                     CreatedDate = DateTime.UtcNow
                 };
+
+                for (int j = 0; j < currentClassSize && userIndex < totalUsers; j++)
+                {
+                    var user = shuffledUsers[userIndex];
+                    var appUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+                    if (appUser != null)
+                    {
+                        newClass.Employees.Add(appUser);
+                    }
+                    userIndex++;
+                }
+
                 createdClasses.Add(newClass);
-            }
-
-            var availableQueue = new Queue<int>(
-                Enumerable.Range(0, createdClasses.Count)
-            );
-
-            int userIndex = 0;
-            while (userIndex < shuffledUsers.Count && availableQueue.Count > 0)
-            {
-                var classIdx = availableQueue.Dequeue();
-                var targetClass = createdClasses[classIdx];
-
-                var user = shuffledUsers[userIndex];
-                var appUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
-                if (appUser != null)
-                {
-                    targetClass.Employees.Add(appUser);
-                    userIndex++;
-                }
-                else
-                {
-                    userIndex++;
-                }
-
-                if (targetClass.Employees.Count < targetClass.Capacity)
-                {
-                    availableQueue.Enqueue(classIdx);
-                }
             }
 
             _context.Classes.AddRange(createdClasses);
             await _context.SaveChangesAsync();
 
-            var classDtos = createdClasses.Select(c => new ClassDto
-            {
-                ClassId = c.ClassId,
-                ClassName = c.ClassName,
-                CourseId = c.CourseId,
-                CourseName = c.Course?.CourseName,
-                MentorId = c.MentorId!,
-                MentorName = c.Mentor != null ? c.Mentor.FullName : null,
-                TotalMembers = c.Employees.Count,
-                Employees = c.Employees.Select(e => new ClassEmployeeDto
-                {
-                    EmployeeId = e.Id,
-                    FullName = e.FullName,
-                    Email = e.Email
-                }).ToList(),
-                CreatedDate = c.CreatedDate,
-                IsActive = c.IsActive
-            }).ToList();
-
-            return (true, classDtos);
+            return true;
         }
 
         public async Task<(bool Success, string Message, int Count)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
@@ -119,7 +97,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             if (request.WeeklySchedules == null || request.WeeklySchedules.Count == 0)
                 return (false, "Chưa có buổi học trong tuần đầu.", 0);
 
-            string joinUrl =  await ZoomHelper.CreateRecurringMeetingAndGetJoinUrlAsync();
+            string joinUrl = await ZoomHelper.CreateRecurringMeetingAndGetJoinUrlAsync();
 
             var allSchedules = new List<Schedule>();
 
@@ -148,8 +126,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             s.Date == date &&
                             (
                                 (s.StartTime <= start && s.EndTime > start) ||
-                                (s.StartTime < end && s.EndTime >= end) ||   
-                                (s.StartTime >= start && s.EndTime <= end) 
+                                (s.StartTime < end && s.EndTime >= end) ||
+                                (s.StartTime >= start && s.EndTime <= end)
                             ) &&
                             s.Class!.Employees.Any(e => classMemberIds.Contains(e.Id))
                         )
@@ -350,7 +328,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 CourseName = classEntity.Course?.CourseName,
                 MentorId = classEntity.MentorId!,
                 MentorName = classEntity.Mentor?.FullName,
-                TotalMembers = classEntity.Employees.Count,
+                MaxStudents = classEntity.Employees.Count,
                 IsActive = classEntity.IsActive,
                 Status = classEntity.Status,
                 CreatedDate = classEntity.CreatedDate,
@@ -374,7 +352,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 IsActive = c.IsActive,
                 Status = c.Status,
                 CreatedDate = c.CreatedDate,
-                TotalMembers = c.Employees.Count
+                MaxStudents = c.Employees.Count
             }).ToList();
         }
 
@@ -419,5 +397,44 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return (true, $"Đã đổi lớp giữa {user1.FullName} ({class1.ClassName}) và {user2.FullName} ({class2.ClassName}) trong môn học '{class1.Course.CourseName}'.");
         }
 
+        public async Task<ActionResult<PagedResult<ClassDto>>> GetClassesAsync(int page, int pageSize)
+        {
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 10;
+
+            var query = _context.Classes
+                .Include(c => c.Course)
+                .Include(c => c.Mentor)
+                .AsNoTracking();
+
+            var totalCount = await query.CountAsync();
+
+            var classes = await query
+                .OrderByDescending(c => c.CreatedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => new ClassDto
+                {
+                    ClassId = c.ClassId,
+                    ClassName = c.ClassName,
+                    CourseId = c.CourseId,
+                    CourseName = c.Course.CourseName,
+                    MentorId = c.MentorId ?? string.Empty,
+                    MentorName = c.Mentor != null ? c.Mentor.FullName : null,
+                    MaxStudents = c.Capacity,
+                    CreatedDate = c.CreatedDate,
+                    IsActive = c.IsActive,
+                    Status = c.Status
+                })
+                .ToListAsync();
+
+            return new PagedResult<ClassDto>
+            {
+                Items = classes,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
     }
 }

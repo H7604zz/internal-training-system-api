@@ -27,6 +27,7 @@ namespace InternalTrainingSystem.Core.Controllers
             _attendanceService = attendanceService;
         }
 
+        //tao course
         [HttpPost]
         public async Task<ActionResult<List<ClassDto>>> CreateClasses(CreateClassRequestDto request)
         {
@@ -38,17 +39,18 @@ namespace InternalTrainingSystem.Core.Controllers
 
             var result = await _classService.CreateClassesAsync(request, confirmedUsers);
 
-            if (!result.Success)
+            if (!result)
                 return BadRequest();
 
-            return Ok(result.Data);
+            return Ok();
         }
 
+        //tao thoi khoa bieu
         [HttpPost("create-weekly")]
         public async Task<IActionResult> CreateWeeklySchedules([FromBody] CreateWeeklyScheduleRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
+                return BadRequest("Dữ liệu không hợp lệ.");
 
             var result = await _classService.CreateWeeklySchedulesAsync(request);
 
@@ -63,6 +65,7 @@ namespace InternalTrainingSystem.Core.Controllers
             });
         }
 
+        // lay lich hoc cua 1 class
         [HttpGet("{classId}/schedule")]
         //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.Staff + "," + UserRoles.Mentor)]
         public async Task<IActionResult> GetClassSchedule(int classId)
@@ -75,6 +78,7 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
+        // lay ra danh sach user trong 1 lop
         [HttpGet("{classId}/user")]
         //[Authorize]
         public async Task<IActionResult> GetStudentsByClass(int classId)
@@ -82,16 +86,12 @@ namespace InternalTrainingSystem.Core.Controllers
             var students = await _classService.GetUserByClassAsync(classId);
 
             if (students.Count == 0)
-                return NotFound(new { success = false, message = "Không tìm thấy người học hoặc lớp học." });
+                return NotFound("Không tìm thấy người học hoặc lớp học.");
 
-            return Ok(new
-            {
-                success = true,
-                message = "Lấy danh sách người học thành công",
-                data = students
-            });
+            return Ok(students);
         }
 
+        // lay ra chi tiet 1 lop
         [HttpGet("{classId}")]
         //[Authorize]
         public async Task<IActionResult> GetClassDetail(int classId)
@@ -99,52 +99,52 @@ namespace InternalTrainingSystem.Core.Controllers
             var classDetail = await _classService.GetClassDetailAsync(classId);
 
             if (classDetail == null)
-                return NotFound(new { success = false, message = "Không tìm thấy lớp học." });
+                return NotFound("Không tìm thấy lớp học.");
 
-            return Ok(new
-            {
-                success = true,
-                message = "Lấy thông tin lớp học thành công",
-                data = classDetail
-            });
+            return Ok(classDetail);
         }
 
+        // diem danh
         [HttpPost("{scheduleId}/attendance")]
         public async Task<IActionResult> MarkAttendance(int scheduleId, [FromBody] List<AttendanceRequest> attendanceList)
         {
             if (attendanceList == null || !attendanceList.Any())
-                return BadRequest(new { success = false, message = "Danh sách điểm danh trống." });
+                return BadRequest("Danh sách điểm danh trống.");
 
             await _attendanceService.MarkAttendanceAsync(scheduleId, attendanceList);
 
-            return Ok(new { success = true, message = "Điểm danh thành công." });
+            return Ok("Điểm danh thành công.");
         }
 
+        // sua diem danh
         [HttpPut("{scheduleId}/attendance")]
         public async Task<IActionResult> UpdateAttendance(int scheduleId, [FromBody] List<AttendanceRequest> attendanceList)
         {
             if (attendanceList == null || !attendanceList.Any())
-                return BadRequest(new { success = false, message = "Danh sách điểm danh trống." });
+                return BadRequest( "Danh sách điểm danh trống.");
 
             var result = await _attendanceService.UpdateAttendanceAsync(scheduleId, attendanceList);
 
             if (!result)
-                return NotFound(new { success = false, message = "Không tìm thấy dữ liệu điểm danh cần cập nhật." });
+                return NotFound("Không tìm thấy dữ liệu điểm danh cần cập nhật.");
 
-            return Ok(new { success = true, message = "Cập nhật điểm danh thành công." });
+            return Ok("Cập nhật điểm danh thành công.");
         }
 
+
+        //lay ra thong tin dim danh cho 1 buoi hoc
         [HttpGet("schedules/{scheduleId}/attendance")]
         public async Task<IActionResult> GetAttendanceBySchedule(int scheduleId)
         {
             var attendances = await _attendanceService.GetAttendanceByScheduleAsync(scheduleId);
 
             if (attendances == null || !attendances.Any())
-                return NotFound(new { success = false, message = "Không tìm thấy thông tin điểm danh cho buổi học này." });
+                return NotFound("Không tìm thấy thông tin điểm danh cho buổi học này.");
 
             return Ok(attendances);
         }
 
+        // chuyen lop giua 2 user
         [HttpPost("change-class")]
         //[Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> SwapStudentsBetweenClasses([FromBody] SwapClassRequest request)
@@ -168,5 +168,16 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result.Message);
         }
 
+        // lay ra tat ca lop hoc
+        [HttpGet]
+        //[Authorize]
+        public async Task<ActionResult<PagedResult<ClassDto>>> GetClasses([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 10;
+            var result = await _classService.GetClassesAsync(page, pageSize);
+            
+            return Ok(result);
+        }
     }
 }

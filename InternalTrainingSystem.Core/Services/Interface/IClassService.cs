@@ -1,11 +1,12 @@
-using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace InternalTrainingSystem.Core.Services.Interface
 {
     public interface IClassService
     {
-        Task<(bool Success, List<ClassDto>? Data)> CreateClassesAsync(CreateClassRequestDto request,
+        Task<bool> CreateClassesAsync(CreateClassRequestDto request,
              List<StaffConfirmCourseResponse> confirmedUsers);
         Task<(bool Success, string Message, int Count)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
 
@@ -15,5 +16,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<ClassDto?> GetClassDetailAsync(int classId);
         Task<List<ClassDto>> GetClassesByCourseAsync(int courseId);
         Task<(bool Success, string Message)> SwapClassesAsync(SwapClassRequest request);
+        Task<ActionResult<PagedResult<ClassDto>>> GetClassesAsync(int page, int pageSize);
     }
 }
