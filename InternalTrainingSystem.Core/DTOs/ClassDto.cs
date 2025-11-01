@@ -89,4 +89,13 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Message { get; set; } = string.Empty;
         public List<ScheduleItemResponseDto> Schedules { get; set; } = new();
     }
+
+    public class SwapClassRequest
+    {
+        public string EmployeeId1 { get; set; } = string.Empty;
+        public string ClassName1 { get; set; } = string.Empty;
+
+        public string EmployeeId2 { get; set; } = string.Empty;
+        public string ClassName2 { get; set; } = string.Empty;
+    }
 }

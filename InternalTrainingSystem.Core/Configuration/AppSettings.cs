@@ -55,4 +55,12 @@ namespace InternalTrainingSystem.Core.Configuration
         public string ApiBaseUrl { get; set; } = string.Empty;
         public List<string> AllowedOrigins { get; set; } = new();
     }
+
+    public class ZoomSettings
+    {
+        public const string SectionName = "ZoomSettings";
+        public string? ClientId { get; set; }
+        public string? ClientSecret { get; set; }
+        public string? AccountId { get; set; }
+    }
 }
