@@ -6,12 +6,10 @@ namespace InternalTrainingSystem.Core.Repository.Interface
 {
 	public interface IDepartmentRepository
 	{
-		Task<List<DepartmentDto>> GetDepartments();
-		Task<PagedResult<Models.Department>> GetAllDepartmentsAsync(int page, int pageSize);
-		Task<Models.Department> AddDepartmentAsync(Models.Department department);
-		Task UpdateDepartmentAsync(Models.Department department);
-		Task DeleteDepartmentAsync(int departmentId);
-		Task<Models.Department> GetDepartmentByIdAsync(int id);
-		Task<Department> GetDepartmentCourseAndEmployeeAsync(int departmentId, string? search, int page, int pageSize);
+		Task<List<DepartmentListDto>> GetDepartmentsAsync();
+		Task<bool> CreateDepartmentAsync(DepartmentRequestDto department);
+        Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto department);
+		Task<bool> DeleteDepartmentAsync(int departmentId);
+		Task<DepartmentDetailDto> GetDepartmentDetailAsync(int id);
 	}
 }
