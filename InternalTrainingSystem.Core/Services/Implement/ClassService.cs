@@ -61,7 +61,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return _classRepo.SwapClassesAsync(request);
         }
 
-        public async Task<ActionResult<PagedResult<ClassDto>>> GetClassesAsync(int page, int pageSize)
+        public async Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize)
         {
             return await _classRepo.GetClassesAsync(page, pageSize);
         }

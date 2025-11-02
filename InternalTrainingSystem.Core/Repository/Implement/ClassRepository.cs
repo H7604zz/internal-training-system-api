@@ -397,7 +397,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return (true, $"Đã đổi lớp giữa {user1.FullName} ({class1.ClassName}) và {user2.FullName} ({class2.ClassName}) trong môn học '{class1.Course.CourseName}'.");
         }
 
-        public async Task<ActionResult<PagedResult<ClassDto>>> GetClassesAsync(int page, int pageSize)
+        public async Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize)
         {
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
