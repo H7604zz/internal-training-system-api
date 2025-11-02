@@ -322,7 +322,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             var result = classEntity.Employees.Select(e => new ClassEmployeeAttendanceDto
             {
-                EmployeeId = e.Id,
+                EmployeeId = e.EmployeeId ?? "",
                 FullName = e.FullName,
                 Email = e.Email,
                 AbsentNumberDay = attendances
