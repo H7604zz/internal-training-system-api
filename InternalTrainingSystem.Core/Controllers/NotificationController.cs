@@ -128,7 +128,7 @@ namespace InternalTrainingSystem.Core.Controllers
             }));
         }
 
-        [HttpGet]
+        [HttpGet("check-status")]
         public async Task<IActionResult> CheckNotifications([FromQuery] int courseId)
         {
             var notifications = await _notificationService.HasRecentNotification(NotificationType.Start, courseId, 0);
