@@ -97,10 +97,16 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class SwapClassRequest
     {
-        public string EmployeeId1 { get; set; } = string.Empty;
-        public string ClassName1 { get; set; } = string.Empty;
+        public string EmployeeIdFrom { get; set; } = string.Empty;
+        public int ClassIdFrom { get; set; }
 
-        public string EmployeeId2 { get; set; } = string.Empty;
-        public string ClassName2 { get; set; } = string.Empty;
+        public string EmployeeIdTo { get; set; } = string.Empty;
+        public int ClassIdTo { get; set; }
+    }
+
+    public class RespondSwapRequest
+    {
+        public int SwapRequestId { get; set; }
+        public bool Accepted { get; set; }
     }
 }

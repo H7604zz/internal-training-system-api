@@ -2,11 +2,14 @@
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 using static InternalTrainingSystem.Core.DTOs.AttendanceDto;
 
@@ -19,12 +22,17 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IClassService _classService;
         private readonly IUserService _userService;
         private readonly IAttendanceService _attendanceService;
+        private readonly INotificationService _notificationService;
+        private readonly IHubContext<NotificationHub> _hub;
 
-        public ClassController(IClassService classService, IUserService userService, IAttendanceService attendanceService)
+        public ClassController(IClassService classService, IUserService userService,
+            IAttendanceService attendanceService, INotificationService notificationService, IHubContext<NotificationHub> hub)
         {
             _classService = classService;
             _userService = userService;
             _attendanceService = attendanceService;
+            _notificationService = notificationService;
+            _hub = hub;
         }
 
         //tao class
@@ -150,10 +158,10 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(attendances);
         }
 
-        // chuyen lop giua 2 user
-        [HttpPost("change-class")]
+        // tao yeu cau chuyen lop giua 2 user
+        [HttpPost("request-swap")]
         //[Authorize(Roles = UserRoles.Staff)]
-        public async Task<IActionResult> SwapStudentsBetweenClasses([FromBody] SwapClassRequest request)
+        public async Task<IActionResult> RequestClassSwap([FromBody] SwapClassRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -162,12 +170,43 @@ namespace InternalTrainingSystem.Core.Controllers
             }
 
             var u = await _userService.GetUserProfileAsync(userId);
-            if (u!.EmployeeId!= request.EmployeeId1)
+            if (u!.EmployeeId!= request.EmployeeIdFrom)
             {
                 return NotFound("Không tìm thấy học viên.");
             }
 
-            var result = await _classService.SwapClassesAsync(request);
+            var result = await _classService.CreateClassSwapRequestAsync(request);
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            await _notificationService.SaveNotificationAsync(new Notification
+            {
+                Type = NotificationType.UserSwapClass,
+                SentAt = DateTime.Now,
+                Message = "Có 1 yêu cầu đổi lớp đang đợi bạn phản hồi",
+            },
+               userIds: new List<string> { request.EmployeeIdTo }
+            );
+
+            await _hub.Clients.User(request.EmployeeIdTo).SendAsync("ReceiveNotification", new
+            {
+                Type = "UserSwapClass",
+                Message = "Bạn có một yêu cầu đổi lớp đang chờ phản hồi."
+            });
+
+            return Ok(result.Message);
+        }
+
+        // phan hoi yeu cau chuyen lop giua 2 user
+        [HttpPost("respond-swap-request")]
+        //[Authorize(Roles = UserRoles.Staff)]
+        public async Task<IActionResult> RespondToSwapRequest([FromBody] RespondSwapRequest request)
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserId))
+                return Unauthorized("Không xác định được người dùng.");
+
+            var result = await _classService.RespondToClassSwapAsync(request, currentUserId);
             if (!result.Success)
                 return BadRequest(result.Message);
 

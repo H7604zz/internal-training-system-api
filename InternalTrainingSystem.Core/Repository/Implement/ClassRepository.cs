@@ -385,23 +385,26 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }).ToList();
         }
 
-        public async Task<(bool Success, string Message)> SwapClassesAsync(SwapClassRequest request)
+        public async Task<(bool Success, string Message)> CreateClassSwapRequestAsync(SwapClassRequest request)
         {
-            var user1 = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeId1);
-            var user2 = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeId2);
+            if (request.EmployeeIdFrom == request.EmployeeIdTo)
+                return (false, "Không thể đổi lớp với chính mình.");
 
-            if (user1 == null || user2 == null)
+            var userFrom = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeIdFrom);
+            var userTo = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeIdTo);
+
+            if (userFrom == null || userTo == null)
                 return (false, "Không tìm thấy 1 hoặc cả 2 học viên.");
 
             var class1 = await _context.Classes
                 .Include(c => c.Employees)
                 .Include(c => c.Course)
-                .FirstOrDefaultAsync(c => c.ClassName == request.ClassName1);
+                .FirstOrDefaultAsync(c => c.ClassId == request.ClassIdFrom);
 
             var class2 = await _context.Classes
                 .Include(c => c.Employees)
                 .Include(c => c.Course)
-                .FirstOrDefaultAsync(c => c.ClassName == request.ClassName2);
+                .FirstOrDefaultAsync(c => c.ClassId == request.ClassIdTo);
 
             if (class1 == null || class2 == null)
                 return (false, "Không tìm thấy 1 hoặc cả 2 lớp học.");
@@ -409,21 +412,35 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             if (class1.CourseId != class2.CourseId)
                 return (false, $"Hai lớp '{class1.ClassName}' và '{class2.ClassName}' không cùng một môn học, không thể đổi.");
 
-            if (!class1.Employees.Any(e => e.EmployeeId == user1.EmployeeId))
-                return (false, $"{user1.FullName} không thuộc lớp {class1.ClassName}.");
+            if (!class1.Employees.Any(e => e.EmployeeId == userFrom.EmployeeId))
+                return (false, $"{userFrom.FullName} không thuộc lớp {class1.ClassName}.");
 
-            if (!class2.Employees.Any(e => e.EmployeeId == user2.EmployeeId))
-                return (false, $"{user2.FullName} không thuộc lớp {class2.ClassName}.");
+            if (!class2.Employees.Any(e => e.EmployeeId == userTo.EmployeeId))
+                return (false, $"{userTo.FullName} không thuộc lớp {class2.ClassName}.");
 
-            class1.Employees.Remove(user1);
-            class2.Employees.Remove(user2);
+            var existingRequest = await _context.ClassSwaps.FirstOrDefaultAsync(x =>
+            (x.RequesterId == request.EmployeeIdFrom && x.TargetId == request.EmployeeIdTo) ||
+            (x.RequesterId == request.EmployeeIdTo && x.TargetId == request.EmployeeIdFrom));
 
-            class1.Employees.Add(user2);
-            class2.Employees.Add(user1);
+            if (existingRequest != null && existingRequest.Status == ClassSwapConstants.Pending)
+                return (false, "Đã có yêu cầu đổi lớp đang chờ xử lý giữa hai học viên.");
 
+            var swapRequest = new ClassSwap
+            {
+                RequesterId = request.EmployeeIdFrom,
+                TargetId = request.EmployeeIdTo,
+
+                FromClassId = request.ClassIdFrom,
+                ToClassId = request.ClassIdTo,
+
+                Status = ClassSwapConstants.Pending,
+                RequestedAt = DateTime.Now
+            };
+
+            _context.ClassSwaps.Add(swapRequest);
             await _context.SaveChangesAsync();
 
-            return (true, $"Đã đổi lớp giữa {user1.FullName} ({class1.ClassName}) và {user2.FullName} ({class2.ClassName}) trong môn học '{class1.Course.CourseName}'.");
+            return (true, $"Gửi yêu cầu đổi lớp thành công. Vui lòng chờ phản hồi.");
         }
 
         public async Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize)
@@ -464,6 +481,71 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 Page = page,
                 PageSize = pageSize
             };
+        }
+
+        public async Task<(bool Success, string Message)> RespondToClassSwapAsync(RespondSwapRequest request, string responderId)
+        {
+            try
+            {
+                var swapRequest = await _context.ClassSwaps
+                    .FirstOrDefaultAsync(r => r.Id == request.SwapRequestId);
+
+                if (swapRequest == null)
+                    return (false, "Không tìm thấy yêu cầu đổi lớp.");
+
+                if (swapRequest.Status != ClassSwapConstants.Pending)
+                    return (false, "Yêu cầu này đã được xử lý trước đó.");
+
+                var classTo = await _context.Classes.FirstOrDefaultAsync(c => c.ClassId == swapRequest.ToClassId);
+                var classFrom = await _context.Classes.FirstOrDefaultAsync(c => c.ClassId == swapRequest.FromClassId);
+
+                if (classTo == null || classFrom == null)
+                    return (false, "Không tìm thấy thông tin lớp học.");
+
+                if (classTo.StartDate <= DateTime.Now || classFrom.StartDate <= DateTime.Now)
+                {
+                    swapRequest.Status = ClassSwapConstants.Cancelled;
+                    await _context.SaveChangesAsync();
+
+                    return (false, "Không thể đổi lớp vì một trong hai lớp đã bắt đầu. Yêu cầu đã bị hủy.");
+                }
+
+                if (request.Accepted)
+                {
+                    var userFrom = await _context.Users.Include(u => u.EnrolledClasses)
+                        .FirstOrDefaultAsync(u => u.EmployeeId == swapRequest.RequesterId);
+                    var userTo = await _context.Users.Include(u => u.EnrolledClasses)
+                        .FirstOrDefaultAsync(u => u.EmployeeId == swapRequest.TargetId);
+
+                    if (userFrom == null || userTo == null)
+                        return (false, "Không tìm thấy thông tin học viên.");
+    
+                    classFrom.Employees.Remove(userFrom);
+                    classTo.Employees.Remove(userTo);
+
+                    classFrom.Employees.Add(userTo);
+                    classTo.Employees.Add(userFrom);
+
+                    swapRequest.Status = ClassSwapConstants.Approved;
+                    swapRequest.RespondedById = responderId;
+
+                    await _context.SaveChangesAsync();
+
+                    return (true, "Đổi lớp thành công.");
+                }
+                else
+                {
+                    swapRequest.Status = ClassSwapConstants.Rejected;
+                    swapRequest.RespondedById = responderId;
+                    await _context.SaveChangesAsync();
+
+                    return (true, "Từ chối yêu cầu đổi lớp thành công.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Lỗi khi xử lý yêu cầu đổi lớp: {ex.Message}");
+            }
         }
     }
 }

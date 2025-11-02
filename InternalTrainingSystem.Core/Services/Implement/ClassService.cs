@@ -57,14 +57,19 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.GetClassesByCourseAsync(courseId);
         }
 
-        public Task<(bool Success, string Message)> SwapClassesAsync(SwapClassRequest request)
+        public Task<(bool Success, string Message)> CreateClassSwapRequestAsync(SwapClassRequest request)
         {
-            return _classRepo.SwapClassesAsync(request);
+            return _classRepo.CreateClassSwapRequestAsync(request);
         }
 
         public async Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize)
         {
             return await _classRepo.GetClassesAsync(page, pageSize);
+        }
+
+        public async Task<(bool Success, string Message)> RespondToClassSwapAsync(RespondSwapRequest request, string responderId)
+        {
+            return await _classRepo.RespondToClassSwapAsync(request, responderId);
         }
     }
 }
