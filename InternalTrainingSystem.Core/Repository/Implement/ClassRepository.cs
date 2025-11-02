@@ -331,7 +331,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 MaxStudents = classEntity.Employees.Count,
                 Employees = classEntity.Employees.Select(e => new ClassEmployeeDto
                 {
-                    EmployeeId = e.Id,
+                    EmployeeId = e.EmployeeId ?? "",
                     FullName = e.FullName,
                     Email = e.Email
                 }).ToList(),
