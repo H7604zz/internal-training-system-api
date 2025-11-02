@@ -32,8 +32,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _uow = uow;
         }
 
-        public async Task<QuizDetailDto?> GetQuizAsync(
+        public async Task<QuizDetailDto?> GetQuizForAttemptAsync(
     int quizId,
+    int attemptId,
     string userId,
     bool shuffleQuestions = false,
     bool shuffleAnswers = false,
@@ -42,12 +43,24 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(quizId, ct);
             if (quiz == null) return null;
 
-            var questionsQuery = quiz.Questions.Where(q => q.IsActive);
+            var attempt = await _attemptRepo.GetAttemptAsync(attemptId, userId, ct)
+                         ?? throw new InvalidOperationException("Invalid attempt.");
 
-            // ✅ chọn thứ tự câu hỏi dựa vào flag
-            var questionList = shuffleQuestions
-                ? questionsQuery.OrderBy(_ => Guid.NewGuid()).ToList()
-                : questionsQuery.OrderBy(q => q.OrderIndex).ThenBy(q => q.QuestionId).ToList();
+            var baseQuestions = quiz.Questions.Where(q => q.IsActive).ToList();
+
+            List<Question> finalQuestions;
+            if (shuffleQuestions)
+            {
+                var rng = new Random(attemptId);
+                finalQuestions = baseQuestions.OrderBy(_ => rng.Next()).ToList();
+            }
+            else
+            {
+                finalQuestions = baseQuestions
+                    .OrderBy(q => q.OrderIndex)
+                    .ThenBy(q => q.QuestionId)
+                    .ToList();
+            }
 
             return new QuizDetailDto
             {
@@ -57,21 +70,27 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 TimeLimit = quiz.TimeLimit,
                 MaxAttempts = quiz.MaxAttempts,
                 PassingScore = quiz.PassingScore,
-                Questions = questionList.Select(q =>
+                Questions = finalQuestions.Select(q =>
                 {
-                    var answersQuery = q.Answers.Where(a => a.IsActive);
+                    var baseAnswers = q.Answers.Where(a => a.IsActive).ToList();
 
-                    var answerList = (q.QuestionType == QuizConstants.QuestionTypes.Essay)
-                        ? new List<AnswerDto>()
-                        : (shuffleAnswers
-                            ? answersQuery.OrderBy(_ => Guid.NewGuid())
-                            : answersQuery.OrderBy(a => a.OrderIndex).ThenBy(a => a.AnswerId))
-                        .Select(a => new AnswerDto
-                        {
-                            AnswerId = a.AnswerId,
-                            AnswerText = a.AnswerText,
-                            OrderIndex = a.OrderIndex
-                        }).ToList();
+                    List<Answer> finalAnswers;
+                    if (q.QuestionType == QuizConstants.QuestionTypes.Essay)
+                    {
+                        finalAnswers = new List<Answer>();
+                    }
+                    else if (shuffleAnswers)
+                    {
+                        var rng = new Random(attemptId + q.QuestionId); 
+                        finalAnswers = baseAnswers.OrderBy(_ => rng.Next()).ToList();
+                    }
+                    else
+                    {
+                        finalAnswers = baseAnswers
+                            .OrderBy(a => a.OrderIndex)
+                            .ThenBy(a => a.AnswerId)
+                            .ToList();
+                    }
 
                     return new QuestionDto
                     {
@@ -80,7 +99,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         QuestionType = q.QuestionType,
                         Points = q.Points,
                         OrderIndex = q.OrderIndex,
-                        Answers = answerList
+                        Answers = finalAnswers.Select(a => new AnswerDto
+                        {
+                            AnswerId = a.AnswerId,
+                            AnswerText = a.AnswerText,
+                            OrderIndex = a.OrderIndex
+                        }).ToList()
                     };
                 }).ToList()
             };
