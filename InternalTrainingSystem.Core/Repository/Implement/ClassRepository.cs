@@ -385,10 +385,13 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }).ToList();
         }
 
-        public async Task<(bool Success, string Message)> SwapClassesAsync(SwapClassRequest request)
+        public async Task<(bool Success, string Message)> CreateClassSwapRequestAsync(SwapClassRequest request)
         {
-            var user1 = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeId1);
-            var user2 = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeId2);
+            if (request.EmployeeIdFrom == request.EmployeeIdTo)
+                return (false, "Không thể đổi lớp với chính mình.");
+
+            var user1 = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeIdFrom);
+            var user2 = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeIdTo);
 
             if (user1 == null || user2 == null)
                 return (false, "Không tìm thấy 1 hoặc cả 2 học viên.");
@@ -396,12 +399,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             var class1 = await _context.Classes
                 .Include(c => c.Employees)
                 .Include(c => c.Course)
-                .FirstOrDefaultAsync(c => c.ClassName == request.ClassName1);
+                .FirstOrDefaultAsync(c => c.ClassName == request.ClassIdFrom);
 
             var class2 = await _context.Classes
                 .Include(c => c.Employees)
                 .Include(c => c.Course)
-                .FirstOrDefaultAsync(c => c.ClassName == request.ClassName2);
+                .FirstOrDefaultAsync(c => c.ClassName == request.ClassIdTo);
 
             if (class1 == null || class2 == null)
                 return (false, "Không tìm thấy 1 hoặc cả 2 lớp học.");
@@ -415,11 +418,23 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             if (!class2.Employees.Any(e => e.EmployeeId == user2.EmployeeId))
                 return (false, $"{user2.FullName} không thuộc lớp {class2.ClassName}.");
 
-            class1.Employees.Remove(user1);
-            class2.Employees.Remove(user2);
+            var existingRequest = await _context.ClassSwaps.FirstOrDefaultAsync(x =>
+            (x.RequesterId == request.EmployeeIdFrom && x.TargetId == request.EmployeeIdTo) ||
+            (x.RequesterId == request.EmployeeIdTo && x.TargetId == request.EmployeeIdFrom));
 
-            class1.Employees.Add(user2);
-            class2.Employees.Add(user1);
+            if (existingRequest != null && existingRequest.Status == "Pending")
+                return (false, "Đã có yêu cầu đổi lớp đang chờ xử lý giữa hai học viên.");
+
+            var swapRequest = new ClassSwap
+            {
+                RequesterId = request.EmployeeIdFrom,
+                TargetId = request.EmployeeIdTo,
+                FromClassId = request.ClassIdFrom,
+                ClassId2 = request.ClassId2,
+                RequestedBy = requesterId,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow
+            };
 
             await _context.SaveChangesAsync();
 

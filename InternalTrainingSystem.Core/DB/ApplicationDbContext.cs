@@ -34,6 +34,7 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<Department> Departments { get; set; }
         public DbSet<LessonProgress> LessonProgresses { get; set; }
         public DbSet<NotificationRecipient> NotificationRecipients { get; set; }
+        public DbSet<ClassSwap> ClassSwaps { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -171,6 +172,31 @@ namespace InternalTrainingSystem.Core.DB
                 .WithMany(s => s.Attendances)
                 .HasForeignKey(a => a.ScheduleId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ClassSwap relationships and composite key
+            builder.Entity<ClassSwap>()
+                .HasOne(r => r.Requester)
+                .WithMany()
+                .HasForeignKey(r => r.RequesterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ClassSwap>()
+                .HasOne(r => r.Target)
+                .WithMany()
+                .HasForeignKey(r => r.TargetId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ClassSwap>()
+                .HasOne(r => r.FromClass)
+                .WithMany()
+                .HasForeignKey(r => r.FromClassId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ClassSwap>()
+                .HasOne(r => r.ToClass)
+                .WithMany()
+                .HasForeignKey(r => r.ToClassId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Indexes for better performance
             builder.Entity<ApplicationUser>()

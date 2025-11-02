@@ -150,10 +150,10 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(attendances);
         }
 
-        // chuyen lop giua 2 user
-        [HttpPost("change-class")]
+        // tao yeu cau chuyen lop giua 2 user
+        [HttpPost("request-swap")]
         //[Authorize(Roles = UserRoles.Staff)]
-        public async Task<IActionResult> SwapStudentsBetweenClasses([FromBody] SwapClassRequest request)
+        public async Task<IActionResult> RequestClassSwap([FromBody] SwapClassRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -162,12 +162,12 @@ namespace InternalTrainingSystem.Core.Controllers
             }
 
             var u = await _userService.GetUserProfileAsync(userId);
-            if (u!.EmployeeId!= request.EmployeeId1)
+            if (u!.EmployeeId!= request.EmployeeIdFrom)
             {
                 return NotFound("Không tìm thấy học viên.");
             }
 
-            var result = await _classService.SwapClassesAsync(request);
+            var result = await _classService.CreateClassSwapRequestAsync(request);
             if (!result.Success)
                 return BadRequest(result.Message);
 

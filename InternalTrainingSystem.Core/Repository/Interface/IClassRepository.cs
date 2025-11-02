@@ -14,7 +14,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId);
         Task<ClassDto?> GetClassDetailAsync(int classId);
         Task<List<ClassDto>> GetClassesByCourseAsync(int courseId);
-        Task<(bool Success, string Message)> SwapClassesAsync(SwapClassRequest request);
+        Task<(bool Success, string Message)> CreateClassSwapRequestAsync(SwapClassRequest request);
         Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize);
     }
 }
