@@ -32,10 +32,22 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _uow = uow;
         }
 
-        public async Task<QuizDetailDto?> GetQuizAsync(int quizId, string userId, CancellationToken ct = default)
+        public async Task<QuizDetailDto?> GetQuizAsync(
+    int quizId,
+    string userId,
+    bool shuffleQuestions = false,
+    bool shuffleAnswers = false,
+    CancellationToken ct = default)
         {
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(quizId, ct);
             if (quiz == null) return null;
+
+            var questionsQuery = quiz.Questions.Where(q => q.IsActive);
+
+            // ✅ chọn thứ tự câu hỏi dựa vào flag
+            var questionList = shuffleQuestions
+                ? questionsQuery.OrderBy(_ => Guid.NewGuid()).ToList()
+                : questionsQuery.OrderBy(q => q.OrderIndex).ThenBy(q => q.QuestionId).ToList();
 
             return new QuizDetailDto
             {
@@ -45,21 +57,32 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 TimeLimit = quiz.TimeLimit,
                 MaxAttempts = quiz.MaxAttempts,
                 PassingScore = quiz.PassingScore,
-                Questions = quiz.Questions
-                    .OrderBy(x => x.OrderIndex)
-                    .Select(q => new QuestionDto
+                Questions = questionList.Select(q =>
+                {
+                    var answersQuery = q.Answers.Where(a => a.IsActive);
+
+                    var answerList = (q.QuestionType == QuizConstants.QuestionTypes.Essay)
+                        ? new List<AnswerDto>()
+                        : (shuffleAnswers
+                            ? answersQuery.OrderBy(_ => Guid.NewGuid())
+                            : answersQuery.OrderBy(a => a.OrderIndex).ThenBy(a => a.AnswerId))
+                        .Select(a => new AnswerDto
+                        {
+                            AnswerId = a.AnswerId,
+                            AnswerText = a.AnswerText,
+                            OrderIndex = a.OrderIndex
+                        }).ToList();
+
+                    return new QuestionDto
                     {
                         QuestionId = q.QuestionId,
                         QuestionText = q.QuestionText,
                         QuestionType = q.QuestionType,
                         Points = q.Points,
                         OrderIndex = q.OrderIndex,
-                        Answers = (q.QuestionType == QuizConstants.QuestionTypes.Essay)
-                            ? new List<AnswerDto>()
-                            : q.Answers.OrderBy(a => a.OrderIndex)
-                                .Select(a => new AnswerDto { AnswerId = a.AnswerId, AnswerText = a.AnswerText, OrderIndex = a.OrderIndex })
-                                .ToList()
-                    }).ToList()
+                        Answers = answerList
+                    };
+                }).ToList()
             };
         }
 
