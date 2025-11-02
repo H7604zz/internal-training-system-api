@@ -497,5 +497,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             return lesson;
         }
+        public Task<Lesson?> GetWithModuleAsync(int lessonId, CancellationToken ct = default) =>
+            _context.Lessons.Include(l => l.Module)
+                       .FirstOrDefaultAsync(l => l.Id == lessonId, ct);
+
+        public Task<Lesson?> GetByIdAsync(int lessonId, CancellationToken ct = default) =>
+            _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId, ct);
     }
 }
