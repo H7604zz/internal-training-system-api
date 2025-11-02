@@ -23,11 +23,11 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet("{quizId:int}")]
-        public async Task<ActionResult<QuizDetailDto>> GetQuiz(int quizId, CancellationToken ct)
+        public async Task<ActionResult<QuizDetailDto>> GetQuiz(int quizId,[FromQuery] bool shuffleQuestions = false,[FromQuery] bool shuffleAnswers = false,CancellationToken ct = default)
         {
-            var res = await _service.GetQuizAsync(quizId, GetUserId(), ct);
-            if (res == null) return NotFound();
-            return Ok(res);
+            var result = await _service.GetQuizAsync(quizId, GetUserId(), shuffleQuestions, shuffleAnswers, ct);
+            if (result == null) return NotFound();
+            return Ok(result);
         }
 
         [HttpPost("{quizId:int}/start")]
