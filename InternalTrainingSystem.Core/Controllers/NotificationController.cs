@@ -51,7 +51,7 @@ namespace InternalTrainingSystem.Core.Controllers
             var now = DateTime.Now;
             var sevenDaysAgo = now.AddDays(-7);
 
-            if (_notificationService.HasRecentNotification(NotificationType.Start, courseId))
+            if (await _notificationService.HasRecentNotification(NotificationType.Start, courseId))
             {
                 return BadRequest("Thông báo mở lớp đã được gửi trong vòng 7 ngày qua. Vui lòng thử lại sau.");
             }
@@ -126,6 +126,15 @@ namespace InternalTrainingSystem.Core.Controllers
                     r.ReadAt
                 })
             }));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CheckNotifications([FromQuery] int courseId)
+        {
+            var notifications = await _notificationService.HasRecentNotification(NotificationType.Start, courseId, 0);
+            if (!notifications) return NotFound();
+
+            return Ok();
         }
     }
 }
