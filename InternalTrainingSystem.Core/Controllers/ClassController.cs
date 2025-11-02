@@ -27,17 +27,24 @@ namespace InternalTrainingSystem.Core.Controllers
             _attendanceService = attendanceService;
         }
 
-        //tao course
+        //tao class
         [HttpPost]
+        [Authorize(Roles = UserRoles.TrainingDepartment)]
         public async Task<ActionResult<List<ClassDto>>> CreateClasses(CreateClassRequestDto request)
         {
+            var createdById = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(createdById))
+            {
+                return Unauthorized("Không thể xác định người dùng.");
+            }
+
             var pagedResult = _userService.GetStaffConfirmCourse(request.CourseId, 1, int.MaxValue);
             var confirmedUsers = pagedResult?.Items?.ToList() ?? new List<StaffConfirmCourseResponse>();
 
             if (confirmedUsers == null || !confirmedUsers.Any())
                 return BadRequest("Không có học viên nào được xác nhận cho khóa học này.");
 
-            var result = await _classService.CreateClassesAsync(request, confirmedUsers);
+            var result = await _classService.CreateClassesAsync(request, confirmedUsers, createdById);
 
             if (!result)
                 return BadRequest();

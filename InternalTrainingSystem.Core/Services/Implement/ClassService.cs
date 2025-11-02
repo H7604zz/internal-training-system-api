@@ -21,9 +21,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _classRepo = classRepository;
         }
 
-        public async Task<bool> CreateClassesAsync(CreateClassRequestDto request, List<StaffConfirmCourseResponse> confirmedUsers)
+        public async Task<bool> CreateClassesAsync(CreateClassRequestDto request,
+            List<StaffConfirmCourseResponse> confirmedUsers, string createdById)
         {
-            return await _classRepo.CreateClassesAsync(request, confirmedUsers);
+            return await _classRepo.CreateClassesAsync(request, confirmedUsers, createdById);
         }
 
         public async Task<(bool Success, string Message, int Count)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)

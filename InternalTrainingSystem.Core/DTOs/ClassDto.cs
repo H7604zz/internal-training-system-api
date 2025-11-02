@@ -40,6 +40,8 @@ namespace InternalTrainingSystem.Core.DTOs
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng lớp cần mở phải lớn hơn 0")]
         public int NumberOfClasses { get; set; }
+
+        public string? Description { get; set; }
     }
 
     public class GetAllClassesRequest

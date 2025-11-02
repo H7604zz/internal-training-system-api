@@ -7,7 +7,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
     public interface IClassService
     {
         Task<bool> CreateClassesAsync(CreateClassRequestDto request,
-             List<StaffConfirmCourseResponse> confirmedUsers);
+             List<StaffConfirmCourseResponse> confirmedUsers, string createdById);
         Task<(bool Success, string Message, int Count)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
 
         Task<ClassScheduleResponse> GetClassScheduleAsync(int classId);

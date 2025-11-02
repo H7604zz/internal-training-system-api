@@ -7,7 +7,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
     public interface IClassRepository
     {
         Task<bool> CreateClassesAsync(CreateClassRequestDto request,
-                List<StaffConfirmCourseResponse> confirmedUsers);
+                List<StaffConfirmCourseResponse> confirmedUsers, string createdById);
         Task<(bool Success, string Message, int Count)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
         Task<ClassScheduleResponse> GetClassScheduleAsync(int classId);
         Task<UserScheduleResponse> GetUserScheduleAsync(string staffId);

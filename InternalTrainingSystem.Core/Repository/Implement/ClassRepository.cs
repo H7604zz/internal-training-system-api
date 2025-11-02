@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
@@ -6,9 +7,8 @@ using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Implement;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+
 
 namespace InternalTrainingSystem.Core.Repository.Implement
 {
@@ -23,8 +23,9 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
         public async Task<bool> CreateClassesAsync(
                 CreateClassRequestDto request,
-                List<StaffConfirmCourseResponse> confirmedUsers)
+                List<StaffConfirmCourseResponse> confirmedUsers, string createdById)
         {
+            
             var course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == request.CourseId);
             if (course == null)
                 return false;
@@ -51,14 +52,26 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             {
                 int currentClassSize = baseCount + (i <= remainder ? 1 : 0);
 
+                string baseClassName = $"Lớp {course.Code}-{i}";
+                string finalClassName = baseClassName;
+                int suffix = 1;
+
+                while (await _context.Classes.AnyAsync(c => c.ClassName == finalClassName) ||
+                        createdClasses.Any(c => c.ClassName == finalClassName)
+                )
+                {
+                    finalClassName = $"{baseClassName}-{suffix}";
+                    suffix++;
+                }
                 var newClass = new Class
                 {
-                    ClassName = $"Lớp {course.Code}-{i}",
+                    ClassName = finalClassName,
                     CourseId = request.CourseId,
                     Capacity = currentClassSize,
+                    Description = request.Description,
                     Status = ClassConstants.Status.Created,
                     IsActive = false,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedById = createdById,
                 };
 
                 for (int j = 0; j < currentClassSize && userIndex < totalUsers; j++)
@@ -192,7 +205,17 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 }
             }
 
+            if (allSchedules.Any())
+            {
+                var startDate = allSchedules.Min(s => s.Date);
+                var endDate = allSchedules.Max(s => s.Date);
+
+                classEntity.StartDate = startDate;
+                classEntity.EndDate = endDate;
+            }
+
             _context.Schedules.AddRange(allSchedules);
+
             classEntity.Status = ClassConstants.Status.Scheduled;
             classEntity.IsActive = true;
             classEntity.MentorId = request.MentorId;
