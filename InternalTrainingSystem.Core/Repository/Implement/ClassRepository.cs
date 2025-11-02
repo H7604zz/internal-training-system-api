@@ -281,7 +281,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
         }
 
-        public async Task<List<ClassEmployeeDto>> GetUserByClassAsync(int classId)
+        public async Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId)
         {
             var classEntity = await _context.Classes
                 .Include(c => c.Employees)
@@ -289,7 +289,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .FirstOrDefaultAsync(c => c.ClassId == classId);
 
             if (classEntity == null)
-                return new List<ClassEmployeeDto>();
+                return new List<ClassEmployeeAttendanceDto>();
 
             var scheduleIds = classEntity.Schedules.Select(s => s.ScheduleId).ToList();
 
@@ -297,7 +297,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Where(a => scheduleIds.Contains(a.ScheduleId))
                 .ToListAsync();
 
-            var result = classEntity.Employees.Select(e => new ClassEmployeeDto
+            var result = classEntity.Employees.Select(e => new ClassEmployeeAttendanceDto
             {
                 EmployeeId = e.Id,
                 FullName = e.FullName,
@@ -329,6 +329,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 MentorId = classEntity.MentorId!,
                 MentorName = classEntity.Mentor?.FullName,
                 MaxStudents = classEntity.Employees.Count,
+                Employees = classEntity.Employees.Select(e => new ClassEmployeeDto
+                {
+                    EmployeeId = e.Id,
+                    FullName = e.FullName,
+                    Email = e.Email
+                }).ToList(),
                 IsActive = classEntity.IsActive,
                 Status = classEntity.Status,
                 CreatedDate = classEntity.CreatedDate,

@@ -10,13 +10,21 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? CourseName { get; set; }
         public string MentorId { get; set; } = string.Empty;
         public string? MentorName { get; set; }
-        public int MaxStudents { get; set; } 
+        public int MaxStudents { get; set; }
+        public List<ClassEmployeeDto> Employees { get; set; } = new List<ClassEmployeeDto>();
         public DateTime CreatedDate { get; set; }
         public bool IsActive { get; set; } = true;
         public string? Status { get; set; }
     }
 
     public class ClassEmployeeDto
+    {
+        public string EmployeeId { get; set; } = string.Empty;
+        public string? FullName { get; set; }
+        public string? Email { get; set; }
+    }
+
+    public class ClassEmployeeAttendanceDto
     {
         public string EmployeeId { get; set; } = string.Empty;
         public string? FullName { get; set; }
