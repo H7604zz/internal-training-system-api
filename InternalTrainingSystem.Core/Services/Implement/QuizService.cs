@@ -32,13 +32,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _uow = uow;
         }
 
-        public async Task<QuizDetailDto?> GetQuizForAttemptAsync(
-    int quizId,
-    int attemptId,
-    string userId,
-    bool shuffleQuestions = false,
-    bool shuffleAnswers = false,
-    CancellationToken ct = default)
+        public async Task<QuizDetailDto?> GetQuizForAttemptAsync(int quizId,int attemptId,string userId,bool shuffleQuestions = false,bool shuffleAnswers = false,CancellationToken ct = default)
         {
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(quizId, ct);
             if (quiz == null) return null;
