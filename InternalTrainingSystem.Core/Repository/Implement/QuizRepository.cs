@@ -34,14 +34,10 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             if (attempt.Score == 0)
                 return false;
 
-            if (quiz.Title.Equals(QuizConstants.QuizTypes.Lesson))
-            {
-                if(attempt.Score<80) return false;
-            }else if (quiz.Title.Equals(QuizConstants.QuizTypes.Final))
-            {
-                if (attempt.Score < 60) return false;
-            }
-            return true;
+            else if(attempt.Score >= quiz?.PassingScore)
+                return true;
+            else
+                return false;
         }
 
 

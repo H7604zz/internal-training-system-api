@@ -21,9 +21,9 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             _quizRepo = quizRepo;
         }
         /// <summary>
-        /// Kiểm tra lesson đã hoàn thành chưa:
-        /// - Nếu có quiz: quiz phải pass (>=80)
-        /// - Nếu không có quiz: IsDone = true
+        /// Kiểm tra Lesson đã hoàn thành chưa:
+        /// - Nếu là quiz: quiz phải pass thì isDone = true
+        /// - Nếu không phải quiz: chưa có bản ghi là isDone = false, có bản ghi thì lấy isDone
         /// </summary>
         public async Task<bool> CheckLessonPassedAsync(int lessonId, CancellationToken ct = default)
         {
@@ -31,21 +31,42 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .AsNoTracking()
                 .FirstOrDefaultAsync(l => l.Id == lessonId, ct);
 
+            var progress = await _context.LessonProgresses
+                .FirstOrDefaultAsync(p => p.LessonId == lessonId, ct);
+
             if (lesson == null)
                 throw new InvalidOperationException("Lesson not found.");
 
-            var progress = await _context.LessonProgresses
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.LessonId == lessonId, ct);
+            if (lesson.Type == LessonType.Quiz)
+            {
+                if (!lesson.QuizId.HasValue)
+                    throw new InvalidOperationException("Lesson is Quiz but QuizId is null.");
 
-            bool isDone = progress?.IsDone ?? false;
+                var isPassed = await _quizRepo.CheckQuizPassedAsync(lesson.QuizId.Value);
+                if (isPassed)
+                {
+                    if (progress == null)
+                    {
+                        progress = new LessonProgress
+                        {
+                            LessonId = lessonId,
+                            IsDone = true
+                        };
+                        _context.LessonProgresses.Add(progress);
+                    }
+                    else if (!progress.IsDone)
+                    {
+                        progress.IsDone = true;
+                    }
 
-            if (lesson.QuizId == null)
-                return isDone;
+                    await _context.SaveChangesAsync(ct);
+                    return true;
+                }
 
-            bool quizPassed = await _quizRepo.CheckQuizPassedAsync(lesson.QuizId.Value);
+                return false;
+            }
 
-            return quizPassed && isDone;
+            return progress?.IsDone ?? false;
         }
 
         /// <summary>
@@ -92,7 +113,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     doneModeles++;
             }
             var percent = Math.Round(100m * doneModeles / totalModules, 2);
-            // 🔗 Cập nhật sang bảng CourseEnrollments
             var enrollment = await _context.CourseEnrollments
                 .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId, ct);
 
