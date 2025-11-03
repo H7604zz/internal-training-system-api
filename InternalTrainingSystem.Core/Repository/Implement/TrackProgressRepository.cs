@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace InternalTrainingSystem.Core.Repository.Implement
@@ -184,8 +185,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     })
                     .ToList(),
 
-                userDetail = usersWithAvgProgress
-                    .Select(u => new UserProfileDto
+                userProgress = usersWithAvgProgress
+                    .Select(u => new TrackProgressUserDto
                     {
                         Id = u.Id,
                         EmployeeId = u.EmployeeId,

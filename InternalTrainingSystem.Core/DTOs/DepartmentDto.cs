@@ -18,7 +18,8 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Description { get; set; }
         public List<CourseDetailDto>? CourseDetail { get; set; }
 		public List<UserProfileDto>? userDetail { get; set; }
-	}
+        public List<TrackProgressUserDto>? userProgress { get; set; }
+    }
 
 	public class DepartmentRequestDto
 	{
