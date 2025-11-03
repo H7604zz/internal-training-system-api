@@ -412,6 +412,22 @@ namespace InternalTrainingSystem.Core.Controllers
 
         }
 
+        [HttpGet("{courseId}/confirmed-staff/count")]
+        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult GetConfirmedUsersCount(int courseId)
+        {
+            var notice = _notificationService.GetNotificationByCourseAndType(courseId, NotificationType.CourseFinalized);
+            if (notice == null)
+            {
+                return Ok(new { Message = "Danh sách nhân viên chưa được chốt !!!", Count = 0 });
+            }
+
+            var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, 1, int.MaxValue);
+            int countStaff = confirmedUsers.TotalCount;
+
+            return Ok(new { countStaff = countStaff });
+        }
+
         [HttpPost("{courseId}/finalize-enrollments")]
         //[Authorize(Roles = UserRoles.DirectManager)]
         public async Task<IActionResult> FinalizeEnrollments(int courseId)
