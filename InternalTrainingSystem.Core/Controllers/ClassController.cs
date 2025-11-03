@@ -224,5 +224,11 @@ namespace InternalTrainingSystem.Core.Controllers
             
             return Ok(result);
         }
+
+        //[HttpPut("reschedule/{scheduleId}")]
+        //public async Task<IActionResult> Reschedule(int scheduleId, [FromBody] RescheduleRequest request)
+        //{
+
+        //}
     }
 }

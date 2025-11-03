@@ -109,4 +109,15 @@ namespace InternalTrainingSystem.Core.DTOs
         public int SwapRequestId { get; set; }
         public bool Accepted { get; set; }
     }
+
+    public class RescheduleRequest
+    {
+        [Required]
+        public DateTime Date { get; set; }
+
+        [Required]
+        public TimeSpan StartTime { get; set; }
+        [Required]
+        public TimeSpan EndTime { get; set; }
+    }
 }
