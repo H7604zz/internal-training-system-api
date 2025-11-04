@@ -42,6 +42,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
 		public async Task<IEnumerable<CoursePassRateDto>> GetHighestPassRateCourseAsync(int top)
 		{
+			if (top <= 0) throw new ArgumentException("Top must be greater than 0.");
 			var courseRates = await GetCoursePassRatesAsync();
 			return courseRates
 					.OrderByDescending(c => c.PassRate)
@@ -52,6 +53,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
 		public async Task<IEnumerable<CoursePassRateDto>> GetLowestPassRateCourseAsync(int top)
 		{
+			if (top <= 0) throw new ArgumentException("Top must be greater than 0.");
 			var courseRates = await GetCoursePassRatesAsync();
 			return courseRates
 					.OrderBy(c => c.PassRate)
@@ -62,6 +64,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
 		public async Task<IEnumerable<StaffRejectStatisticDto>> GetTopStaffRejectingCoursesAsync(int top)
 		{
+			if (top <= 0) throw new ArgumentException("Top must be greater than 0.");
 			var result = await _context.Set<CourseEnrollment>()
 							 .Where(e => e.Status == "Rejected")
 							 .GroupBy(e => new { e.UserId, e.User.FullName })
