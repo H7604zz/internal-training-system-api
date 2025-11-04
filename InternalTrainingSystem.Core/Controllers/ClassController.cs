@@ -35,7 +35,11 @@ namespace InternalTrainingSystem.Core.Controllers
             _hub = hub;
         }
 
-        //tao class
+        /// <summary>
+        /// tao class
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost]
         [Authorize(Roles = UserRoles.TrainingDepartment)]
         public async Task<ActionResult<List<ClassDto>>> CreateClasses(CreateClassRequestDto request)
@@ -60,8 +64,13 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok();
         }
 
-        //tao thoi khoa bieu
+        /// <summary>
+        /// tao thoi khoa bieu
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("create-weekly")]
+        [Authorize(Roles = UserRoles.TrainingDepartment)]
         public async Task<IActionResult> CreateWeeklySchedules([FromBody] CreateWeeklyScheduleRequest request)
         {
             if (!ModelState.IsValid)
@@ -76,13 +85,16 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 success = true,
                 message = result.Message,
-                createdCount = result.Count
             });
         }
 
-        // lay lich hoc cua 1 class
+        /// <summary>
+        /// lay lich hoc cua 1 class
+        /// </summary>
+        /// <param name="classId"></param>
+        /// <returns></returns>
         [HttpGet("{classId}/schedule")]
-        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.Staff + "," + UserRoles.Mentor)]
+        //[Authorize]
         public async Task<IActionResult> GetClassSchedule(int classId)
         {
             var result = await _classService.GetClassScheduleAsync(classId);
@@ -93,7 +105,11 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
-        // lay ra danh sach user trong 1 lop
+        /// <summary>
+        /// lay ra danh sach user trong 1 lop 
+        /// </summary>
+        /// <param name="classId"></param>
+        /// <returns></returns>
         [HttpGet("{classId}/user")]
         //[Authorize]
         public async Task<IActionResult> GetStudentsByClass(int classId)
@@ -106,7 +122,11 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(students);
         }
 
-        // lay ra chi tiet 1 lop
+        /// <summary>
+        /// lay ra chi tiet 1 lop 
+        /// </summary>
+        /// <param name="classId"></param>
+        /// <returns></returns>
         [HttpGet("{classId}")]
         //[Authorize]
         public async Task<IActionResult> GetClassDetail(int classId)
@@ -119,20 +139,40 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(classDetail);
         }
 
-        // diem danh
+        /// <summary>
+        /// Diem danh
+        /// </summary>
+        /// <param name="scheduleId"></param>
+        /// <param name="attendanceList"></param>
+        /// <returns></returns>
         [HttpPost("{scheduleId}/attendance")]
+        [Authorize(Roles = UserRoles.Mentor)]
         public async Task<IActionResult> MarkAttendance(int scheduleId, [FromBody] List<AttendanceRequest> attendanceList)
         {
             if (attendanceList == null || !attendanceList.Any())
                 return BadRequest("Danh sách điểm danh trống.");
+
+            var schedule = await _classService.GetClassScheduleByIdAsync(scheduleId);
+            var scheduleStart = schedule!.Date + schedule.StartTime;
+            var scheduleEnd = schedule.Date + schedule.EndTime;
+            var now = DateTime.Now;
+
+            if (now < scheduleStart)
+                return BadRequest("Buổi học chưa bắt đầu, không thể điểm danh.");
 
             await _attendanceService.MarkAttendanceAsync(scheduleId, attendanceList);
 
             return Ok("Điểm danh thành công.");
         }
 
-        // sua diem danh
+        /// <summary>
+        /// Sua diem danh trong ngay
+        /// </summary>
+        /// <param name="scheduleId"></param>
+        /// <param name="attendanceList"></param>
+        /// <returns></returns>
         [HttpPut("{scheduleId}/attendance")]
+        [Authorize(Roles = UserRoles.Mentor)]
         public async Task<IActionResult> UpdateAttendance(int scheduleId, [FromBody] List<AttendanceRequest> attendanceList)
         {
             if (attendanceList == null || !attendanceList.Any())
@@ -146,8 +186,13 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok("Cập nhật điểm danh thành công.");
         }
 
-        //lay ra thong tin diem danh cho 1 buoi hoc
+        /// <summary>
+        /// lay ra thong tin diem danh cho 1 buoi hoc
+        /// </summary>
+        /// <param name="scheduleId"></param>
+        /// <returns></returns>
         [HttpGet("schedules/{scheduleId}/attendance")]
+        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.DirectManager + "," + UserRoles.Mentor)]
         public async Task<IActionResult> GetAttendanceBySchedule(int scheduleId)
         {
             var attendances = await _attendanceService.GetAttendanceByScheduleAsync(scheduleId);
@@ -158,7 +203,11 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(attendances);
         }
 
-        // tao yeu cau chuyen lop giua 2 user
+        /// <summary>
+        /// tao yeu cau chuyen lop giua 2 user 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("request-swap")]
         //[Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> RequestClassSwap([FromBody] SwapClassRequest request)
@@ -197,7 +246,11 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result.Message);
         }
 
-        // phan hoi yeu cau chuyen lop giua 2 user
+        /// <summary>
+        /// phan hoi yeu cau chuyen lop giua 2 user
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("respond-swap-request")]
         //[Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> RespondToSwapRequest([FromBody] RespondSwapRequest request)
@@ -213,7 +266,12 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result.Message);
         }
 
-        // lay ra tat ca lop hoc
+        /// <summary>
+        /// lay ra tat ca lop hoc 
+        /// </summary>
+        /// <param name="page"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
         [HttpGet]
         //[Authorize]
         public async Task<ActionResult<PagedResult<ClassDto>>> GetClasses([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -223,6 +281,23 @@ namespace InternalTrainingSystem.Core.Controllers
             var result = await _classService.GetClassesAsync(page, pageSize);
             
             return Ok(result);
+        }
+
+        /// <summary>
+        /// cho phep mentor chuyen lich hoc 1 ngay trong tuan
+        /// </summary>
+        /// <param name="scheduleId"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPut("reschedule/{scheduleId}")]
+        //[Authorize(Roles = UserRoles.Mentor)]
+        public async Task<IActionResult> Reschedule(int scheduleId, [FromBody] RescheduleRequest request)
+        {
+            var result = await _classService.RescheduleAsync(scheduleId, request);
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok();
         }
     }
 }

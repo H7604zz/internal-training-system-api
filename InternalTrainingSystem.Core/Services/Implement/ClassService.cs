@@ -1,3 +1,4 @@
+using Azure.Core;
 using DocumentFormat.OpenXml.InkML;
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;
@@ -27,7 +28,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.CreateClassesAsync(request, confirmedUsers, createdById);
         }
 
-        public async Task<(bool Success, string Message, int Count)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
+        public async Task<(bool Success, string Message)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
         {
             return await _classRepo.CreateWeeklySchedulesAsync(request);
         }
@@ -70,6 +71,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<(bool Success, string Message)> RespondToClassSwapAsync(RespondSwapRequest request, string responderId)
         {
             return await _classRepo.RespondToClassSwapAsync(request, responderId);
+        }
+
+        public async Task<(bool Success, string Message)> RescheduleAsync(int scheduleId, RescheduleRequest request)
+        {
+            return await _classRepo.RescheduleAsync(scheduleId, request);
+        }
+
+        public async Task<Schedule?> GetClassScheduleByIdAsync(int scheduleId)
+        {
+            return await _classRepo.GetClassScheduleByIdAsync(scheduleId);
         }
     }
 }

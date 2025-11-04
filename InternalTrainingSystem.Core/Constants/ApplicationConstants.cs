@@ -73,7 +73,8 @@
             public const string Scheduled = "Scheduled";
             public const string InProgress = "InProgress";
             public const string Completed = "Completed";
-            public const string Cancelled = "Cancelled";
+            public const string Cancelled = "Cancelled"; 
+            public const string Rescheduled = "Rescheduled";
         }
 
         public static class ParticipantStatus
