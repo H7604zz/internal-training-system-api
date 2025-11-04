@@ -18,6 +18,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public bool IsMandatory { get; set; }
         public DateTime? CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
         public List<DepartmentListDto> Departments { get; set; } = new();
         public List<ModuleDetailDto> Modules { get; set; } = new();
     }

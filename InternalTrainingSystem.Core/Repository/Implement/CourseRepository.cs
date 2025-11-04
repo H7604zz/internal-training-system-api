@@ -476,6 +476,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Include(c => c.Departments)
                 .Include(c => c.Modules)
                     .ThenInclude(m => m.Lessons)
+                .Include(c => c.CreatedBy)
                 .FirstOrDefaultAsync(c => c.CourseId == courseId, ct);
 
             if (course == null)
@@ -484,7 +485,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return new CourseDetailDto
             {
                 CourseId = course.CourseId,
-                Code = course.Code,
+                Code = course.Code ?? "",
                 CourseName = course.CourseName,
                 Description = course.Description,
                 CategoryName = course.CourseCategory.CategoryName,
@@ -495,6 +496,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 IsMandatory = course.IsMandatory,
                 CreatedDate = course.CreatedDate,
                 UpdatedDate = course.UpdatedDate,
+                CreatedBy = course.CreatedBy.FullName,
                 Departments = course.Departments.Select(d => new DepartmentListDto
                 {
                     DepartmentId = d.Id,
