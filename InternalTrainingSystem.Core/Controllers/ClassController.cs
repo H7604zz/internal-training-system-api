@@ -76,7 +76,6 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 success = true,
                 message = result.Message,
-                createdCount = result.Count
             });
         }
 
@@ -125,6 +124,14 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             if (attendanceList == null || !attendanceList.Any())
                 return BadRequest("Danh sách điểm danh trống.");
+
+            var schedule = await _classService.GetClassScheduleByIdAsync(scheduleId);
+            var scheduleStart = schedule!.Date + schedule.StartTime;
+            var scheduleEnd = schedule.Date + schedule.EndTime;
+            var now = DateTime.Now;
+
+            if (now < scheduleStart)
+                return BadRequest("Buổi học chưa bắt đầu, không thể điểm danh.");
 
             await _attendanceService.MarkAttendanceAsync(scheduleId, attendanceList);
 
