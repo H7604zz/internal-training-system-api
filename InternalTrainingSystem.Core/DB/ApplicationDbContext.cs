@@ -35,6 +35,9 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<LessonProgress> LessonProgresses { get; set; }
         public DbSet<NotificationRecipient> NotificationRecipients { get; set; }
         public DbSet<ClassSwap> ClassSwaps { get; set; }
+        public DbSet<Assignment> Assignments { get; set; }
+        public DbSet<AssignmentSubmission> AssignmentSubmissions { get; set; }
+        public DbSet<SubmissionFile> SubmissionFiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -99,6 +102,11 @@ namespace InternalTrainingSystem.Core.DB
                 .WithMany(q => q.QuizAttempts)
                 .HasForeignKey(qa => qa.QuizId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<QuizAttempt>(b =>
+            {
+                b.HasIndex(x => new { x.UserId, x.QuizId, x.AttemptNumber }).IsUnique();
+            });
 
             // UserAnswer relationships
             builder.Entity<UserAnswer>()
@@ -222,35 +230,42 @@ namespace InternalTrainingSystem.Core.DB
                 .HasIndex(a => a.Status);
 
             // CourseHistory relationships
-            builder.Entity<CourseHistory>()
-                .HasOne(ch => ch.User)
+            builder.Entity<CourseHistory>(b =>
+            {
+                b.HasIndex(x => new { x.UserId, x.CourseId, x.ActionDate });
+                b.HasIndex(x => x.Action);
+                b.HasIndex(x => x.QuizAttemptId);
+
+                b.HasOne(ch => ch.User)
                 .WithMany(u => u.CourseHistories)
                 .HasForeignKey(ch => ch.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Entity<CourseHistory>()
-                .HasOne(ch => ch.Course)
-                .WithMany(c => c.CourseHistories)
-                .HasForeignKey(ch => ch.CourseId)
-                .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(ch => ch.Course)
+                    .WithMany(c => c.CourseHistories)
+                    .HasForeignKey(ch => ch.CourseId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Entity<CourseHistory>()
-                .HasOne(ch => ch.Enrollment)
-                .WithMany(ce => ce.CourseHistories)
-                .HasForeignKey(ch => ch.EnrollmentId)
-                .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(ch => ch.Enrollment)
+                    .WithMany(ce => ce.CourseHistories)
+                    .HasForeignKey(ch => ch.EnrollmentId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<CourseHistory>()
-                .HasOne(ch => ch.QuizAttempt)
-                .WithMany(qa => qa.CourseHistories)
-                .HasForeignKey(ch => ch.QuizAttemptId)
-                .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(ch => ch.QuizAttempt)
+                    .WithMany(qa => qa.CourseHistories)
+                    .HasForeignKey(ch => ch.QuizAttemptId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<CourseHistory>()
-                .HasOne(ch => ch.Schedule)
-                .WithMany(s => s.CourseHistories)
-                .HasForeignKey(ch => ch.ScheduleId)
-                .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(ch => ch.Schedule)
+                    .WithMany(s => s.CourseHistories)
+                    .HasForeignKey(ch => ch.ScheduleId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.Quiz)
+                    .WithMany() 
+                    .HasForeignKey(x => x.QuizId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
             builder.Entity<Certificate>()
                 .HasOne(c => c.Course) 
@@ -452,6 +467,65 @@ namespace InternalTrainingSystem.Core.DB
 
             builder.Entity<LessonProgress>()
                 .HasIndex(lp => lp.IsDone);
+
+            // Assignment
+            builder.Entity<Assignment>(entity =>
+            {
+                entity.HasKey(a => a.AssignmentId);
+
+                entity.HasOne(a => a.Course)
+                    .WithMany(a => a.Assignments)           
+                    .HasForeignKey(a => a.CourseId)
+                    .OnDelete(DeleteBehavior.Cascade);      
+
+                entity.HasOne(a => a.Schedule)
+                    .WithMany()           
+                    .HasForeignKey(a => a.ScheduleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);      
+
+                entity.HasIndex(a => new { a.CourseId, a.DueAt });
+                entity.HasIndex(a => a.ScheduleId);
+
+            });
+
+            builder.Entity<AssignmentSubmission>(entity =>
+            {
+                entity.HasKey(x => x.SubmissionId);
+
+                entity.HasOne(x => x.Assignment)
+                    .WithMany(a => a.Submissions)
+                    .HasForeignKey(x => x.AssignmentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(x => x.User)
+                    .WithMany(u => u.AssignmentSubmissions)
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Restrict); 
+
+                entity.HasOne(x => x.Enrollment)
+                    .WithMany(e => e.AssignmentSubmissions)
+                    .HasForeignKey(x => x.EnrollmentId)
+                    .OnDelete(DeleteBehavior.Restrict); 
+
+                entity.HasIndex(x => new { x.AssignmentId, x.UserId, x.AttemptNumber }).IsUnique();
+                entity.HasIndex(x => x.SubmittedAt);
+            });
+
+            // SubmissionFile
+            builder.Entity<SubmissionFile>(entity =>
+            {
+                entity.HasKey(f => f.FileId);
+
+                entity.HasOne(f => f.Submission)
+                    .WithMany(s => s.Files)
+                    .HasForeignKey(f => f.SubmissionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(f => f.OriginalFileName).HasMaxLength(255).IsRequired();
+                entity.Property(f => f.MimeType).HasMaxLength(255);
+                entity.HasIndex(f => new { f.SubmissionId, f.IsMain });
+            });
+
         }
     }
 }
