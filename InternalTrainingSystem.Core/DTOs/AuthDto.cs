@@ -38,6 +38,21 @@ namespace InternalTrainingSystem.Core.DTOs
         public DateTime? LastLoginDate { get; set; }
     }
 
+    public class TrackProgressUserDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string? EmployeeId { get; set; }
+        public string? Department { get; set; }
+        public string? Position { get; set; }
+        public string? CurrentRole { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime? LastLoginDate { get; set; }
+        public decimal ProgressPercent { get; set; }
+    }
+
     public class RefreshTokenRequestDto
     {
         [Required]

@@ -44,14 +44,14 @@ namespace InternalTrainingSystem.Core.Controllers
             if (eligiblePaged.TotalCount == 0)
                 return NotFound("Không có nhân viên nào cần học khóa này.");
 
-            var course = _couseService.GetCourseByCourseID(courseId);
+            var course = await _couseService.GetCourseByCourseIdAsync(courseId);
             if (course == null)
                 return NotFound("Không tìm thấy khóa học tương ứng.");
 
             var now = DateTime.Now;
             var sevenDaysAgo = now.AddDays(-7);
 
-            if (_notificationService.HasRecentNotification(NotificationType.Start, courseId))
+            if (await _notificationService.HasRecentNotification(NotificationType.Start, courseId))
             {
                 return BadRequest("Thông báo mở lớp đã được gửi trong vòng 7 ngày qua. Vui lòng thử lại sau.");
             }
@@ -97,7 +97,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
             await _notificationService.DeleteOldNotificationsAsync(courseId, NotificationType.Start);
 
-            _notificationService.SaveNotificationAsync(new Notification
+            await _notificationService.SaveNotificationAsync(new Notification
                 {
                     CourseId = courseId,
                     Type = NotificationType.Start,
@@ -126,6 +126,15 @@ namespace InternalTrainingSystem.Core.Controllers
                     r.ReadAt
                 })
             }));
+        }
+
+        [HttpGet("check-status")]
+        public async Task<IActionResult> CheckNotifications([FromQuery] int courseId)
+        {
+            var notifications = await _notificationService.HasRecentNotification(NotificationType.Start, courseId, 0);
+            if (!notifications) return NotFound();
+
+            return Ok();
         }
     }
 }

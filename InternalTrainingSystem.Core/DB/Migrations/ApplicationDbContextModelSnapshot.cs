@@ -343,6 +343,54 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.ToTable("Classes");
                 });
 
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.ClassSwap", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FromClassId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RequesterId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RespondedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("TargetId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("ToClassId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromClassId");
+
+                    b.HasIndex("RequesterId");
+
+                    b.HasIndex("RespondedById");
+
+                    b.HasIndex("TargetId");
+
+                    b.HasIndex("ToClassId");
+
+                    b.ToTable("ClassSwaps");
+                });
+
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Course", b =>
                 {
                     b.Property<int>("CourseId")
@@ -1351,6 +1399,47 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Mentor");
+                });
+
+            modelBuilder.Entity("InternalTrainingSystem.Core.Models.ClassSwap", b =>
+                {
+                    b.HasOne("InternalTrainingSystem.Core.Models.Class", "FromClass")
+                        .WithMany()
+                        .HasForeignKey("FromClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "Requester")
+                        .WithMany()
+                        .HasForeignKey("RequesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "RespondedBy")
+                        .WithMany()
+                        .HasForeignKey("RespondedById");
+
+                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "Target")
+                        .WithMany()
+                        .HasForeignKey("TargetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InternalTrainingSystem.Core.Models.Class", "ToClass")
+                        .WithMany()
+                        .HasForeignKey("ToClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromClass");
+
+                    b.Navigation("Requester");
+
+                    b.Navigation("RespondedBy");
+
+                    b.Navigation("Target");
+
+                    b.Navigation("ToClass");
                 });
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Course", b =>

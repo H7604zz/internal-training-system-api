@@ -4,15 +4,11 @@ using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Models;
-using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -43,24 +39,92 @@ namespace InternalTrainingSystem.Core.Controllers
             _classService = classService;
         } 
 
-        // PUT: /api/courses/5
-        [HttpPut("{id:int}")]
-        [Authorize(Roles = UserRoles.TrainingDepartment)]
-        public async Task<ActionResult<Course>> Update(int id, [FromBody] UpdateCourseDto dto)
+        // PUT: /api/courses/{id}
+        [HttpPut("{id}")]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(600 * 1024 * 1024)]
+        //[Authorize(Roles = UserRoles.TrainingDepartment)]
+        public async Task<IActionResult> UpdateCourse(
+            int id,
+            [FromForm] UpdateCourseFormDto form,
+            CancellationToken ct)
         {
-            if (id != dto.CourseId)
-                return BadRequest(new { message = "Course ID mismatch" });
+            // 1) Xác thực user
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
-            if (!ModelState.IsValid)
-                return ValidationProblem(ModelState);
+            // 2) Đọc & parse metadata JSON
+            if (string.IsNullOrWhiteSpace(form.Metadata))
+                return BadRequest(new { message = "metadata is required and must be a JSON string" });
 
-            var updated = await _courseService.UpdateCourseAsync(dto);
-            if (updated is null)
-                return NotFound(new { message = $"Course {id} not found" });
+            UpdateCourseMetadataDto meta;
+            try
+            {
+                meta = JsonSerializer.Deserialize<UpdateCourseMetadataDto>(
+                    form.Metadata,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                ) ?? throw new ArgumentException("metadata invalid");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Invalid metadata JSON", error = ex.Message });
+            }
 
-            return Ok(updated);
+            // 3) Validate đệ quy (object + modules + lessons)
+            var validationResults = new List<ValidationResult>();
+            var context = new ValidationContext(meta, HttpContext.RequestServices, null);
+            bool isValid = Validator.TryValidateObject(meta, context, validationResults, validateAllProperties: true);
+
+            foreach (var module in meta.Modules)
+            {
+                var mctx = new ValidationContext(module, HttpContext.RequestServices, null);
+                isValid &= Validator.TryValidateObject(module, mctx, validationResults, true);
+
+                foreach (var lesson in module.Lessons)
+                {
+                    var lctx = new ValidationContext(lesson, HttpContext.RequestServices, null);
+                    isValid &= Validator.TryValidateObject(lesson, lctx, validationResults, true);
+                }
+            }
+
+            if (!isValid)
+            {
+                var errors = validationResults
+                    .Select(r => r.ErrorMessage)
+                    .Where(msg => !string.IsNullOrWhiteSpace(msg))
+                    .ToList();
+
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
+            // 4) Gọi service update
+            try
+            {
+                var updated = await _courseService.UpdateCourseAsync(
+                    id,
+                    meta,
+                    form.LessonFiles,
+                    userId,
+                    ct);
+
+                return Ok(new { updated.CourseId, updated.CourseName });
+            }
+            catch (OperationCanceledException)
+            {
+                // Client hủy request hoặc server yêu cầu hủy
+                return StatusCode(StatusCodes.Status499ClientClosedRequest,
+                    new { message = "Request was cancelled." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
         }
-
 
         // DELETE: /api/courses/5
         [HttpDelete("{id}")]
@@ -68,8 +132,7 @@ namespace InternalTrainingSystem.Core.Controllers
         public async Task<IActionResult> DeleteCourse(int id)
         {
             var success = await _courseService.DeleteCourseAsync(id);
-            return success ? Ok(new { message = "Xóa thành công!" })
-                           : NotFound(new { message = "Không tìm thấy course!" });
+            return success ? Ok("Xóa thành công!") : NotFound("Không tìm thấy course!");
         }
 
 
@@ -83,6 +146,7 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(new { courseId = id, isActive = dto.Status });
         }
 
+        //api này không cần thiết
         [HttpGet("search")]
         public async Task<ActionResult<PagedResult<CourseListItemDto>>> Search([FromQuery] CourseSearchRequest req,
             CancellationToken ct)
@@ -106,25 +170,21 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
 
+        /// <summary>
+        /// Lấy chi tiết khóa học theo ID.
+        /// </summary>
+        /// <param name="id">CourseId</param>
         [HttpGet("{id:int}/detail")]
-        public async Task<ActionResult<CourseDetailDto>> GetCourseDetail(int id)
+        public async Task<IActionResult> GetCourseDetail([FromRoute][Required] int id, CancellationToken ct)
         {
-            try
-            {
-                var course = await _courseService.GetCourseDetailAsync(id);
-                if (course == null)
-                {
-                    return NotFound(new { message = "Course not found" });
-                }
+            var dto = await _courseService.GetCourseDetailAsync(id, ct);
+            if (dto is null)
+                return NotFound(new { message = $"Course with ID {id} not found." });
 
-                return Ok(course);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
-            }
+            return Ok(dto);
         }
 
+        //api này không cần thiết
         /// <summary>Hiển thị các course có status = Pending (Ban giám đốc duyệt).</summary>
         [HttpGet("pending")]
         [ProducesResponseType(typeof(IEnumerable<CourseListItemDto>), StatusCodes.Status200OK)]
@@ -140,31 +200,38 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(items);
         }
 
-        public class UpdateCourseStatusRequest
+        
+
+        [HttpPatch("update-pending-status/{courseId}")]
+        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdatePendingCourseStatusRequest request)
         {
-            public string NewStatus { get; set; } = default!;
-        }
+            try
+            {
+                var result = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus, request.RejectReason);
 
-        /// <summary>Duyệt 1 course đang Pending: newStatus = "Apporove".</summary>
-        [HttpPut("{courseId:int}/status")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdateCourseStatusRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.NewStatus))
-                return BadRequest("newStatus không được rỗng.");
+                if (!result)
+                    return BadRequest("Không thể cập nhật trạng thái. Có thể khóa học không tồn tại hoặc không ở trạng thái Pending.");
 
-            var ok = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus);
-            if (!ok)
-                return BadRequest("Chỉ có thể cập nhật trạng thái các khóa học đang ở Pending hoặc khóa học không tồn tại.");
-
-            return Ok(new { message = $"Cập nhật trạng thái thành công: {request.NewStatus}" });
+                return Ok(new
+                {
+                    message = $"Cập nhật trạng thái khóa học {courseId} thành công: {request.NewStatus}",
+                    reason = request.RejectReason
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi nếu cần
+                return StatusCode(500, "Đã xảy ra lỗi khi cập nhật trạng thái khóa học.");
+            }
         }
 
         /// <summary>Chuyển 1 course từ Active -> Deleted (xóa mềm theo status).</summary>
         [HttpPatch("{courseId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        
         public async Task<IActionResult> DeleteActiveCourse(int courseId, [FromBody] string? rejectReason)
         {
             if (string.IsNullOrWhiteSpace(rejectReason))
@@ -218,7 +285,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> UpdateEnrollmentStatus(int courseId, string userId, [FromBody] EnrollmentStatusUpdateRequest request)
         {
-            var course = _courseService.GetCourseByCourseID(courseId);
+            var course = await _courseService.GetCourseByCourseIdAsync(courseId);
             if (course == null)
                 return NotFound();
 
@@ -345,7 +412,7 @@ namespace InternalTrainingSystem.Core.Controllers
         public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var notice = _notificationService.GetNotificationByCourseAndType(courseId, NotificationType.CourseFinalized);
-            if (notice != null)
+            if (notice == null)
             {
                 return Ok("Danh sách nhân viên chưa được chốt !!!");
             }
@@ -354,19 +421,28 @@ namespace InternalTrainingSystem.Core.Controllers
 
         }
 
-        [HttpPost("{courseCode}/finalize-enrollments")]
-        //[Authorize(Roles = UserRoles.DirectManager)]
-        public async Task<IActionResult> FinalizeEnrollments(string courseCode)
+        [HttpGet("{courseId}/confirmed-staff/count")]
+        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult GetConfirmedUsersCount(int courseId)
         {
+            var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, 1, int.MaxValue);
+            int countStaff = confirmedUsers.TotalCount;
 
-            var course = await _courseService.GetCourseByCourseCodeAsync(courseCode);
+            return Ok(countStaff);
+        }
+
+        [HttpPost("{courseId}/finalize-enrollments")]
+        //[Authorize(Roles = UserRoles.DirectManager)]
+        public async Task<IActionResult> FinalizeEnrollments(int courseId)
+        {
+            var course = await _courseService.GetCourseByCourseIdAsync(courseId);
             if (course == null) return BadRequest();
 
             var existingNotification = _notificationService.GetNotificationByCourseAndType(course.CourseId, NotificationType.CourseFinalized);
 
             if (existingNotification != null)
             {
-                return Ok(ApiResponseDto.SuccessResult(new { sent = false }, "Thông báo đã được gửi trước đó."));
+                return Ok("Thông báo đã được gửi trước đó.");
             }
 
             var searchDto = new UserSearchDto
@@ -439,6 +515,59 @@ namespace InternalTrainingSystem.Core.Controllers
                 data = classList
             });
         }
+
+        [HttpPut("{id:int}/resubmit")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> ResubmitAfterReject(int id,[FromForm(Name = "metadata")] string metadata,[FromForm] List<IFormFile> lessonFiles,[FromForm] string? resubmitNote,
+        CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(metadata))
+                return BadRequest(new { message = "metadata is required and must be a JSON string" });
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            UpdateCourseMetadataDto? dto;
+            try
+            {
+                dto = JsonSerializer.Deserialize<UpdateCourseMetadataDto>(metadata, options);
+                if (dto == null) throw new JsonException();
+            }
+            catch
+            {
+                return BadRequest(new { message = "metadata is not valid JSON" });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                        ?? User.Identity?.Name
+                        ?? "system";
+
+            try
+            {
+                var course = await _courseService.UpdateAndResubmitToPendingAsync(
+                    id, dto, lessonFiles, userId, resubmitNote, ct);
+
+                return Ok(new
+                {
+                    message = "Resubmitted to Pending successfully.",
+                    courseId = course.CourseId,
+                    status = course.Status,
+                    note = course.RejectionReason,
+                    updatedAt = course.UpdatedDate
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "Failed to resubmit course." });
+            }
+        }
+
 
     }
 }

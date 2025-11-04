@@ -29,6 +29,14 @@
         }
     }
 
+    public static class ClassSwapConstants
+    {
+        public const string Pending = "Pending";
+        public const string Approved = "Approved";
+        public const string Cancelled = "Cancelled";
+        public const string Rejected = "Rejected";
+    }
+
     public static class EnrollmentConstants
     {
         public static class Status
@@ -65,7 +73,8 @@
             public const string Scheduled = "Scheduled";
             public const string InProgress = "InProgress";
             public const string Completed = "Completed";
-            public const string Cancelled = "Cancelled";
+            public const string Cancelled = "Cancelled"; 
+            public const string Rescheduled = "Rescheduled";
         }
 
         public static class ParticipantStatus

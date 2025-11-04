@@ -8,6 +8,7 @@ using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Security.Claims;
 
 namespace InternalTrainingSystem.Core.Services.Implement
@@ -31,9 +32,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _courseRepo.DeleteCourseAsync(id);
         }
 
-        public async Task<Course?> UpdateCourseAsync(UpdateCourseDto dto)
+        public async Task<Course> UpdateCourseAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId, CancellationToken ct = default)
         {
-           return await _courseRepo.UpdateCourseAsync(dto);
+           return await _courseRepo.UpdateCourseAsync( courseId,  meta,  lessonFiles,  updatedByUserId,  ct = default);
         }
 
         public bool ToggleStatus(int id, string status)
@@ -46,9 +47,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _courseRepo.SearchAsync(req, ct);
         }
 
-        public Course? GetCourseByCourseID(int? couseId)
+        public async Task<Course?> GetCourseByCourseIdAsync(int? couseId)
         {
-            return _courseRepo.GetCourseByCourseID(couseId);
+            return await _courseRepo.GetCourseByCourseIdAsync(couseId);
         }
 
         public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)
@@ -56,15 +57,15 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _courseRepo.GetAllCoursesPagedAsync(request);
         }
 
-        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId)
+        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default)
         {
-            return await _courseRepo.GetCourseDetailAsync(courseId);
+            return await _courseRepo.GetCourseDetailAsync(courseId,ct);
         }
 
         // Duyệt khóa học - ban giám đốc
-        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus)
+        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus, string? rejectReason = null)
         {
-            return await _courseRepo.UpdatePendingCourseStatusAsync(courseId, newStatus);
+            return await _courseRepo.UpdatePendingCourseStatusAsync(courseId, newStatus,rejectReason);
         }
 
         // Ban giám đốc xóa khóa học đã duyệt
@@ -77,6 +78,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                                 IList<IFormFile> lessonFiles, string createdByUserId, CancellationToken ct = default)
         {
             return await _courseRepo.CreateCourseAsync(meta, lessonFiles, createdByUserId, ct);
+        }
+        public async Task<Course> UpdateAndResubmitToPendingAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId,
+                                                                  string? resubmitNote = null, CancellationToken ct = default)
+        {
+            return await _courseRepo.UpdateAndResubmitToPendingAsync( courseId,  meta,  lessonFiles,  updatedByUserId,
+                                                                    resubmitNote = null,  ct = default);
         }
     }
 }

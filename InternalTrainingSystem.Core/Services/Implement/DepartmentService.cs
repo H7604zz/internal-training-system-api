@@ -1,7 +1,10 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+using DocumentFormat.OpenXml.Wordprocessing;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -13,9 +16,19 @@ namespace InternalTrainingSystem.Core.Services.Implement
 			_departmentRepo = departmentRepo;
 		}
 
-		public async Task<bool> CreateDepartmentAsync(CreateDepartmentDto input)
+		public async Task<List<DepartmentListDto>> GetDepartmentsAsync()
 		{
-			return await _departmentRepo.CreateDepartmentAsync(input);
+			return await _departmentRepo.GetDepartmentsAsync();
+		}
+
+		public async Task<DepartmentDetailDto?> GetDepartmentDetailAsync(int departmentId)
+		{
+			return await _departmentRepo.GetDepartmentDetailAsync(departmentId);
+		}
+
+		public async Task<bool> CreateDepartmentAsync(DepartmentRequestDto department)
+		{
+			return await _departmentRepo.CreateDepartmentAsync(department);
 		}
 
 		public async Task<bool> DeleteDepartmentAsync(int departmentId)
@@ -23,29 +36,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
 			return await _departmentRepo.DeleteDepartmentAsync(departmentId);
 		}
 
-		public async Task<PagedResult<DepartmenDetailsDto>> GetAllDepartmentsAsync(DepartmentInputDto input)
+		public async Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto department)
 		{
-			return await _departmentRepo.GetAllDepartmentsAsync(input);
-		}
 
-		public async Task<DepartmenDetailsDto?> GetDepartmentByIdAsync(int departmentId)
-		{
-			return await _departmentRepo.GetDepartmentByIdAsync(departmentId);
-		}
-
-		public async Task<DepartmenCourseAndEmployeeDto?> GetDepartmentCourseAndEmployeeAsync(DepartmentCourseAndEmployeeInput input)
-		{
-			return await _departmentRepo.GetDepartmentCourseAndEmployeeAsync(input);
-		}
-
-		public async Task<List<DepartmentDto>> GetDepartments()
-		{
-			return await _departmentRepo.GetDepartments();
-		}
-
-		public async Task<bool> UpdateDepartmentAsync(int id, UpdateDepartmentDto input)
-		{
-			return await _departmentRepo.UpdateDepartmentAsync(id, input);
+			return await _departmentRepo.UpdateDepartmentAsync(id, department);
 		}
 	}
 }

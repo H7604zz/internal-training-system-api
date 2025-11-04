@@ -10,7 +10,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? CourseName { get; set; }
         public string MentorId { get; set; } = string.Empty;
         public string? MentorName { get; set; }
-        public int TotalMembers { get; set; } 
+        public int MaxStudents { get; set; }
         public List<ClassEmployeeDto> Employees { get; set; } = new List<ClassEmployeeDto>();
         public DateTime CreatedDate { get; set; }
         public bool IsActive { get; set; } = true;
@@ -18,6 +18,13 @@ namespace InternalTrainingSystem.Core.DTOs
     }
 
     public class ClassEmployeeDto
+    {
+        public string EmployeeId { get; set; } = string.Empty;
+        public string? FullName { get; set; }
+        public string? Email { get; set; }
+    }
+
+    public class ClassEmployeeAttendanceDto
     {
         public string EmployeeId { get; set; } = string.Empty;
         public string? FullName { get; set; }
@@ -31,12 +38,10 @@ namespace InternalTrainingSystem.Core.DTOs
         public int CourseId { get; set; }
 
         [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Số lượng tối đa phải lớn hơn 0")]
-        public int MaxMembers { get; set; }
-
-        [Required]
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng lớp cần mở phải lớn hơn 0")]
         public int NumberOfClasses { get; set; }
+
+        public string? Description { get; set; }
     }
 
     public class GetAllClassesRequest
@@ -88,5 +93,31 @@ namespace InternalTrainingSystem.Core.DTOs
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
         public List<ScheduleItemResponseDto> Schedules { get; set; } = new();
+    }
+
+    public class SwapClassRequest
+    {
+        public string EmployeeIdFrom { get; set; } = string.Empty;
+        public int ClassIdFrom { get; set; }
+
+        public string EmployeeIdTo { get; set; } = string.Empty;
+        public int ClassIdTo { get; set; }
+    }
+
+    public class RespondSwapRequest
+    {
+        public int SwapRequestId { get; set; }
+        public bool Accepted { get; set; }
+    }
+
+    public class RescheduleRequest
+    {
+        [Required]
+        public DateTime NewDate { get; set; }
+
+        [Required]
+        public TimeSpan NewStartTime { get; set; }
+        [Required]
+        public TimeSpan NewEndTime { get; set; }
     }
 }

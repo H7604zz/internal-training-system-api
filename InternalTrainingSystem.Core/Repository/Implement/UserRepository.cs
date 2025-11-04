@@ -83,12 +83,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                   .Any(dep => dep.Id == d.Id)
                               && !_context.Certificates
                                   .Any(c => c.UserId == u.Id && c.CourseId == courseId)
-                             && (string.IsNullOrEmpty(searchDto.SearchTerm)
-                                  || u.FullName.Contains(searchDto.SearchTerm)
-                                  || u.EmployeeId!.Contains(searchDto.SearchTerm)
-                                  || u.Email!.Contains(searchDto.SearchTerm))
-                              && (string.IsNullOrEmpty(searchDto.status)
-                                  || (e != null && e.Status == searchDto.status))
+                             && (string.IsNullOrEmpty(searchDto.Search)
+                                  || u.FullName.Contains(searchDto.Search)
+                                  || u.EmployeeId!.Contains(searchDto.Search)
+                                  || u.Email!.Contains(searchDto.Search))
+                              && (string.IsNullOrEmpty(searchDto.Status)
+                                  || (e != null && e.Status == searchDto.Status))
                         orderby u.FullName
                         select new EligibleStaffResponse
                         {

@@ -1,4 +1,4 @@
-﻿using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,52 +15,55 @@ namespace InternalTrainingSystem.Core.Controllers
 			_departmentService = departmentService;
 		}
 
-
 		[HttpGet]
-		public async Task<IActionResult> GetAllDepartments()
+		public async Task<IActionResult> GetDepartments()
 		{
-			var departments = await _departmentService.GetDepartments();
+			var departments = await _departmentService.GetDepartmentsAsync();
 
 			return Ok(departments);
 		}
-		[HttpGet("details")]
-		public async Task<IActionResult> GetDepartmentCourseAndEmployee([FromQuery] DepartmentCourseAndEmployeeInput input)
+
+		[HttpGet("{departmentId}")]
+		public async Task<IActionResult> GetDepartmentDetail(int departmentId)
 		{
-			var department = await _departmentService.GetDepartmentCourseAndEmployeeAsync(input);
+			var department = await _departmentService.GetDepartmentDetailAsync(departmentId);
 			return Ok(department);
 		}
-		[HttpGet("get-all")]
-		public async Task<IActionResult> GetPaged([FromQuery] DepartmentInputDto input)
-		{
-			var result = await _departmentService.GetAllDepartmentsAsync(input);
-			return Ok(result);
-		}
+
 		[HttpPost]
-		public async Task<IActionResult> CreateDepartment([FromBody] CreateDepartmentDto input)
+		public async Task<IActionResult> CreateDepartment([FromBody] DepartmentRequestDto request)
 		{
 			if (!ModelState.IsValid)
 				return BadRequest(ModelState);
 
-			var id = await _departmentService.CreateDepartmentAsync(input);
-			return Ok(new { message = "Xác nhận tạo thành công!" });
+			var success = await _departmentService.CreateDepartmentAsync(request);
+			if (!success)
+				return BadRequest();
+
+			return Ok();
 		}
-		[HttpPut("{id:int}")]
-		public async Task<IActionResult> Update(int id, [FromBody] UpdateDepartmentDto dto)
+
+		[HttpPut("{departmentId}")]
+		public async Task<IActionResult> Update(int departmentId, [FromBody] DepartmentRequestDto request)
 		{
 			if (!ModelState.IsValid)
 				return BadRequest(ModelState);
-			var success = await _departmentService.UpdateDepartmentAsync(id, dto);
+
+			var success = await _departmentService.UpdateDepartmentAsync(departmentId, request);
 			if (!success)
 				return NotFound();
-			return NoContent();
+
+			return Ok();
 		}
-		[HttpDelete("{id:int}")]
-		public async Task<IActionResult> Delete(int id)
+
+		[HttpDelete("{departmentId}")]
+		public async Task<IActionResult> Delete(int departmentId)
 		{
-			var success = await _departmentService.DeleteDepartmentAsync(id);
+			var success = await _departmentService.DeleteDepartmentAsync(departmentId);
 			if (!success)
 				return NotFound();
-			return NoContent();
+
+			return Ok();
 		}
 	}
 }
