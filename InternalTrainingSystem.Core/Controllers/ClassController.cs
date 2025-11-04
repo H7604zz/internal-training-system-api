@@ -70,6 +70,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("create-weekly")]
+        [Authorize(Roles = UserRoles.TrainingDepartment)]
         public async Task<IActionResult> CreateWeeklySchedules([FromBody] CreateWeeklyScheduleRequest request)
         {
             if (!ModelState.IsValid)
@@ -93,7 +94,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="classId"></param>
         /// <returns></returns>
         [HttpGet("{classId}/schedule")]
-        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.Staff + "," + UserRoles.Mentor)]
+        //[Authorize]
         public async Task<IActionResult> GetClassSchedule(int classId)
         {
             var result = await _classService.GetClassScheduleAsync(classId);
@@ -145,6 +146,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="attendanceList"></param>
         /// <returns></returns>
         [HttpPost("{scheduleId}/attendance")]
+        [Authorize(Roles = UserRoles.Mentor)]
         public async Task<IActionResult> MarkAttendance(int scheduleId, [FromBody] List<AttendanceRequest> attendanceList)
         {
             if (attendanceList == null || !attendanceList.Any())
@@ -170,6 +172,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="attendanceList"></param>
         /// <returns></returns>
         [HttpPut("{scheduleId}/attendance")]
+        [Authorize(Roles = UserRoles.Mentor)]
         public async Task<IActionResult> UpdateAttendance(int scheduleId, [FromBody] List<AttendanceRequest> attendanceList)
         {
             if (attendanceList == null || !attendanceList.Any())
@@ -189,6 +192,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="scheduleId"></param>
         /// <returns></returns>
         [HttpGet("schedules/{scheduleId}/attendance")]
+        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.DirectManager + "," + UserRoles.Mentor)]
         public async Task<IActionResult> GetAttendanceBySchedule(int scheduleId)
         {
             var attendances = await _attendanceService.GetAttendanceByScheduleAsync(scheduleId);
