@@ -9,7 +9,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
     {
         Task<bool> CreateClassesAsync(CreateClassRequestDto request,
                 List<StaffConfirmCourseResponse> confirmedUsers, string createdById);
-        Task<(bool Success, string Message, int Count)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
+        Task<(bool Success, string Message)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
         Task<ClassScheduleResponse> GetClassScheduleAsync(int classId);
         Task<UserScheduleResponse> GetUserScheduleAsync(string staffId);
         Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId);
@@ -19,6 +19,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<(bool Success, string Message)> RespondToClassSwapAsync(RespondSwapRequest request, string responderId);
         Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize);
         Task<(bool Success, string Message)> RescheduleAsync(int scheduleId, RescheduleRequest request);
-        
+        Task<Schedule?> GetClassScheduleByIdAsync(int scheduleId);
     }
 }

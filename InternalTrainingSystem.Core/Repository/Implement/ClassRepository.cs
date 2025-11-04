@@ -94,21 +94,21 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return true;
         }
 
-        public async Task<(bool Success, string Message, int Count)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
+        public async Task<(bool Success, string Message)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
         {
             var classEntity = await _context.Classes
                 .Include(c => c.Employees)
                 .FirstOrDefaultAsync(c => c.ClassId == request.ClassId);
 
             if (classEntity == null)
-                return (false, "Không tìm thấy lớp học.", 0);
+                return (false, "Không tìm thấy lớp học.");
 
             var instructor = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.MentorId);
             if (instructor == null)
-                return (false, "Không tìm thấy giảng viên.", 0);
+                return (false, "Không tìm thấy giảng viên.");
 
             if (request.WeeklySchedules == null || request.WeeklySchedules.Count == 0)
-                return (false, "Chưa có buổi học trong tuần đầu.", 0);
+                return (false, "Chưa có buổi học trong tuần đầu.");
 
             string joinUrl = await ZoomHelper.CreateRecurringMeetingAndGetJoinUrlAsync();
 
@@ -121,7 +121,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 foreach (var item in request.WeeklySchedules)
                 {
                     if (!Enum.TryParse<DayOfWeek>(item.DayOfWeek, true, out var day))
-                        return (false, $"Ngày '{item.DayOfWeek}' không hợp lệ.", 0);
+                        return (false, $"Ngày '{item.DayOfWeek}' không hợp lệ.");
 
                     var date = baseDate.AddDays((int)day - (int)request.StartWeek.DayOfWeek);
                     if (date < baseDate)
@@ -156,7 +156,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             .ToList();
 
                         var conflictList = string.Join(", ", conflictedStudents.Take(5));
-                        return (false, $"Lịch học bị trùng cho các học viên: {conflictList}...", 0);
+                        return (false, $"Lịch học bị trùng cho các học viên: {conflictList}...");
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.Location))
@@ -183,7 +183,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 .ToList();
 
                             var classList = string.Join(", ", classNames.Take(3));
-                            return (false, $"Phòng '{item.Location}' đã có lớp ({classList}) trong khung giờ này.", 0);
+                            return (false, $"Phòng '{item.Location}' đã có lớp ({classList}) trong khung giờ này.");
                         }
                     }
 
@@ -222,7 +222,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             _context.Classes.Update(classEntity);
             await _context.SaveChangesAsync();
 
-            return (true, $"Đã tạo {allSchedules.Count} buổi học cho {request.NumberOfWeeks} tuần.", allSchedules.Count);
+            return (true, $"Đã tạo {allSchedules.Count} buổi học cho {request.NumberOfWeeks} tuần.");
         }
 
         public async Task<ClassScheduleResponse> GetClassScheduleAsync(int classId)
@@ -624,6 +624,13 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             await _context.SaveChangesAsync();
             return (true, "Đổi lịch thành công.");
+        }
+
+        public async Task<Schedule?> GetClassScheduleByIdAsync(int scheduleId)
+        {
+            return await _context.Schedules
+                .Include(s => s.ScheduleParticipants)
+                .FirstOrDefaultAsync(sc => sc.ScheduleId == scheduleId);
         }
     }
 }
