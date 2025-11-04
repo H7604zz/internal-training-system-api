@@ -216,4 +216,11 @@ namespace InternalTrainingSystem.Core.DTOs
         public int? AttachmentFileIndex { get; set; }
     }
 
+    public sealed class UpdatePendingCourseStatusRequest
+    {
+        public string NewStatus { get; init; } = default!; // "Approve" | "Reject"
+        public string? RejectReason { get; init; }
+    }
+
+
 }

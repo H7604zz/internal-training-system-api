@@ -198,31 +198,38 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(items);
         }
 
-        public class UpdateCourseStatusRequest
+        
+
+        [HttpPatch("update-pending-status/{courseId}")]
+        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdatePendingCourseStatusRequest request)
         {
-            public string NewStatus { get; set; } = default!;
-        }
+            try
+            {
+                var result = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus, request.RejectReason);
 
-        /// <summary>Duyệt 1 course đang Pending: newStatus = "Apporove".</summary>
-        [HttpPut("{courseId:int}/status")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdateCourseStatusRequest request)
-        {
-            if (request == null || string.IsNullOrWhiteSpace(request.NewStatus))
-                return BadRequest("newStatus không được rỗng.");
+                if (!result)
+                    return BadRequest("Không thể cập nhật trạng thái. Có thể khóa học không tồn tại hoặc không ở trạng thái Pending.");
 
-            var ok = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus);
-            if (!ok)
-                return BadRequest("Chỉ có thể cập nhật trạng thái các khóa học đang ở Pending hoặc khóa học không tồn tại.");
-
-            return Ok(new { message = $"Cập nhật trạng thái thành công: {request.NewStatus}" });
+                return Ok(new
+                {
+                    message = $"Cập nhật trạng thái khóa học {courseId} thành công: {request.NewStatus}",
+                    reason = request.RejectReason
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi nếu cần
+                return StatusCode(500, "Đã xảy ra lỗi khi cập nhật trạng thái khóa học.");
+            }
         }
 
         /// <summary>Chuyển 1 course từ Active -> Deleted (xóa mềm theo status).</summary>
         [HttpPatch("{courseId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        
         public async Task<IActionResult> DeleteActiveCourse(int courseId, [FromBody] string? rejectReason)
         {
             if (string.IsNullOrWhiteSpace(rejectReason))
@@ -506,6 +513,59 @@ namespace InternalTrainingSystem.Core.Controllers
                 data = classList
             });
         }
+
+        [HttpPut("{id:int}/resubmit")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> ResubmitAfterReject(int id,[FromForm(Name = "metadata")] string metadata,[FromForm] List<IFormFile> lessonFiles,[FromForm] string? resubmitNote,
+        CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(metadata))
+                return BadRequest(new { message = "metadata is required and must be a JSON string" });
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            UpdateCourseMetadataDto? dto;
+            try
+            {
+                dto = JsonSerializer.Deserialize<UpdateCourseMetadataDto>(metadata, options);
+                if (dto == null) throw new JsonException();
+            }
+            catch
+            {
+                return BadRequest(new { message = "metadata is not valid JSON" });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                        ?? User.Identity?.Name
+                        ?? "system";
+
+            try
+            {
+                var course = await _courseService.UpdateAndResubmitToPendingAsync(
+                    id, dto, lessonFiles, userId, resubmitNote, ct);
+
+                return Ok(new
+                {
+                    message = "Resubmitted to Pending successfully.",
+                    courseId = course.CourseId,
+                    status = course.Status,
+                    note = course.RejectionReason,
+                    updatedAt = course.UpdatedDate
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "Failed to resubmit course." });
+            }
+        }
+
 
     }
 }

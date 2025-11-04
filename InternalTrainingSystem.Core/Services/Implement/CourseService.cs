@@ -63,9 +63,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         // Duyệt khóa học - ban giám đốc
-        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus)
+        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus, string? rejectReason = null)
         {
-            return await _courseRepo.UpdatePendingCourseStatusAsync(courseId, newStatus);
+            return await _courseRepo.UpdatePendingCourseStatusAsync(courseId, newStatus,rejectReason);
         }
 
         // Ban giám đốc xóa khóa học đã duyệt
@@ -78,6 +78,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                                 IList<IFormFile> lessonFiles, string createdByUserId, CancellationToken ct = default)
         {
             return await _courseRepo.CreateCourseAsync(meta, lessonFiles, createdByUserId, ct);
+        }
+        public async Task<Course> UpdateAndResubmitToPendingAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId,
+                                                                  string? resubmitNote = null, CancellationToken ct = default)
+        {
+            return await _courseRepo.UpdateAndResubmitToPendingAsync( courseId,  meta,  lessonFiles,  updatedByUserId,
+                                                                    resubmitNote = null,  ct = default);
         }
     }
 }

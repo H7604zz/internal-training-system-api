@@ -272,6 +272,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
             return false;
         }
+
         public async Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default)
         {
             var page = req.Page <= 0 ? 1 : req.Page;
@@ -526,7 +527,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         }
 
         // Duyệt khóa học - ban giám đốc
-        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus)
+        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus, string? rejectReason = null)
         {
             if (string.IsNullOrWhiteSpace(newStatus))
                 throw new ArgumentException("Trạng thái mới không hợp lệ.", nameof(newStatus));
@@ -535,7 +536,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             {
                 CourseConstants.Status.Approve,
                 CourseConstants.Status.Reject
-                };
+            };
 
             if (!allowedStatuses.Contains(newStatus, StringComparer.OrdinalIgnoreCase))
                 throw new ArgumentException($"Trạng thái '{newStatus}' không hợp lệ. Chỉ chấp nhận Approve hoặc Reject.");
@@ -547,67 +548,50 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             if (course == null)
                 return false;
 
-            // Chỉ cho phép xử lý khi đang Pending
+            // Chỉ xử lý khi khóa học đang ở trạng thái Pending
             if (!course.Status.Equals(CourseConstants.Status.Pending, StringComparison.OrdinalIgnoreCase))
                 return false;
 
+            // Cập nhật trạng thái
             if (newStatus.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase))
             {
-                // ✅ Duyệt khóa học
                 course.Status = CourseConstants.Status.Approve;
-                course.UpdatedDate = DateTime.UtcNow;
+                course.RejectionReason = null; // ✅ Nếu duyệt thì không có lý do
+            }
+            else if (newStatus.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(rejectReason))
+                    throw new ArgumentException("Phải cung cấp lý do khi từ chối khóa học.", nameof(rejectReason));
+
+                course.Status = CourseConstants.Status.Reject;
+                course.RejectionReason = rejectReason.Trim();
             }
 
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        //Update reject conmeback
-        public async Task<bool> UpdateDraftAndResubmitAsync(int courseId, UpdateCourseRejectDto dto)
-        {
-            // 1) Validate input cơ bản
-            if (dto is null) throw new ArgumentNullException(nameof(dto));
-            if (string.IsNullOrWhiteSpace(dto.CourseName))
-                throw new ArgumentException("Tên khóa học không được để trống.", nameof(dto.CourseName));
-
-            // 2) Tải course + Departments
-            var course = await _context.Courses
-                .Include(c => c.Departments)
-                .FirstOrDefaultAsync(c => c.CourseId == courseId);
-
-            if (course == null) return false;
-
-            // 3) Chỉ cho phép sửa và "gửi lại" khi đang Pending (bản nháp) hoặc Reject
-            var canResubmit =
-                course.Status.Equals(CourseConstants.Status.Pending, StringComparison.OrdinalIgnoreCase) ||
-                course.Status.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase);
-
-            if (!canResubmit) return false;
-
-            // 4) Cập nhật field nội dung
-            course.CourseName = dto.CourseName.Trim();
-            course.Description = dto.Description?.Trim();
-            course.Duration = dto.Duration;
-            course.Level = dto.Level.Trim();
-            course.CourseCategoryId = dto.CourseCategoryId;
-
-            // 5) Đồng bộ Departments (many-to-many) theo danh sách ID được gửi lên
-            //    - Lấy các Department hiện hữu
-            var deps = dto.DepartmentIds?.Distinct().ToList() ?? new List<int>();
-            var existingDepartments = deps.Count == 0
-                ? new List<Department>()
-                : await _context.Departments.Where(d => deps.Contains(d.Id)).ToListAsync();
-
-            //    - Gán lại tập Departments để EF Core tự sync (add/remove join rows)
-            course.Departments = existingDepartments;
-
-            // 6) Đưa trạng thái về Pending để "gửi lại", cập nhật thời gian
-            course.Status = CourseConstants.Status.Pending;
             course.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;
         }
+
+
+        //Update reject conmeback
+        public async Task<Course> UpdateAndResubmitToPendingAsync(int courseId,UpdateCourseMetadataDto meta,IList<IFormFile> lessonFiles,string updatedByUserId,
+                                                                  string? resubmitNote = null,CancellationToken ct = default)
+        {
+            // 1) Cập nhật nội dung (modules/lessons/files...)
+            var course = await UpdateCourseAsync(courseId, meta, lessonFiles, updatedByUserId, ct);
+
+            // 2) Đưa trạng thái về Pending để chờ duyệt lại
+            //    (xóa/ghi chú lý do reject cũ tùy bạn)
+            course.Status = CourseConstants.Status.Pending;
+            course.RejectionReason = resubmitNote;          // hoặc null nếu bạn muốn xoá lý do cũ
+            course.UpdatedDate = DateTime.UtcNow;
+            course.CreatedById = updatedByUserId;        // nếu có trường này
+
+            await _context.SaveChangesAsync(ct);
+            return course;
+        }
+
 
         // Ban giám đốc xóa khóa học đã duyệt
         public async Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason)
