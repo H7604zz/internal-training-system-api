@@ -245,9 +245,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
                     b.HasKey("AssignmentId");
 
-                    b.HasIndex("CourseId");
-
                     b.HasIndex("ScheduleId");
+
+                    b.HasIndex("CourseId", "DueAt");
 
                     b.ToTable("Assignments");
                 });
@@ -269,16 +269,12 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Property<int?>("EnrollmentId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("EnrollmentId1")
-                        .HasColumnType("int");
-
                     b.Property<string>("Feedback")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Grade")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsLate")
                         .HasColumnType("bit");
@@ -298,21 +294,16 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("UserId1")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("SubmissionId");
 
                     b.HasIndex("EnrollmentId");
 
-                    b.HasIndex("EnrollmentId1");
+                    b.HasIndex("SubmittedAt");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("UserId1");
-
-                    b.HasIndex("AssignmentId", "UserId", "AttemptNumber");
+                    b.HasIndex("AssignmentId", "UserId", "AttemptNumber")
+                        .IsUnique();
 
                     b.ToTable("AssignmentSubmissions");
                 });
@@ -688,13 +679,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Property<DateTime>("ActionDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ApplicationUserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CourseId1")
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
@@ -702,12 +687,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<int?>("EnrollmentId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("LessonId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ModuleId")
                         .HasColumnType("int");
 
                     b.Property<int?>("QuizAttemptId")
@@ -729,17 +708,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
                     b.HasIndex("ActionDate");
 
-                    b.HasIndex("ApplicationUserId");
-
                     b.HasIndex("CourseId");
 
-                    b.HasIndex("CourseId1");
-
                     b.HasIndex("EnrollmentId");
-
-                    b.HasIndex("LessonId");
-
-                    b.HasIndex("ModuleId");
 
                     b.HasIndex("QuizAttemptId");
 
@@ -1222,7 +1193,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("MimeType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("OriginalFileName")
                         .IsRequired()
@@ -1240,7 +1212,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
                     b.HasKey("FileId");
 
-                    b.HasIndex("SubmissionId");
+                    b.HasIndex("SubmissionId", "IsMain");
 
                     b.ToTable("SubmissionFiles");
                 });
@@ -1533,7 +1505,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Assignment", b =>
                 {
                     b.HasOne("InternalTrainingSystem.Core.Models.Course", "Course")
-                        .WithMany()
+                        .WithMany("Assignments")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1555,31 +1527,15 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("InternalTrainingSystem.Core.Models.Lesson", null)
-                        .WithMany()
-                        .HasForeignKey("AssignmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("InternalTrainingSystem.Core.Models.CourseEnrollment", null)
+                    b.HasOne("InternalTrainingSystem.Core.Models.CourseEnrollment", "Enrollment")
                         .WithMany("AssignmentSubmissions")
                         .HasForeignKey("EnrollmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("InternalTrainingSystem.Core.Models.CourseEnrollment", "Enrollment")
-                        .WithMany()
-                        .HasForeignKey("EnrollmentId1");
-
-                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId1")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .WithMany("AssignmentSubmissions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Assignment");
@@ -1739,62 +1695,41 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseHistory", b =>
                 {
-                    b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", null)
-                        .WithMany("CourseHistories")
-                        .HasForeignKey("ApplicationUserId");
-
                     b.HasOne("InternalTrainingSystem.Core.Models.Course", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("InternalTrainingSystem.Core.Models.Course", null)
                         .WithMany("CourseHistories")
-                        .HasForeignKey("CourseId1");
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("InternalTrainingSystem.Core.Models.CourseEnrollment", "Enrollment")
                         .WithMany("CourseHistories")
                         .HasForeignKey("EnrollmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("InternalTrainingSystem.Core.Models.Lesson", "Lesson")
-                        .WithMany()
-                        .HasForeignKey("LessonId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("InternalTrainingSystem.Core.Models.CourseModule", "Module")
-                        .WithMany()
-                        .HasForeignKey("ModuleId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("InternalTrainingSystem.Core.Models.QuizAttempt", "QuizAttempt")
                         .WithMany("CourseHistories")
                         .HasForeignKey("QuizAttemptId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("InternalTrainingSystem.Core.Models.Quiz", "Quiz")
                         .WithMany()
                         .HasForeignKey("QuizId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("InternalTrainingSystem.Core.Models.Schedule", "Schedule")
                         .WithMany("CourseHistories")
-                        .HasForeignKey("ScheduleId");
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
-                        .WithMany()
+                        .WithMany("CourseHistories")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Course");
 
                     b.Navigation("Enrollment");
-
-                    b.Navigation("Lesson");
-
-                    b.Navigation("Module");
 
                     b.Navigation("Quiz");
 
@@ -2056,6 +1991,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.ApplicationUser", b =>
                 {
+                    b.Navigation("AssignmentSubmissions");
+
                     b.Navigation("Attendances");
 
                     b.Navigation("Certificates");
@@ -2094,6 +2031,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.Course", b =>
                 {
+                    b.Navigation("Assignments");
+
                     b.Navigation("Certificates");
 
                     b.Navigation("Classes");

@@ -17,16 +17,11 @@ namespace InternalTrainingSystem.Core.Models
         public string? Description { get; set; }
 
         public DateTime ActionDate { get; set; } = DateTime.Now;
-
         [Required]
         public string UserId { get; set; } = string.Empty;
-
         [Required]
         public int CourseId { get; set; }
-
-        public int? EnrollmentId { get; set; }     
-        public int? ModuleId { get; set; }         
-        public int? LessonId { get; set; }         
+        public int? EnrollmentId { get; set; }            
         public int? QuizId { get; set; }           
         public int? QuizAttemptId { get; set; }    
         public int? ScheduleId { get; set; }       
@@ -39,12 +34,6 @@ namespace InternalTrainingSystem.Core.Models
 
         [ForeignKey(nameof(EnrollmentId))]
         public virtual CourseEnrollment? Enrollment { get; set; }
-
-        [ForeignKey(nameof(ModuleId))]
-        public virtual CourseModule? Module { get; set; }
-
-        [ForeignKey(nameof(LessonId))]
-        public virtual Lesson? Lesson { get; set; }
 
         [ForeignKey(nameof(QuizId))]
         public virtual Quiz? Quiz { get; set; }
