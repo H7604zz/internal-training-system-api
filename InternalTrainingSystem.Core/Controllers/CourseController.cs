@@ -146,6 +146,7 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(new { courseId = id, isActive = dto.Status });
         }
 
+        //api này không cần thiết
         [HttpGet("search")]
         public async Task<ActionResult<PagedResult<CourseListItemDto>>> Search([FromQuery] CourseSearchRequest req,
             CancellationToken ct)
@@ -183,6 +184,7 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(dto);
         }
 
+        //api này không cần thiết
         /// <summary>Hiển thị các course có status = Pending (Ban giám đốc duyệt).</summary>
         [HttpGet("pending")]
         [ProducesResponseType(typeof(IEnumerable<CourseListItemDto>), StatusCodes.Status200OK)]
