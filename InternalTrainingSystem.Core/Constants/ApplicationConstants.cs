@@ -187,4 +187,14 @@
         public static bool IsAllowedVideo(string ext, string contentType) =>
             AllowedVideoExtensions.Contains(ext) && AllowedVideoContentTypes.Contains(contentType);
     }
+    public static class AssignmentSubmissionConstants
+    {
+        public static class Status
+        {
+            public const string Submitted = "Submitted";   // staff đã nộp
+            public const string Returned = "Returned";     // trả bài yêu cầu sửa
+            public const string Graded = "Graded";         // đã chấm
+            public const string Rejected = "Rejected";     // từ chối bài nộp (sai format, gian lận…)
+        }
+    }
 }

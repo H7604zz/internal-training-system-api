@@ -35,6 +35,9 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<LessonProgress> LessonProgresses { get; set; }
         public DbSet<NotificationRecipient> NotificationRecipients { get; set; }
         public DbSet<ClassSwap> ClassSwaps { get; set; }
+        public DbSet<Assignment> Assignments { get; set; }
+        public DbSet<AssignmentSubmission> AssignmentSubmissions { get; set; }
+        public DbSet<SubmissionFile> SubmissionFiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -471,6 +474,32 @@ namespace InternalTrainingSystem.Core.DB
 
             builder.Entity<LessonProgress>()
                 .HasIndex(lp => lp.IsDone);
+
+            builder.Entity<AssignmentSubmission>(entity =>
+            {
+                entity.HasKey(x => x.SubmissionId);
+
+                // Mỗi bài nộp thuộc 1 assignment (lesson quiz offline)
+                entity.HasOne<Lesson>()
+                    .WithMany()
+                    .HasForeignKey(x => x.AssignmentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Mỗi bài nộp thuộc 1 User
+                entity.HasOne<ApplicationUser>()
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Optional — bài nộp trong enrollment
+                entity.HasOne<CourseEnrollment>()
+                    .WithMany(e => e.AssignmentSubmissions)
+                    .HasForeignKey(x => x.EnrollmentId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Mỗi bài nộp có attempt number -> index
+                entity.HasIndex(x => new { x.AssignmentId, x.UserId, x.AttemptNumber });
+            });
         }
     }
 }
