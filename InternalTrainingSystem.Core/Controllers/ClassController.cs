@@ -225,10 +225,21 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
-        //[HttpPut("reschedule/{scheduleId}")]
-        //public async Task<IActionResult> Reschedule(int scheduleId, [FromBody] RescheduleRequest request)
-        //{
+        /// <summary>
+        /// cho phep mentor chuyen lich hoc 1 ngay trong tuan
+        /// </summary>
+        /// <param name="scheduleId"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPut("reschedule/{scheduleId}")]
+        //[Authorize(Roles = UserRoles.Mentor)]
+        public async Task<IActionResult> Reschedule(int scheduleId, [FromBody] RescheduleRequest request)
+        {
+            var result = await _classService.RescheduleAsync(scheduleId, request);
+            if (!result.Success)
+                return BadRequest(result.Message);
 
-        //}
+            return Ok();
+        }
     }
 }

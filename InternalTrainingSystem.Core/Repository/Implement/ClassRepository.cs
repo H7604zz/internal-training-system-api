@@ -547,5 +547,83 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 return (false, $"Lỗi khi xử lý yêu cầu đổi lớp: {ex.Message}");
             }
         }
+
+        public async Task<(bool Success, string Message)> RescheduleAsync(int scheduleId, RescheduleRequest request)
+        {
+            var schedule = await _context.Schedules.FirstOrDefaultAsync(sh => sh.ScheduleId == scheduleId);
+            if (schedule == null)
+                return (false, "Không tìm thấy lịch học.");
+
+            if (schedule.Date < DateTime.Today)
+                return (false, "Không thể đổi lịch cho buổi học đã diễn ra.");
+
+            var instructorConflict = await _context.Schedules.AnyAsync(sh =>
+                sh.InstructorId == schedule.InstructorId &&
+                sh.ScheduleId != schedule.ScheduleId &&
+                sh.Date == request.NewDate &&
+                (
+                    (request.NewStartTime >= sh.StartTime && request.NewStartTime < sh.EndTime) ||
+                    (request.NewEndTime > sh.StartTime && request.NewEndTime <= sh.EndTime) ||
+                    (request.NewStartTime <= sh.StartTime && request.NewEndTime >= sh.EndTime)
+                )
+            );
+
+            if (instructorConflict)
+                return (false, "Giảng viên đã có buổi học khác trong khoảng thời gian này.");
+
+            if (!string.IsNullOrWhiteSpace(schedule.Location))
+            {
+                var roomConflict = await _context.Schedules.AnyAsync(sh =>
+                    sh.Location == schedule.Location &&
+                    sh.ScheduleId != schedule.ScheduleId &&
+                    sh.Date == request.NewDate &&
+                    (
+                        (request.NewStartTime >= sh.StartTime && request.NewStartTime < sh.EndTime) ||
+                        (request.NewEndTime > sh.StartTime && request.NewEndTime <= sh.EndTime) ||
+                        (request.NewStartTime <= sh.StartTime && request.NewEndTime >= sh.EndTime)
+                    )
+                );
+
+                if (roomConflict)
+                    return (false, $"Phòng học \"{schedule.Location}\" đã có buổi khác trong khoảng thời gian này.");
+            }
+
+            var studentIds = schedule.ScheduleParticipants.Select(p => p.UserId).ToList();
+
+            if (studentIds.Any())
+            {
+                var studentConflict = await _context.ScheduleParticipants
+                    .Include(sp => sp.Schedule)
+                    .AnyAsync(sp =>
+                        studentIds.Contains(sp.UserId) &&
+                        sp.ScheduleId != schedule.ScheduleId &&
+                        sp.Schedule.Date == request.NewDate &&
+                        (
+                            (request.NewStartTime >= sp.Schedule.StartTime && request.NewStartTime < sp.Schedule.EndTime) ||
+                            (request.NewEndTime > sp.Schedule.StartTime && request.NewEndTime <= sp.Schedule.EndTime) ||
+                            (request.NewStartTime <= sp.Schedule.StartTime && request.NewEndTime >= sp.Schedule.EndTime)
+                        )
+                    );
+
+                if (studentConflict)
+                    return (false, "Một hoặc nhiều học viên đã có lịch học khác trong khoảng thời gian này.");
+            }
+
+            schedule.Date = request.NewDate;
+            schedule.StartTime = request.NewStartTime;
+            schedule.EndTime = request.NewEndTime;
+            schedule.Status = ScheduleConstants.Status.Rescheduled;
+
+            _context.CourseHistories.Add(new CourseHistory
+            {
+                CourseId = schedule.CourseId,
+                UserId = schedule.InstructorId,
+                Action = $"Buổi học \"{schedule.Title}\" được dời sang {request.NewDate:dd/MM/yyyy}",
+                ActionDate = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+            return (true, "Đổi lịch thành công.");
+        }
     }
 }

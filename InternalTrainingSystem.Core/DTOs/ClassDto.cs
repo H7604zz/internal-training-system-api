@@ -113,11 +113,11 @@ namespace InternalTrainingSystem.Core.DTOs
     public class RescheduleRequest
     {
         [Required]
-        public DateTime Date { get; set; }
+        public DateTime NewDate { get; set; }
 
         [Required]
-        public TimeSpan StartTime { get; set; }
+        public TimeSpan NewStartTime { get; set; }
         [Required]
-        public TimeSpan EndTime { get; set; }
+        public TimeSpan NewEndTime { get; set; }
     }
 }

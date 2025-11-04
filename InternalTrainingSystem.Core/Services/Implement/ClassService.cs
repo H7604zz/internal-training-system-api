@@ -71,5 +71,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _classRepo.RespondToClassSwapAsync(request, responderId);
         }
+
+        public async Task<(bool Success, string Message)> RescheduleAsync(int scheduleId, RescheduleRequest request)
+        {
+            return await _classRepo.RescheduleAsync(scheduleId, request);
+        }
     }
 }
