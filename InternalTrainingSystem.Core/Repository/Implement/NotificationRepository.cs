@@ -39,16 +39,18 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .FirstOrDefault(n => n.ClassId == classId && n.Type == type);
         }
 
-        public bool HasRecentNotification(NotificationType type, int courseId, int days = 7)
+        public async Task<bool> HasRecentNotification(NotificationType type, int courseId, int? days = 7)
         {
-            var since = DateTime.UtcNow.AddDays(-days);
+            var query = _context.Notifications
+                .Where(n => n.Type == type && n.CourseId == courseId);
 
-            return _context.Notifications
-                .Any(n =>
-                    n.Type == type &&
-                    n.CourseId == courseId &&
-                    n.SentAt >= since
-                );
+            if (days.HasValue && days.Value > 0)
+            {
+                var since = DateTime.UtcNow.AddDays(-days.Value);
+                query = query.Where(n => n.SentAt >= since);
+            }
+
+            return await query.AnyAsync();
         }
 
         public async Task DeleteOldNotificationsAsync(int courseId, NotificationType type)

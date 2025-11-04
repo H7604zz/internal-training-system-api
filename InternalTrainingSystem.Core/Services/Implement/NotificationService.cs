@@ -33,9 +33,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return _notificationRepo.GetNotificationByClassAndType(classId, type);
         }
 
-        public bool HasRecentNotification(NotificationType type, int courseId, int days = 7)
+        public async Task<bool> HasRecentNotification(NotificationType type, int courseId, int? days = 7)
         {
-            return _notificationRepo.HasRecentNotification(type, courseId, days);
+            return await _notificationRepo.HasRecentNotification(type, courseId, days);
         }
 
         public async Task DeleteOldNotificationsAsync(int courseId, NotificationType type)

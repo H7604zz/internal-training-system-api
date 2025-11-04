@@ -410,13 +410,23 @@ namespace InternalTrainingSystem.Core.Controllers
         public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var notice = _notificationService.GetNotificationByCourseAndType(courseId, NotificationType.CourseFinalized);
-            if (notice != null)
+            if (notice == null)
             {
                 return Ok("Danh sách nhân viên chưa được chốt !!!");
             }
             var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, page, pageSize);
             return Ok(confirmedUsers);
 
+        }
+
+        [HttpGet("{courseId}/confirmed-staff/count")]
+        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public IActionResult GetConfirmedUsersCount(int courseId)
+        {
+            var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, 1, int.MaxValue);
+            int countStaff = confirmedUsers.TotalCount;
+
+            return Ok(countStaff);
         }
 
         [HttpPost("{courseId}/finalize-enrollments")]

@@ -6,6 +6,7 @@ using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -20,9 +21,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _classRepo = classRepository;
         }
 
-        public async Task<(bool Success, List<ClassDto>? Data)> CreateClassesAsync(CreateClassRequestDto request, List<StaffConfirmCourseResponse> confirmedUsers)
+        public async Task<bool> CreateClassesAsync(CreateClassRequestDto request,
+            List<StaffConfirmCourseResponse> confirmedUsers, string createdById)
         {
-            return await _classRepo.CreateClassesAsync(request, confirmedUsers);
+            return await _classRepo.CreateClassesAsync(request, confirmedUsers, createdById);
         }
 
         public async Task<(bool Success, string Message, int Count)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
@@ -40,7 +42,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.GetUserScheduleAsync(staffId);
         }
 
-        public async Task<List<ClassEmployeeDto>> GetUserByClassAsync(int classId)
+        public async Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId)
         {
             return await _classRepo.GetUserByClassAsync(classId);
         }
@@ -53,6 +55,21 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<List<ClassDto>> GetClassesByCourseAsync(int courseId)
         {
             return await _classRepo.GetClassesByCourseAsync(courseId);
+        }
+
+        public Task<(bool Success, string Message)> CreateClassSwapRequestAsync(SwapClassRequest request)
+        {
+            return _classRepo.CreateClassSwapRequestAsync(request);
+        }
+
+        public async Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize)
+        {
+            return await _classRepo.GetClassesAsync(page, pageSize);
+        }
+
+        public async Task<(bool Success, string Message)> RespondToClassSwapAsync(RespondSwapRequest request, string responderId)
+        {
+            return await _classRepo.RespondToClassSwapAsync(request, responderId);
         }
     }
 }

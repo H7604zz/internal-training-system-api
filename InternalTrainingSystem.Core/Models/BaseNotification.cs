@@ -58,6 +58,7 @@ namespace InternalTrainingSystem.Core.Models
         UserWelcome = 7,
         UserWarning = 8,
         UserInfoUpdate = 9,
+        UserSwapClass = 17,
 
         // --- Notification types for System ---
         SystemAlert = 10,
