@@ -76,7 +76,14 @@ namespace InternalTrainingSystem.Core.Controllers
 			var res = await _service.SubmitAttemptByLessonAsync(lessonId, attemptId, GetUserId(), req, ct);
 			return Ok(res);
 		}
-		[HttpGet("course/{courseId}/quiz/{quizId}/history")]
+
+		/// <summary>
+		/// lay ra lich su lam quiz
+		/// </summary>
+		/// <param name="courseId"></param>
+		/// <param name="quizId"></param>
+		/// <returns></returns>
+		[HttpGet("{courseId}/{quizId}/history")]
 		public async Task<IActionResult> GetUserQuizHistory(int courseId, int quizId)
 		{
 			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
