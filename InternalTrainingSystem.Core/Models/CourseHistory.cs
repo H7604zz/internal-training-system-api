@@ -8,8 +8,8 @@ namespace InternalTrainingSystem.Core.Models
         [Key]
         public int HistoryId { get; set; }
 
-        [Required, StringLength(50)]
-        public string Action { get; set; } = string.Empty;
+        [Required]
+        public CourseAction Action { get; set; }
         // Enrolled, Started, ProgressUpdated, MaterialAccessed, MaterialDownloaded,
         // QuizStarted, QuizCompleted, QuizPassed, QuizFailed, Completed, CertificateIssued, ...
 
@@ -43,5 +43,32 @@ namespace InternalTrainingSystem.Core.Models
 
         [ForeignKey(nameof(ScheduleId))]
         public virtual Schedule? Schedule { get; set; }
+    }
+    public enum CourseAction
+    {
+        Enrolled = 1,
+        Started = 2,
+        Paused = 3,
+        Resumed = 4,
+        Completed = 5,
+        Dropped = 6,
+
+        QuizStarted = 10,
+        QuizCompleted = 11,
+        QuizPassed = 12,
+        QuizFailed = 13,
+        QuizRetaken = 14,
+
+        CertificateIssued = 20,
+
+        ScheduleRegistered = 30,
+        ScheduleAttended = 31,
+        ScheduleCancelled = 32,
+
+        ProgressUpdated = 40,
+        MaterialAccessed = 41,
+        MaterialDownloaded = 42,
+
+        FeedbackSubmitted = 50
     }
 }

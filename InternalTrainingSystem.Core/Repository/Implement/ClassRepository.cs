@@ -618,7 +618,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             {
                 CourseId = schedule.CourseId,
                 UserId = schedule.InstructorId,
-                Action = $"Buổi học \"{schedule.Title}\" được dời sang {request.NewDate:dd/MM/yyyy}",
+                //Action = $"Buổi học \"{schedule.Title}\" được dời sang {request.NewDate:dd/MM/yyyy}",
                 ActionDate = DateTime.Now
             });
 
