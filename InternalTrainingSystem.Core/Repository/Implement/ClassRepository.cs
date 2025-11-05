@@ -614,13 +614,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             schedule.EndTime = request.NewEndTime;
             schedule.Status = ScheduleConstants.Status.Rescheduled;
 
-            _context.CourseHistories.Add(new CourseHistory
-            {
-                CourseId = schedule.CourseId,
-                UserId = schedule.InstructorId,
-                Action = $"Buổi học \"{schedule.Title}\" được dời sang {request.NewDate:dd/MM/yyyy}",
-                ActionDate = DateTime.Now
-            });
 
             await _context.SaveChangesAsync();
             return (true, "Đổi lịch thành công.");
