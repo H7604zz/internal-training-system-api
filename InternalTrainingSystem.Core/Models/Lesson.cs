@@ -13,12 +13,9 @@ namespace InternalTrainingSystem.Core.Models
         public int OrderIndex { get; set; }  // Thứ tự lesson trong module
         public string? ContentUrl { get; set; }    // Video/File/Link
         public string? FilePath { get; set; }      // storage key (S3/Azure)
-        public string? MimeType { get; set; }
-        public string? AttachmentUrl { get; set; }         // public link hoặc pre-signed URL
-        public string? AttachmentFilePath { get; set; }    // storage key trên S3
-        public string? AttachmentMimeType { get; set; }
-        public long? AttachmentSizeBytes { get; set; }
+        public string? MimeType { get; set; }        
         public long? SizeBytes { get; set; }
+        public string? AttachmentUrl { get; set; }
         public int? QuizId { get; set; }            // Type = Quiz
         public CourseModule Module { get; set; } = null!;
     }
@@ -27,8 +24,6 @@ namespace InternalTrainingSystem.Core.Models
     {
         Video = 1,
         Reading = 2,
-        File = 3,
-        Link = 4,
-        Quiz = 5
+        Quiz = 3
     }
 }
