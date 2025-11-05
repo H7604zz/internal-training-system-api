@@ -86,32 +86,6 @@
         }
     }
 
-    public static class CourseHistoryConstants
-    {
-        public static class Actions
-        {
-            public const string Enrolled = "Enrolled";
-            public const string Started = "Started";
-            public const string Paused = "Paused";
-            public const string Resumed = "Resumed";
-            public const string Completed = "Completed";
-            public const string Dropped = "Dropped";
-            public const string QuizStarted = "QuizStarted";
-            public const string QuizCompleted = "QuizCompleted";
-            public const string QuizPassed = "QuizPassed";
-            public const string QuizFailed = "QuizFailed";
-            public const string QuizRetaken = "QuizRetaken";
-            public const string CertificateIssued = "CertificateIssued";
-            public const string ScheduleRegistered = "ScheduleRegistered";
-            public const string ScheduleAttended = "ScheduleAttended";
-            public const string ScheduleCancelled = "ScheduleCancelled";
-            public const string ProgressUpdated = "ProgressUpdated";
-            public const string MaterialAccessed = "MaterialAccessed";
-            public const string MaterialDownloaded = "MaterialDownloaded";
-            public const string FeedbackSubmitted = "FeedbackSubmitted";
-        }
-    }
-
     public static class AttendanceConstants
     {
         public static class Status
@@ -186,5 +160,15 @@
 
         public static bool IsAllowedVideo(string ext, string contentType) =>
             AllowedVideoExtensions.Contains(ext) && AllowedVideoContentTypes.Contains(contentType);
+    }
+    public static class AssignmentSubmissionConstants
+    {
+        public static class Status
+        {
+            public const string Submitted = "Submitted";   // staff đã nộp
+            public const string Returned = "Returned";     // trả bài yêu cầu sửa
+            public const string Graded = "Graded";         // đã chấm
+            public const string Rejected = "Rejected";     // từ chối bài nộp (sai format, gian lận…)
+        }
     }
 }

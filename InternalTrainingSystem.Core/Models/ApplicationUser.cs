@@ -49,6 +49,7 @@ namespace InternalTrainingSystem.Core.Models
         public virtual ICollection<Class> EnrolledClasses { get; set; } = new List<Class>();
 
         public virtual ICollection<LessonProgress> LessonProgresses { get; set; } = new List<LessonProgress>();
+        public virtual ICollection<AssignmentSubmission> AssignmentSubmissions { get; set; }= new List<AssignmentSubmission>();
 
     }
 }
