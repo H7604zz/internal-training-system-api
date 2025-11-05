@@ -222,6 +222,27 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             _context.Classes.Update(classEntity);
             await _context.SaveChangesAsync();
 
+            var scheduleParticipants = new List<ScheduleParticipant>();
+
+            foreach (var schedule in allSchedules)
+            {
+                foreach (var student in classEntity.Employees)
+                {
+                    scheduleParticipants.Add(new ScheduleParticipant
+                    {
+                        ScheduleId = schedule.ScheduleId,
+                        UserId = student.Id,
+                        AttendanceDate = null
+                    });
+                }
+            }
+
+            if (scheduleParticipants.Count > 0)
+            {
+                _context.ScheduleParticipants.AddRange(scheduleParticipants);
+                await _context.SaveChangesAsync();
+            }
+
             return (true, $"Đã tạo {allSchedules.Count} buổi học cho {request.NumberOfWeeks} tuần.");
         }
 
