@@ -184,24 +184,6 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(dto);
         }
 
-        //api này không cần thiết
-        /// <summary>Hiển thị các course có status = Pending (Ban giám đốc duyệt).</summary>
-        [HttpGet("pending")]
-        [ProducesResponseType(typeof(IEnumerable<CourseListItemDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<CourseListItemDto>>> GetPendingCourses()
-        {
-            var request = new GetAllCoursesRequest
-            {
-                Page = 1,
-                PageSize = int.MaxValue,
-                Status = CourseConstants.Status.Pending
-            };
-            var items = await _courseService.GetAllCoursesPagedAsync(request);
-            return Ok(items);
-        }
-
-        
-
         [HttpPatch("update-pending-status/{courseId}")]
         //[Authorize(Roles = UserRoles.DirectManager)]
         public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdatePendingCourseStatusRequest request)
