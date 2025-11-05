@@ -25,10 +25,11 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hub;
         private readonly ICategoryService _categoryService;
+        private readonly ICourseHistoryService _courseHistoryService;
 
         public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
             IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService,
-            ICategoryService categoryService, IClassService classService)
+            ICategoryService categoryService, IClassService classService, ICourseHistoryService courseHistoryService)
         {
             _courseService = courseService;
             _hub = hub;
@@ -37,6 +38,7 @@ namespace InternalTrainingSystem.Core.Controllers
             _categoryService = categoryService;
             _notificationService = notificationService;
             _classService = classService;
+            _courseHistoryService = courseHistoryService;
         } 
 
         // PUT: /api/courses/{id}
@@ -557,6 +559,35 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
+        //[Authorize(Roles = UserRoles.)]
+        [HttpGet("histories")]
+        public async Task<IActionResult> GetCourseHistories()
+        {
+            // Lấy danh sách lịch sử từ service
+            var histories = await _courseHistoryService.GetCourseHistoriesAsync();
+
+            if (histories == null || !histories.Any())
+                return NotFound(new { message = "Không có lịch sử khóa học nào." });
+
+            // Map sang DTO gọn cho FE
+            var result = histories.Select(h => new CourseHistoryDto
+            {
+                HistoryId = h.HistoryId,
+                CourseId = h.CourseId,
+                UserId = h.UserId,
+                UserName = h.User?.FullName ?? "Hệ thống",
+                ActionName = h.Action.ToString(),
+                Description = h.Description,
+                ActionDate = h.ActionDate
+            }).ToList();
+
+            // Trả về list JSON
+            return Ok(new
+            {
+                total = result.Count,
+                data = result
+            });
+        }
 
     }
 }
