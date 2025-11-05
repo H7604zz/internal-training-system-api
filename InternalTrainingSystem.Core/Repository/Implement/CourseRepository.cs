@@ -529,7 +529,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         }
 
         // Duyệt khóa học - ban giám đốc
-        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus, string? rejectReason = null)
+        public async Task<bool> UpdatePendingCourseStatusAsync(string userId, int courseId, string newStatus, string? rejectReason = null)
         {
             if (string.IsNullOrWhiteSpace(newStatus))
                 throw new ArgumentException("Trạng thái mới không hợp lệ.", nameof(newStatus));
@@ -554,6 +554,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             if (!course.Status.Equals(CourseConstants.Status.Pending, StringComparison.OrdinalIgnoreCase))
                 return false;
 
+            var oldStatus = course.Status;
+
             // Cập nhật trạng thái
             if (newStatus.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase))
             {
@@ -569,10 +571,42 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 course.RejectionReason = rejectReason.Trim();
             }
 
-            course.UpdatedDate = DateTime.UtcNow;
+            course.UpdatedDate = DateTime.Now;
+
+            // 🔹 Ghi lịch sử duyệt khóa học vào CourseHistories
+            var history = new CourseHistory
+            {
+                CourseId = course.CourseId,
+                UserId = userId, 
+                Action = newStatus.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase)
+                                ? CourseAction.CourseApproved
+                                : CourseAction.CourseRejected,
+
+                Description = BuildApprovalDescription(oldStatus, course.Status, rejectReason),
+                ActionDate = DateTime.UtcNow,
+
+                EnrollmentId = null,
+                QuizId = null,
+                QuizAttemptId = null,
+                ScheduleId = null
+            };
+
+            _context.CourseHistories.Add(history);
+
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private static string BuildApprovalDescription(string oldStatus, string newStatus, string? reason)
+        {
+            if (newStatus.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase))
+                return $"Khóa học chuyển từ '{oldStatus}' sang APPROVE.";
+
+            if (newStatus.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase))
+                return $"Khóa học bị từ chối (từ '{oldStatus}' sang REJECT). Lý do: {reason}";
+
+            return $"Trạng thái khóa học thay đổi từ '{oldStatus}' sang '{newStatus}'.";
         }
 
 

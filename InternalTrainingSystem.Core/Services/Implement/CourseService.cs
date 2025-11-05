@@ -63,9 +63,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         // Duyệt khóa học - ban giám đốc
-        public async Task<bool> UpdatePendingCourseStatusAsync(int courseId, string newStatus, string? rejectReason = null)
+        public async Task<bool> UpdatePendingCourseStatusAsync(string userId,int courseId, string newStatus, string? rejectReason = null)
         {
-            return await _courseRepo.UpdatePendingCourseStatusAsync(courseId, newStatus,rejectReason);
+            return await _courseRepo.UpdatePendingCourseStatusAsync(userId,courseId, newStatus,rejectReason);
         }
 
         // Ban giám đốc xóa khóa học đã duyệt

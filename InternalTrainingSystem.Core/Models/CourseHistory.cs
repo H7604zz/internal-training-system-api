@@ -69,6 +69,13 @@ namespace InternalTrainingSystem.Core.Models
         MaterialAccessed = 41,
         MaterialDownloaded = 42,
 
-        FeedbackSubmitted = 50
+        FeedbackSubmitted = 50,
+
+        // ?? Thêm nhóm hành ??ng duy?t khóa h?c
+        CourseSubmittedForApproval = 60, // Khi ng??i t?o g?i lên ch? duy?t
+        CourseApproved = 61,             // Khi Ban giám ??c duy?t
+        CourseRejected = 62,             // Khi b? t? ch?i
+        CourseReSubmitted = 63,          // Khi ng??i t?o ch?nh l?i và g?i l?i
+        CourseDeletedByManagement = 64   // Khi BOD xóa khóa h?c ?ã duy?t
     }
 }

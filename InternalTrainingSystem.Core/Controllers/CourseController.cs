@@ -203,11 +203,18 @@ namespace InternalTrainingSystem.Core.Controllers
         
 
         [HttpPatch("update-pending-status/{courseId}")]
+        //[Authorize(Roles = UserRoles.DirectManager)]
         public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdatePendingCourseStatusRequest request)
         {
+            // ✅ Lấy userId từ JWT
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? User.FindFirstValue("sub")     // phổ biến nhất
+                          ?? User.FindFirstValue("id")
+                          ?? User.FindFirstValue("uid")
+                          ?? "SYSTEM_BOD"; // fallback nếu token không có
             try
             {
-                var result = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus, request.RejectReason);
+                var result = await _courseService.UpdatePendingCourseStatusAsync(userId, courseId, request.NewStatus, request.RejectReason);
 
                 if (!result)
                     return BadRequest("Không thể cập nhật trạng thái. Có thể khóa học không tồn tại hoặc không ở trạng thái Pending.");
