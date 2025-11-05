@@ -12,7 +12,7 @@ namespace InternalTrainingSystem.Core.Models
         public DateTime RegisteredDate { get; set; } = DateTime.Now;
 
         [StringLength(20)]
-        public string Status { get; set; } = ScheduleConstants.ParticipantStatus.Registered; // Registered, Attended, NoShow, Cancelled
+        public string Status { get; set; } = ScheduleConstants.ParticipantStatus.InProgress;
 
         public DateTime? AttendanceDate { get; set; }
 
