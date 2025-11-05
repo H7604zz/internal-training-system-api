@@ -4,6 +4,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
 {
 	public interface ICourseHistoryRepository
 	{
-		Task<IEnumerable<UserQuizHistoryDto>> GetUserQuizHistoryAsync(string userId, int courseId);
+		Task<IEnumerable<UserQuizHistoryDto>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId);
 	}
 }

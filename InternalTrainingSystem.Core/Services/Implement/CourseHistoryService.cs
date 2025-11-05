@@ -13,9 +13,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
 			_courseHistoryRepository = courseHistoryRepository;
 		}
 
-		public Task<IEnumerable<UserQuizHistoryDto>> GetUserQuizHistoryAsync(string userId, int courseId)
+		public Task<IEnumerable<UserQuizHistoryDto>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId)
 		{
-			return _courseHistoryRepository.GetUserQuizHistoryAsync(userId, courseId);
+			return _courseHistoryRepository.GetUserQuizHistoryAsync(userId, courseId, quizId);
 		}
 	}
 }

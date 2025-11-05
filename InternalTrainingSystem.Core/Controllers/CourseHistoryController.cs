@@ -14,13 +14,14 @@ namespace InternalTrainingSystem.Core.Controllers
 		{
 			_courseHistoryService = courseHistoryService;
 		}
-		[HttpGet("{courseId}")]
-		public async Task<IActionResult> GetUserCourseHistory(int courseId)
+		[HttpGet("{courseId}/{quizId}")]
+		public async Task<IActionResult> GetUserQuizHistory(int courseId, int quizId)
 		{
 			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 			if (string.IsNullOrEmpty(userId))
 				return Unauthorized();
-			var result = await _courseHistoryService.GetUserQuizHistoryAsync(userId, courseId);
+
+			var result = await _courseHistoryService.GetUserQuizHistoryAsync(userId, courseId, quizId);
 			return Ok(result);
 		}
 	}

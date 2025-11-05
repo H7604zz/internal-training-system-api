@@ -15,11 +15,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			_context = context;
 		}
 
-		public async Task<IEnumerable<UserQuizHistoryDto>> GetUserQuizHistoryAsync(string userId, int courseId)
+		public async Task<IEnumerable<UserQuizHistoryDto>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId)
 		{
 			return await _context.CourseHistories
 				.Include(x => x.QuizAttempt)
-				.Where(h => h.UserId == userId && h.CourseId==courseId &&
+				.Where(h => h.UserId == userId && h.CourseId==courseId && h.QuizId == quizId &&
 				(h.Action == CourseAction.QuizCompleted || h.Action == CourseAction.QuizPassed 
 				|| h.Action == CourseAction.QuizFailed))
 				.Select(h => new UserQuizHistoryDto
