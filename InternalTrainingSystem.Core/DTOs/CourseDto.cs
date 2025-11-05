@@ -207,14 +207,21 @@ namespace InternalTrainingSystem.Core.DTOs
 
         // Với Video
         public string? ContentUrl { get; set; }
+        public string? AttachmentUrl { get; set; }
 
         // Với Quiz (Excel)
         public bool IsQuizExcel { get; set; } = false;
         public string? QuizTitle { get; set; }
+        public int? QuizTimeLimit { get; set; }
+
+        [Range(1, 20)]
+        public int? QuizMaxAttempts { get; set; }
+
+        [Range(0, 100)]
+        public int? QuizPassingScore { get; set; }
 
         // File indices trong UpdateCourseFormDto.LessonFiles
         public int? MainFileIndex { get; set; }
-        public int? AttachmentFileIndex { get; set; }
     }
 
     public sealed class UpdatePendingCourseStatusRequest
