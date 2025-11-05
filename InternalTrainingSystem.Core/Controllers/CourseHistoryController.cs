@@ -14,15 +14,6 @@ namespace InternalTrainingSystem.Core.Controllers
 		{
 			_courseHistoryService = courseHistoryService;
 		}
-		[HttpGet("{courseId}/{quizId}")]
-		public async Task<IActionResult> GetUserQuizHistory(int courseId, int quizId)
-		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-			if (string.IsNullOrEmpty(userId))
-				return Unauthorized();
-
-			var result = await _courseHistoryService.GetUserQuizHistoryAsync(userId, courseId, quizId);
-			return Ok(result);
-		}
+		
 	}
 }

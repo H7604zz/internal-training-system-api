@@ -91,17 +91,12 @@ namespace InternalTrainingSystem.Core.DTOs
 		public double Percentage { get; set; }
 		public bool IsPassed { get; set; }
 	}
-	public class UserQuizHistoryDto
+	public class UserQuizHistoryResponse
 	{
 		public int QuizId { get; set; }
 		public CourseAction Action { get; set; }
 		public DateTime StartTime { get; set; }
 		public DateTime? SubmissionTime { get; set; }
 		public double? Score { get; set; }
-	}
-	public class UserQuizHistoryRequest
-	{
-		public string UserId { get; set; } = string.Empty;
-		public int CourseId { get; set; }
 	}
 }
