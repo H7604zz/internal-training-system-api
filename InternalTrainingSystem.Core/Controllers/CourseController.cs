@@ -493,8 +493,9 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok("Danh sách nhân viên tham gia khóa học đã được chốt thành công.");
         }
 
+        //HttpGet /categories
         [HttpGet("/categories")]
-        public ActionResult<IEnumerable<CourseCategory>> GetAll()
+        public ActionResult<IEnumerable<CourseCategory>> GetCategories()
         {
             var items = _categoryService.GetCategories();
             return Ok(items);
