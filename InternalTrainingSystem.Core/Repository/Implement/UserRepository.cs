@@ -99,7 +99,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             Department = d.Name,
                             Position = u.Position,
                             Status = e.Status ?? EnrollmentConstants.Status.NotEnrolled,
-                            Reason = e.RejectionReason ?? "Chưa có phản hồi"
+                            Reason = e.RejectionReason ?? "N/A"
                         };
 
             int totalCount = query.Count();
