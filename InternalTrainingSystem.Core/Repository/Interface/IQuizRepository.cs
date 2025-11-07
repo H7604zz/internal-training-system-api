@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Models;
+﻿using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Models;
 
 namespace InternalTrainingSystem.Core.Repository.Interface
 {
@@ -7,5 +8,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<bool> CheckQuizPassedAsync(int quizId);
         Task<Quiz?> GetActiveQuizWithQuestionsAsync(int quizId, CancellationToken ct = default);
         Task<int> GetQuizMaxScoreAsync(int quizId, CancellationToken ct = default);
+        Task<QuizDetailDto2?> GetDetailAsync(int quizId, CancellationToken ct);
     }
 }

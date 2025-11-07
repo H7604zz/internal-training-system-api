@@ -31,7 +31,38 @@ namespace InternalTrainingSystem.Core.DTOs
         public string AnswerText { get; set; } = "";
         public int OrderIndex { get; set; }
     }
+    public sealed class QuizDetailDto2
+    {
+        public int QuizId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int TimeLimit { get; set; }
+        public int MaxAttempts { get; set; }
+        public int PassingScore { get; set; }
+        public int CourseId { get; set; }
+        public string CourseName { get; set; } = string.Empty;
 
+        public int AttemptCount { get; set; }
+
+        public List<QuizQuestionDto> Questions { get; set; } = new();
+    }
+
+    public sealed class QuizQuestionDto
+    {
+        public int QuestionId { get; set; }
+        public string QuestionText { get; set; } = string.Empty;
+        public string QuestionType { get; set; } = string.Empty;
+        public int Points { get; set; }
+        public int OrderIndex { get; set; }
+        public List<QuizAnswerDto> Answers { get; set; } = new();
+    }
+    public sealed class QuizAnswerDto
+    {
+        public int AnswerId { get; set; }
+        public string AnswerText { get; set; } = string.Empty;
+        public bool IsCorrect { get; set; }
+        public int OrderIndex { get; set; }
+    }
     public class StartQuizResponse
     {
         public int AttemptId { get; set; }

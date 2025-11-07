@@ -70,5 +70,20 @@ namespace InternalTrainingSystem.Core.Controllers
             var res = await _service.SubmitAttemptByLessonAsync(lessonId, attemptId, GetUserId(), req, ct);
             return Ok(res);
         }
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetDetail(
+        [FromRoute] int id,
+        CancellationToken ct = default)
+        {
+            try
+            {
+                var dto = await _service.GetDetailAsync(id, ct);
+                return Ok(dto);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+        }
     }
 }
