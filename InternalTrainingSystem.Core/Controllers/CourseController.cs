@@ -20,7 +20,6 @@ namespace InternalTrainingSystem.Core.Controllers
     {
         private readonly ICourseService _courseService;
         private readonly IUserService _userService;
-        private readonly IClassService _classService;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
         private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hub;
@@ -29,7 +28,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
         public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
             IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService,
-            ICategoryService categoryService, IClassService classService, ICourseHistoryService courseHistoryService)
+            ICategoryService categoryService, ICourseHistoryService courseHistoryService)
         {
             _courseService = courseService;
             _hub = hub;
@@ -37,7 +36,6 @@ namespace InternalTrainingSystem.Core.Controllers
             _userService = userService;
             _categoryService = categoryService;
             _notificationService = notificationService;
-            _classService = classService;
             _courseHistoryService = courseHistoryService;
         } 
 
@@ -490,22 +488,6 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             var items = _categoryService.GetCategories();
             return Ok(items);
-        }
-
-        [HttpGet("/{courseId}/classes")]
-        public async Task<IActionResult> GetClassesByCourse(int courseId)
-        {
-            var classList = await _classService.GetClassesByCourseAsync(courseId);
-
-            if (!classList.Any())
-                return NotFound(new { success = false, message = "Không tìm thấy lớp học cho khóa học này." });
-
-            return Ok(new
-            {
-                success = true,
-                message = $"Tìm thấy {classList.Count} lớp học thuộc khóa học.",
-                data = classList
-            });
         }
 
         [HttpPut("{id:int}/resubmit")]
