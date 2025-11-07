@@ -71,6 +71,10 @@ namespace InternalTrainingSystem.Core.Models
         ClassReminder = 15,
         ClassAttendance = 16,
 
+        //
+        CourseApproved = 18,
+        CourseRejected = 19,
+
         // --- For custom or unspecified cases ---
         Custom = 99
     }
