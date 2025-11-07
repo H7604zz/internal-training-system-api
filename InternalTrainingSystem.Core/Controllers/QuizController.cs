@@ -93,5 +93,20 @@ namespace InternalTrainingSystem.Core.Controllers
 			var result = await _courseService.GetUserQuizHistoryAsync(userId, courseId, quizId);
 			return Ok(result);
 		}
+		[HttpGet("{id:int}")]
+		public async Task<IActionResult> GetDetail(
+			[FromRoute] int id,
+			CancellationToken ct = default)
+		{
+			try
+			{
+				var dto = await _service.GetDetailAsync(id, ct);
+				return Ok(dto);
+			}
+			catch (KeyNotFoundException)
+			{
+				return NotFound();
+			}
+		}
 	}
 }

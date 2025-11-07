@@ -427,5 +427,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             return result;
         }
+        public async Task<QuizDetailDto2> GetDetailAsync(int quizId, CancellationToken ct)
+        {
+            var dto = await _quizRepo.GetDetailAsync(quizId, ct);
+            if (dto is null)
+                throw new KeyNotFoundException($"Quiz {quizId} not found.");
+            return dto;
+        }
     }
 }

@@ -12,5 +12,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<PagedResult<AttemptHistoryItem>> GetAttemptHistoryAsync(int quizId, string userId, int page, int pageSize, CancellationToken ct = default);
         Task<StartQuizResponse> StartAttemptByLessonAsync(int lessonId, string userId, CancellationToken ct = default);
         Task<AttemptResultDto> SubmitAttemptByLessonAsync(int lessonId, int attemptId, string userId, SubmitAttemptRequest req, CancellationToken ct = default);
+        Task<QuizDetailDto2> GetDetailAsync(int quizId, CancellationToken ct);
     }
 }
