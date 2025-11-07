@@ -1,6 +1,5 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DTOs;
-using InternalTrainingSystem.Core.Models;
 
 namespace InternalTrainingSystem.Core.Repository.Interface
 {

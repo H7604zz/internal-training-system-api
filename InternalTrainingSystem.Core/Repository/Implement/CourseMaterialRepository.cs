@@ -26,12 +26,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             switch (dto.Type)
             {
                 case LessonType.Video:
-                case LessonType.File:
-                case LessonType.Link:
-                    if (string.IsNullOrWhiteSpace(dto.ContentUrl))
-                        throw new ArgumentException("ContentUrl is required for Video/File/Link lesson.");
-                    break;
-
                 case LessonType.Reading:
                     if (string.IsNullOrWhiteSpace(dto.ContentHtml) &&
                 string.IsNullOrWhiteSpace(dto.ContentUrl))
@@ -50,12 +44,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             switch (dto.Type)
             {
                 case LessonType.Video:
-                case LessonType.File:
-                case LessonType.Link:
-                    if (string.IsNullOrWhiteSpace(dto.ContentUrl))
-                        throw new ArgumentException("ContentUrl is required for Video/File/Link lesson.");
-                    break;
-
                 case LessonType.Reading:
                     if (string.IsNullOrWhiteSpace(dto.ContentHtml) &&
                 string.IsNullOrWhiteSpace(dto.ContentUrl))
@@ -286,7 +274,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             if (lesson == null)
                 throw new ArgumentException("Lesson not found.");
 
-            if (lesson.Type is not (LessonType.File or LessonType.Video or LessonType.Reading))
+            if (lesson.Type is not ( LessonType.Video or LessonType.Reading))
                 throw new InvalidOperationException(
                     "This lesson type does not support binary upload. Only File / Video / Reading can upload binary data.");
 
@@ -300,7 +288,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             switch (lesson.Type)
             {
-                case LessonType.File:
                 case LessonType.Reading:
                     if (file.Length > LessonContentConstraints.MaxDocBytes)
                     {
@@ -341,39 +328,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             return (url, relativePath);
         }
-        public async Task<(string url, string relativePath)> UploadLessonAttachmentAsync(
-    int lessonId,
-    IFormFile attachmentFile,
-    CancellationToken ct = default)
-        {
-            var lesson = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId, ct);
-            if (lesson == null)
-                throw new ArgumentException("Lesson not found.");
-
-            if (attachmentFile == null || attachmentFile.Length == 0)
-                throw new ArgumentException("Empty attachment file.");
-
-            var ext = Path.GetExtension(attachmentFile.FileName);
-            var contentType = string.IsNullOrWhiteSpace(attachmentFile.ContentType)
-                ? "application/octet-stream"
-                : attachmentFile.ContentType;
-
-            // doc/pdf/ppt, v.v.
-            if (!LessonContentConstraints.IsAllowedDoc(ext, contentType))
-                throw new ArgumentException("Attachment must be a document (PDF/DOC/DOCX...).");
-
-            var subFolder = $"uploads/lessons/{lessonId}/attachments";
-            var (url, relativePath) = await _storage.SaveAsync(attachmentFile, subFolder, ct);
-
-            lesson.AttachmentUrl = url;
-            lesson.AttachmentFilePath = relativePath;
-            lesson.AttachmentMimeType = contentType;
-            lesson.AttachmentSizeBytes = attachmentFile.Length;
-
-            await _context.SaveChangesAsync(ct);
-            return (url, relativePath);
-        }
-
         public async Task<bool> ClearLessonFileAsync(int lessonId, CancellationToken ct = default)
         {
             var lesson = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId, ct);

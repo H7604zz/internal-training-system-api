@@ -1,4 +1,4 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DTOs;
 
 namespace InternalTrainingSystem.Core.Services.Interface

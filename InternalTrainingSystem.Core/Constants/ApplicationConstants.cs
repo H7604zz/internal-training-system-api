@@ -125,7 +125,7 @@
     {
         // Docs
         public static readonly ISet<string> AllowedDocExtensions =
-            new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".pdf", ".doc", ".docx" };
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".pdf", ".doc", ".docx", ".txt", ".pptx" };
 
         public static readonly ISet<string> AllowedDocContentTypes =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase)

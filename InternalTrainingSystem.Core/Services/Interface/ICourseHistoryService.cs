@@ -6,4 +6,4 @@ namespace InternalTrainingSystem.Core.Services.Interface
     {
         Task<IEnumerable<CourseHistory>> GetCourseHistoriesAsync();
     }
-}
+

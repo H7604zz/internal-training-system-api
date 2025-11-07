@@ -19,53 +19,56 @@ namespace InternalTrainingSystem.Core.Services.Implement
         private readonly ICourseRepository _courseRepo;
         private readonly IUserService _userService;
         private readonly INotificationService _notificationService;
+        private readonly ICourseHistoryRepository _courseHistoryRepository;
 
-        public CourseService(ICourseRepository courseRepo, IUserService userService,INotificationService notificationService)
+        public CourseService(ICourseRepository courseRepo, IUserService userService,INotificationService notificationService, ICourseHistoryRepository courseHistoryRepository)
         {
             _courseRepo = courseRepo;
             _userService = userService;
             _notificationService = notificationService;
+            _courseHistoryRepository = courseHistoryRepository;
         }
 
-        public async Task<Course> GetCourseByCourseCodeAsync(string courseCode)
-        {
-            return await _courseRepo.GetCourseByCourseCodeAsync(courseCode);
-        }
 
-        public async Task<bool> DeleteCourseAsync(int id)
-        {
-            return await _courseRepo.DeleteCourseAsync(id);
-        }
+		public async Task<Course> GetCourseByCourseCodeAsync(string courseCode)
+		{
+			return await _courseRepo.GetCourseByCourseCodeAsync(courseCode);
+		}
 
-        public async Task<Course> UpdateCourseAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId, CancellationToken ct = default)
-        {
-           return await _courseRepo.UpdateCourseAsync( courseId,  meta,  lessonFiles,  updatedByUserId,  ct = default);
-        }
+		public async Task<bool> DeleteCourseAsync(int id)
+		{
+			return await _courseRepo.DeleteCourseAsync(id);
+		}
 
-        public bool ToggleStatus(int id, string status)
-        {
-            return _courseRepo.ToggleStatus(id, status);
-        }
+		public async Task<Course> UpdateCourseAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId, CancellationToken ct = default)
+		{
+			return await _courseRepo.UpdateCourseAsync(courseId, meta, lessonFiles, updatedByUserId, ct = default);
+		}
 
-        public async Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default)
-        {
-            return await _courseRepo.SearchAsync(req, ct);
-        }
+		public bool ToggleStatus(int id, string status)
+		{
+			return _courseRepo.ToggleStatus(id, status);
+		}
 
-        public async Task<Course?> GetCourseByCourseIdAsync(int? couseId)
-        {
-            return await _courseRepo.GetCourseByCourseIdAsync(couseId);
-        }
+		public async Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default)
+		{
+			return await _courseRepo.SearchAsync(req, ct);
+		}
 
-        public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)
-        {
-            return await _courseRepo.GetAllCoursesPagedAsync(request);
-        }
+		public async Task<Course?> GetCourseByCourseIdAsync(int? couseId)
+		{
+			return await _courseRepo.GetCourseByCourseIdAsync(couseId);
+		}
 
-        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default)
-        {
-            return await _courseRepo.GetCourseDetailAsync(courseId,ct);
-        }
+		public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)
+		{
+			return await _courseRepo.GetAllCoursesPagedAsync(request);
+		}
+
+		public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default)
+		{
+			return await _courseRepo.GetCourseDetailAsync(courseId, ct);
+		}
 
         // Duyệt khóa học - ban giám đốc
         public async Task<bool> UpdatePendingCourseStatusAsync(
@@ -180,22 +183,26 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return $"Trạng thái khóa học thay đổi từ '{oldStatus}' sang '{newStatus}'.";
         }
 
-        // Ban giám đốc xóa khóa học đã duyệt
-        public async Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason)
-        {
-            return await _courseRepo.DeleteActiveCourseAsync(courseId, rejectReason);
-        }
+		// Ban giám đốc xóa khóa học đã duyệt
+		public async Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason)
+		{
+			return await _courseRepo.DeleteActiveCourseAsync(courseId, rejectReason);
+		}
 
-        public async Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta,
-                                IList<IFormFile> lessonFiles, string createdByUserId, CancellationToken ct = default)
-        {
-            return await _courseRepo.CreateCourseAsync(meta, lessonFiles, createdByUserId, ct);
-        }
-        public async Task<Course> UpdateAndResubmitToPendingAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId,
-                                                                  string? resubmitNote = null, CancellationToken ct = default)
-        {
-            return await _courseRepo.UpdateAndResubmitToPendingAsync( courseId,  meta,  lessonFiles,  updatedByUserId,
-                                                                    resubmitNote = null,  ct = default);
-        }
-    }
+		public async Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta,
+														IList<IFormFile> lessonFiles, string createdByUserId, CancellationToken ct = default)
+		{
+			return await _courseRepo.CreateCourseAsync(meta, lessonFiles, createdByUserId, ct);
+		}
+		public async Task<Course> UpdateAndResubmitToPendingAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId,
+																															string? resubmitNote = null, CancellationToken ct = default)
+		{
+			return await _courseRepo.UpdateAndResubmitToPendingAsync(courseId, meta, lessonFiles, updatedByUserId,
+																															resubmitNote = null, ct = default);
+		}
+		public Task<IEnumerable<UserQuizHistoryResponse>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId)
+		{
+			return _courseHistoryRepository.GetUserQuizHistoryAsync(userId, courseId, quizId);
+		}
+	}
 }

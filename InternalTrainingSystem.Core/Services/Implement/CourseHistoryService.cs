@@ -1,4 +1,5 @@
 ﻿using InternalTrainingSystem.Core.Models;
+﻿using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
 
@@ -17,4 +18,4 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _courseHistoryRepository.GetCourseHistoriesAsync();
         }
     }
-}
+

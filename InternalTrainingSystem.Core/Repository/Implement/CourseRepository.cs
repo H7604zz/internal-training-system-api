@@ -190,7 +190,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 Title = lessonSpec.Title.Trim(),
                                 Description = lessonSpec.Description,
                                 Type = lessonSpec.Type,
-                                OrderIndex = lessonSpec.OrderIndex
+                                OrderIndex = lessonSpec.OrderIndex,
+                                AttachmentUrl = lessonSpec.AttachmentUrl,
                             };
                             await _context.Lessons.AddAsync(lesson, ct);
                             await _context.SaveChangesAsync(ct);
@@ -202,6 +203,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             lesson.Description = lessonSpec.Description;
                             lesson.Type = lessonSpec.Type;
                             lesson.OrderIndex = lessonSpec.OrderIndex;
+                            lesson.AttachmentUrl = lessonSpec.AttachmentUrl;
                             await _context.SaveChangesAsync(ct);
                         }
 
@@ -215,18 +217,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             await _courseMaterialRepo.UploadLessonBinaryAsync(lesson.Id, lessonFiles[idx],ct);
                         }
 
-                        if (lessonSpec.AttachmentFileIndex is not null)
-                        {
-                            var idxAttach = lessonSpec.AttachmentFileIndex.Value;
-                            if (idxAttach < 0 || idxAttach >= lessonFiles.Count)
-                                throw new ArgumentException($"AttachmentFileIndex {idxAttach} out of range for lesson '{lessonSpec.Title}'.");
-
-                            await _courseMaterialRepo.UploadLessonAttachmentAsync(lesson.Id, lessonFiles[idxAttach],ct);
-                        }
-
                         // Quiz (Excel)
                         if (lessonSpec.Type == LessonType.Quiz && lessonSpec.IsQuizExcel)
                         {
+                            var timeLimit = lessonSpec.QuizTimeLimit ?? 30;
+                            var maxAttempts = lessonSpec.QuizMaxAttempts ?? 3;
+                            var passing = lessonSpec.QuizPassingScore ?? 70;
                             if (lessonSpec.MainFileIndex is null)
                                 throw new ArgumentException($"Lesson '{lessonSpec.Title}' requires Excel file.");
 
@@ -234,6 +230,9 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             var quizId = await ImportQuizFromExcelInternal(
                                 course.CourseId,
                                 lessonSpec.QuizTitle ?? lessonSpec.Title,
+                                timeLimit,
+                                maxAttempts,
+                                passing,
                                 excelFile,ct);
                             lesson.QuizId = quizId;
                             await _context.SaveChangesAsync(ct);
@@ -747,11 +746,14 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                         // CASE 1: QUIZ (Excel import)
                         if (lessonSpec.Type == LessonType.Quiz && lessonSpec.IsQuizExcel)
                         {
+                            var timeLimit = lessonSpec.QuizTimeLimit ?? 30;
+                            var maxAttempts = lessonSpec.QuizMaxAttempts ?? 3;
+                            var passing = lessonSpec.QuizPassingScore ?? 70;
                             if (lessonSpec.MainFileIndex is null || lessonSpec.MainFileIndex < 0 || lessonSpec.MainFileIndex >= lessonFiles.Count)
                                 throw new ArgumentException("Thiếu hoặc sai file Excel cho lesson Quiz.");
 
                             var excelFile = lessonFiles[lessonSpec.MainFileIndex.Value];
-                            var quizId = await ImportQuizFromExcelInternal(course.CourseId, lessonSpec.QuizTitle ?? lessonSpec.Title, excelFile, ct);
+                            var quizId = await ImportQuizFromExcelInternal(course.CourseId, lessonSpec.QuizTitle ?? lessonSpec.Title, timeLimit, maxAttempts, passing, excelFile, ct);
 
                             newLesson = new Lesson
                             {
@@ -781,7 +783,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 Description = lessonSpec.Description,
                                 Type = LessonType.Video,
                                 OrderIndex = lessonSpec.OrderIndex,
-                                ContentUrl = lessonSpec.ContentUrl
+                                ContentUrl = lessonSpec.ContentUrl,
+                                AttachmentUrl = lessonSpec.AttachmentUrl
                             };
 
                             await _context.Lessons.AddAsync(newLesson, ct);
@@ -796,7 +799,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             Title = lessonSpec.Title.Trim(),
                             Description = lessonSpec.Description,
                             Type = lessonSpec.Type,
-                            OrderIndex = lessonSpec.OrderIndex
+                            OrderIndex = lessonSpec.OrderIndex,
+                            AttachmentUrl = lessonSpec.AttachmentUrl
                         };
 
                         await _context.Lessons.AddAsync(newLesson, ct);
@@ -813,16 +817,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             await _courseMaterialRepo.UploadLessonBinaryAsync(newLesson.Id, mainFile, ct);
                         }
 
-                        // Upload tài liệu đính kèm nếu có
-                        if (lessonSpec.AttachmentFileIndex is not null)
-                        {
-                            var idxAttach = lessonSpec.AttachmentFileIndex.Value;
-                            if (idxAttach < 0 || idxAttach >= lessonFiles.Count)
-                                throw new ArgumentException($"AttachmentFileIndex {idxAttach} is out of range for lesson '{lessonSpec.Title}'.");
-
-                            var attachFile = lessonFiles[idxAttach];
-                            await _courseMaterialRepo.UploadLessonAttachmentAsync(newLesson.Id, attachFile, ct);
-                        }
                     }
 
                 }
@@ -836,8 +830,13 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 throw;
             }
         }
-        private async Task<int> ImportQuizFromExcelInternal(int courseId, string quizTitle,
-                                                            IFormFile excelFile, CancellationToken ct)
+        private async Task<int> ImportQuizFromExcelInternal(int courseId,
+                                                            string quizTitle,
+                                                            int timeLimit,
+                                                            int maxAttempts,
+                                                            int passingScore,
+                                                            IFormFile excelFile,
+                                                            CancellationToken ct)
         {
             if (excelFile == null || excelFile.Length == 0)
                 throw new ArgumentException("Quiz Excel file is empty.");
@@ -853,9 +852,9 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 CourseId = courseId,
                 Title = quizTitle,
                 Description = $"Imported from {excelFile.FileName}",
-                TimeLimit = 30,
-                MaxAttempts = 3,
-                PassingScore = 70,
+                TimeLimit = timeLimit,
+                MaxAttempts = maxAttempts,
+                PassingScore = passingScore,
                 IsActive = true,
                 CreatedDate = DateTime.UtcNow
             };

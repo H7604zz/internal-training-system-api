@@ -95,10 +95,18 @@ namespace InternalTrainingSystem.Core.DTOs
 
         public int? MainFileIndex { get; set; }
 
-        public int? AttachmentFileIndex { get; set; }
+        public string? AttachmentUrl { get; set; }
 
         public string? QuizTitle { get; set; }
         public bool IsQuizExcel { get; set; } = false;
+        [Range(1, 600)]
+        public int? QuizTimeLimit { get; set; } 
+
+        [Range(1, 20)]
+        public int? QuizMaxAttempts { get; set; }
+
+        [Range(0, 100)]
+        public int? QuizPassingScore { get; set; }
     }
 
     // Module full course
