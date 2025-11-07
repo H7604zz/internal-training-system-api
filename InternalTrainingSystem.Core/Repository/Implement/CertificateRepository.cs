@@ -63,14 +63,44 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
         }
 
-        public Task<CertificateResponse?> GetCertificateByIdAsync(int id, string userId)
+        public async Task<CertificateResponse?> GetCertificateByIdAsync(int id, string userId)
         {
-            throw new NotImplementedException();
+            var certificate = await _context.Certificates
+                .Include(c => c.User)
+                .Include(c => c.Course)
+                .FirstOrDefaultAsync(c => c.CertificateId == id && c.UserId == userId);
+
+            return new CertificateResponse
+            {
+                CertificateId = certificate!.CertificateId,
+                CourseName = certificate.Course.CourseName,
+                CourseCode = certificate.Course.Code!,
+                CertificateName = certificate.CertificateName,
+                IssueDate = certificate.IssueDate,
+                ExpirationDate = certificate.ExpirationDate,
+                FilePath = certificate.FilePath,
+                UserFullName = certificate.User.FullName,
+            };
         }
 
-        public Task<List<CertificateResponse>> GetCertificateByUserAsync(string userId)
+        public async Task<List<CertificateResponse>> GetCertificateByUserAsync(string userId)
         {
-            throw new NotImplementedException();
+            var certificates = await _context.Certificates
+            .Include(c => c.Course)
+            .Where(c => c.UserId == userId)
+            .OrderByDescending(c => c.IssueDate)
+            .Select(c => new CertificateResponse
+            {
+                CertificateId = c.CertificateId,
+                CertificateName = c.CertificateName,
+                CourseName = c.Course.CourseName,
+                FilePath = c.FilePath,
+                IssueDate = c.IssueDate,
+                ExpirationDate = c.ExpirationDate
+            })
+            .ToListAsync();
+
+            return certificates;
         }
     }
 }
