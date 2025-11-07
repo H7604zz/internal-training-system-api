@@ -1,4 +1,4 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
+using DocumentFormat.OpenXml.Wordprocessing;
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
@@ -8,38 +8,38 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
-    public class DepartmentService : IDepartmentService
-    {
-        private readonly IDepartmentRepository _departmentRepo;
-        public DepartmentService(IDepartmentRepository departmentRepo)
-        {
-            _departmentRepo = departmentRepo;
-        }
+	public class DepartmentService : IDepartmentService
+	{
+		private readonly IDepartmentRepository _departmentRepo;
+		public DepartmentService(IDepartmentRepository departmentRepo)
+		{
+			_departmentRepo = departmentRepo;
+		}
 
-        public async Task<List<DepartmentListDto>> GetDepartmentsAsync()
-        {
-            return await _departmentRepo.GetDepartmentsAsync();
-        }
+		public async Task<List<DepartmentListDto>> GetDepartmentsAsync()
+		{
+			return await _departmentRepo.GetDepartmentsAsync();
+		}
 
-        public async Task<DepartmentDetailDto?> GetDepartmentDetailAsync(int departmentId)
-        {
-            return await _departmentRepo.GetDepartmentDetailAsync(departmentId);
-        }
+		public async Task<DepartmentDetailDto?> GetDepartmentDetailAsync(int departmentId)
+		{
+			return await _departmentRepo.GetDepartmentDetailAsync(departmentId);
+		}
 
-        public async Task<bool> CreateDepartmentAsync(DepartmentRequestDto department)
-        {
-            return await _departmentRepo.CreateDepartmentAsync(department);
-        }
+		public async Task<bool> CreateDepartmentAsync(DepartmentRequestDto department)
+		{
+			return await _departmentRepo.CreateDepartmentAsync(department);
+		}
 
-        public async Task<bool> DeleteDepartmentAsync(int departmentId)
-        {
-            return await _departmentRepo.DeleteDepartmentAsync(departmentId);
-        }
+		public async Task<bool> DeleteDepartmentAsync(int departmentId)
+		{
+			return await _departmentRepo.DeleteDepartmentAsync(departmentId);
+		}
 
-        public async Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto department)
-        {
+		public async Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto department)
+		{
 
-            return await _departmentRepo.UpdateDepartmentAsync(id, department);
-        }
-    }
+			return await _departmentRepo.UpdateDepartmentAsync(id, department);
+		}
+	}
 }

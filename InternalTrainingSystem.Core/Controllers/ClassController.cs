@@ -299,5 +299,12 @@ namespace InternalTrainingSystem.Core.Controllers
 
             return Ok();
         }
+
+        [HttpGet("by-course/{courseId}")]
+        public async Task<IActionResult> GetClassesByCourse(int courseId)
+        {
+            var classList = await _classService.GetClassesByCourseAsync(courseId);
+            return Ok(classList);
+        }
     }
 }
