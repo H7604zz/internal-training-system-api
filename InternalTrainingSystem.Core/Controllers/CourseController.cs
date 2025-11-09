@@ -538,20 +538,8 @@ namespace InternalTrainingSystem.Core.Controllers
             if (histories == null || !histories.Any())
                 return NotFound(new { message = "Không có lịch sử khóa học nào." });
 
-            // Map sang DTO gọn cho FE
-            var result = histories.Select(h => new CourseHistoryDto
-            {
-                HistoryId = h.HistoryId,
-                CourseId = h.CourseId,
-                UserId = h.UserId,
-                UserName = h.User?.FullName ?? "Hệ thống",
-                ActionName = h.Action.ToString(),
-                Description = h.Description,
-                ActionDate = h.ActionDate
-            }).ToList();
-
             // Trả về list JSON
-            return Ok(result);
+            return Ok(histories);
         }
 
         //Staff lam course

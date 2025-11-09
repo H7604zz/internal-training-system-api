@@ -14,7 +14,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             _courseHistoryRepository = courseHistoryRepository;
         }
-        public async Task<IEnumerable<CourseHistory>> GetCourseHistoriesByIdAsync(int Id)
+        public async Task<List<CourseHistoryDto>> GetCourseHistoriesByIdAsync(int Id)
         {
             return await _courseHistoryRepository.GetCourseHistoriesByIdAsync(Id);
         }

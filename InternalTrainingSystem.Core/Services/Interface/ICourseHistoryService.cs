@@ -1,10 +1,12 @@
-﻿using InternalTrainingSystem.Core.Models;
+﻿using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Models;
+using System.Collections.Generic;
 
 namespace InternalTrainingSystem.Core.Services.Interface
 {
     public interface ICourseHistoryService
     {
-        Task<IEnumerable<CourseHistory>> GetCourseHistoriesByIdAsync(int Id);
+        Task<List<CourseHistoryDto>> GetCourseHistoriesByIdAsync(int Id);
     }
 }
 
