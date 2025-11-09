@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using DocumentFormat.OpenXml.InkML;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
@@ -47,5 +48,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             await _courseEnrollmentRepo.AddRangeAsync(enrollments);
         }
+
+        public async Task BulkUpdateEnrollmentsToEnrolledAsync(List<EligibleStaffResponse> eligibleUsers, int courseId)
+        {
+            await _courseEnrollmentRepo.BulkUpdateEnrollmentsToEnrolledAsync(eligibleUsers, courseId);
+        }
+
     }
 }

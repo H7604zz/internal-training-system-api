@@ -17,5 +17,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         public Task<PagedResult<CourseListItemDto>> GetAllCoursesEnrollmentsByStaffAsync(GetAllCoursesRequest request);
 
         public Task AddRangeAsync(IEnumerable<CourseEnrollment> enrollments);
+
+        public Task BulkUpdateEnrollmentsToEnrolledAsync(List<EligibleStaffResponse> eligibleUsers, int courseId);
     }
 }

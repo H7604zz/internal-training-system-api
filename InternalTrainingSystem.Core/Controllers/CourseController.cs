@@ -223,7 +223,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
         /// <summary>Chuyển 1 course từ Active -> Deleted (xóa mềm theo status).</summary>
         [HttpPatch("{courseId}")]
-        
+
         public async Task<IActionResult> DeleteActiveCourse(int courseId, [FromBody] string? rejectReason)
         {
             if (string.IsNullOrWhiteSpace(rejectReason))
@@ -441,28 +441,11 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 Page = 1,
                 PageSize = int.MaxValue,
+                Status = EnrollmentConstants.Status.NotEnrolled
             };
 
             var eligiblePaged = _userService.GetEligibleStaff(course.CourseId, searchDto);
-            var enrollmentsToAdd = new List<CourseEnrollment>();
-            foreach (var user in eligiblePaged.Items)
-            {
-                if (user.Status == EnrollmentConstants.Status.NotEnrolled)
-                {
-                    enrollmentsToAdd.Add(new CourseEnrollment
-                    {
-                        CourseId = course.CourseId,
-                        UserId = user.Id!,
-                        Status = EnrollmentConstants.Status.Enrolled,
-                        EnrollmentDate = DateTime.Now,
-                        LastAccessedDate = DateTime.Now
-                    });
-                }
-            }
-            if (enrollmentsToAdd.Any())
-            { 
-                await _courseEnrollmentService.AddRangeAsync(enrollmentsToAdd);
-            }
+            await _courseEnrollmentService.BulkUpdateEnrollmentsToEnrolledAsync(eligiblePaged.Items.ToList(), courseId);
 
             await _notificationService.SaveNotificationAsync(
                 new Notification
@@ -495,7 +478,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
         [HttpPut("{id:int}/resubmit")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> ResubmitAfterReject(int id,[FromForm(Name = "metadata")] string metadata,[FromForm] List<IFormFile> lessonFiles,[FromForm] string? resubmitNote,
+        public async Task<IActionResult> ResubmitAfterReject(int id, [FromForm(Name = "metadata")] string metadata, [FromForm] List<IFormFile> lessonFiles, [FromForm] string? resubmitNote,
         CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(metadata))
