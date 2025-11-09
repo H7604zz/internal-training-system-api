@@ -38,7 +38,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return _classRepo.GetClassScheduleAsync(classId);
         }
 
-        public async Task<UserScheduleResponse> GetUserScheduleAsync(string staffId)
+        public async Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string staffId)
         {
             return await _classRepo.GetUserScheduleAsync(staffId);
         }

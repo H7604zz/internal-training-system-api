@@ -276,7 +276,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
         }
 
-        public async Task<UserScheduleResponse> GetUserScheduleAsync(string staffId)
+        public async Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string staffId)
         {
             var staffClasses = await _context.Classes
                 .Include(c => c.Employees)
@@ -286,12 +286,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             if (staffClasses == null || staffClasses.Count == 0)
             {
-                return new UserScheduleResponse
-                {
-                    Success = false,
-                    Message = "Nhân viên chưa được xếp vào lớp nào.",
-                    Schedules = new List<ScheduleItemResponseDto>()
-                };
+                return new List<ScheduleItemResponseDto>();
             }
 
             var schedules = await _context.Schedules
@@ -317,12 +312,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 })
                 .ToListAsync();
 
-            return new UserScheduleResponse
-            {
-                Success = true,
-                Message = "Lấy lịch học thành công",
-                Schedules = schedules
-            };
+            return schedules;
         }
 
         public async Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId)

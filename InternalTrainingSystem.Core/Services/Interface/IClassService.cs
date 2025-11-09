@@ -22,6 +22,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<Schedule?> GetClassScheduleByIdAsync(int scheduleId);
         Task<(bool Success, string Message)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
         Task<ClassScheduleResponse> GetClassScheduleAsync(int classId);
-        Task<UserScheduleResponse> GetUserScheduleAsync(string staffId);
+        Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string staffId);
     }
 }
