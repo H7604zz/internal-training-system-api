@@ -131,4 +131,17 @@ namespace InternalTrainingSystem.Core.DTOs
 		public DateTime? SubmissionTime { get; set; }
 		public double? Score { get; set; }
 	}
+    public class QuizInfoDto
+    {
+        public int QuizId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int TimeLimit { get; set; }     
+        public int MaxAttempts { get; set; }
+        public int PassingScore { get; set; }  
+        public int UserAttemptCount { get; set; }
+        public int RemainingAttempts => Math.Max(0, MaxAttempts - UserAttemptCount);
+        public bool IsLocked => RemainingAttempts <= 0;
+        public bool HasPassed { get; set; }
+        public int? BestScore { get; set; }
+    }
 }

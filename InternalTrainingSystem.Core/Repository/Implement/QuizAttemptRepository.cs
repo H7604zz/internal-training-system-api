@@ -43,5 +43,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             return (items, total);
         }
+        public async Task<List<QuizAttempt>> GetUserAttemptsAsync(int quizId, string userId, CancellationToken ct = default)
+        {
+            return await _db.QuizAttempts
+                .AsNoTracking()
+                .Where(a => a.QuizId == quizId && a.UserId == userId)
+                .ToListAsync(ct);
+        }
     }
 }

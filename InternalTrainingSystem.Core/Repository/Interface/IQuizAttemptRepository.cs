@@ -9,5 +9,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<QuizAttempt?> GetAttemptAsync(int attemptId, string userId, CancellationToken ct = default);
         Task<(IReadOnlyList<QuizAttempt> items, int total)> GetAttemptHistoryAsync(
             int quizId, string userId, int page, int pageSize, CancellationToken ct = default);
+        Task<List<QuizAttempt>> GetUserAttemptsAsync(int quizId, string userId, CancellationToken ct = default);
     }
 }

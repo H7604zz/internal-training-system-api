@@ -96,5 +96,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             else
                 return false;
         }
+        public async Task<Quiz?> GetActiveQuizAsync(int quizId, CancellationToken ct = default)
+        {
+            return await _context.Quizzes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.QuizId == quizId && q.IsActive, ct);
+        }
     }
 }
