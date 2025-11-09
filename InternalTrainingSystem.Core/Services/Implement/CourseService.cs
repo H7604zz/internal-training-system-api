@@ -161,7 +161,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 CourseId = course.CourseId,
                 Type = isApproved
-                                ? NotificationType.CourseApproved   // enum bạn tự định nghĩa
+                                ? NotificationType.CourseApproved   
                                 : NotificationType.CourseRejected,
                 Message = isApproved
                                 ? $"Khóa học \"{course.CourseName}\" đã được giám đốc phê duyệt."

@@ -15,10 +15,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			_context = context;
 		}
     
-    public async Task<IEnumerable<CourseHistory>> GetCourseHistoriesAsync()
+    public async Task<IEnumerable<CourseHistory>> GetCourseHistoriesByIdAsync(int Id)
         {
             return await _context.CourseHistories
-                .Include(h => h.User) // để lấy thông tin người thực hiện
+                .Include(h => h.User) 
+				.Where(m=>m.CourseId==Id)
                 .OrderByDescending(h => h.ActionDate)
                 .ToListAsync();
         }
