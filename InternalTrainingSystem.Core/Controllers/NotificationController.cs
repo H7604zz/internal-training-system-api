@@ -1,8 +1,10 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -20,14 +22,17 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IUserService _userService;
         private readonly ICourseService _couseService;
         private readonly INotificationService _notificationService;
+        private readonly ICourseEnrollmentService _courseEnrollmentService;
         private readonly string _baseUrl;
-        
+
         public NotificationController(IUserService userServices, IEmailSender mailService,
-            ICourseService couseService, INotificationService notificationService, IConfiguration config)
+            ICourseService couseService, INotificationService notificationService,
+            IConfiguration config, ICourseEnrollmentService courseEnrollmentService)
         {
             _userService = userServices;
             _couseService = couseService;
             _notificationService = notificationService;
+            _courseEnrollmentService = courseEnrollmentService;
             _baseUrl = config["ApplicationSettings:ApiBaseUrl"] ?? "http://localhost:7001";
         }
 
@@ -78,7 +83,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     emailContent += "<span style='color:red;font-weight:bold'> Đây là khóa học BẮT BUỘC, dự kiến bắt đầu trong 3 ngày nữa. Vui lòng xác nhận và tham gia đúng hạn.</span><br/><br/>";
                 }
                 else
-                { 
+                {
                     emailContent += "Bạn có thể xác nhận tham gia nếu phù hợp.<br/><br/>";
                 }
 
@@ -95,19 +100,35 @@ namespace InternalTrainingSystem.Core.Controllers
                 ));
             }
 
+            var newEnrollments = new List<CourseEnrollment>();
+
+            foreach (var staff in eligiblePaged.Items)
+            {
+                newEnrollments.Add(new CourseEnrollment
+                {
+                    CourseId = course.CourseId,
+                    UserId = staff.Id!,
+                    Status = EnrollmentConstants.Status.NotEnrolled,
+                    EnrollmentDate = DateTime.Now,
+                    LastAccessedDate = DateTime.Now
+                });
+            }
+
+            await _courseEnrollmentService.AddRangeAsync(newEnrollments);
+
             await _notificationService.DeleteOldNotificationsAsync(courseId, NotificationType.Start);
 
             await _notificationService.SaveNotificationAsync(new Notification
-                {
-                    CourseId = courseId,
-                    Type = NotificationType.Start,
-                    SentAt = DateTime.Now,
-                },
+            {
+                CourseId = courseId,
+                Type = NotificationType.Start,
+                SentAt = DateTime.Now,
+            },
                 userIds: eligiblePaged.Items.Select(u => u.Id).ToList()!
             );
             return Ok();
         }
-         
+
         [HttpGet]
         public async Task<IActionResult> GetNotifications([FromQuery] string? userId, [FromQuery] string? roleName)
         {
