@@ -18,4 +18,5 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _courseHistoryRepository.GetCourseHistoriesAsync();
         }
     }
+}
 
