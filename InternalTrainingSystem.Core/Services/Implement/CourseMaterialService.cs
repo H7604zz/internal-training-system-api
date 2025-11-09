@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Repository.Implement;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
     public class CourseMaterialService : ICourseMaterialService
     {
         private readonly ICourseMaterialRepository _courseMaterialRepo;
+        private readonly ILessonProgressRepository _lessonProgressRepo;
 
-        public CourseMaterialService(ICourseMaterialRepository courseMaterialRepo)
+        public CourseMaterialService(ICourseMaterialRepository courseMaterialRepo, ILessonProgressRepository lessonProgressRepository)
         {
             _courseMaterialRepo = courseMaterialRepo;
+            _lessonProgressRepo = lessonProgressRepository;
         }
 
 
@@ -88,6 +91,241 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<Lesson> CreateQuizLessonFromExcelAsync(CreateQuizLessonRequest req, CancellationToken ct = default)
         {
             return await _courseMaterialRepo.CreateQuizLessonFromExcelAsync(req, ct);
+        }
+        public async Task<CourseOutlineDto> GetOutlineAsync(int courseId, string userId, CancellationToken ct = default)
+        {
+            var course = await _lessonProgressRepo.GetCourseWithStructureAsync(courseId, ct)
+                ?? throw new ArgumentException("Course not found.");
+
+            var enrolled = await _lessonProgressRepo.IsEnrolledAsync(courseId, userId, ct);
+            if (!enrolled) throw new UnauthorizedAccessException("User is not enrolled in this course.");
+
+            var lessonIds = course.Modules.SelectMany(m => m.Lessons).Select(l => l.Id).ToList();
+            var map = await _lessonProgressRepo.GetProgressMapAsync(userId, lessonIds, ct);
+
+            return new CourseOutlineDto
+            {
+                CourseId = course.CourseId,
+                CourseName = course.CourseName,
+                Modules = course.Modules.Select(m => new ModuleOutlineDto
+                {
+                    ModuleId = m.Id,
+                    Title = m.Title,
+                    OrderIndex = m.OrderIndex,
+                    Lessons = m.Lessons.Select(l =>
+                    {
+                        map.TryGetValue(l.Id, out var lp);
+                        return new LessonOutlineDto
+                        {
+                            LessonId = l.Id,
+                            Title = l.Title,
+                            OrderIndex = l.OrderIndex,
+                            Type = l.Type,
+                            IsDone = lp?.IsDone ?? false,
+                            CompletedAt = lp?.CompletedAt
+                        };
+                    }).ToList()
+                }).ToList()
+            };
+        }
+
+        public async Task<CourseProgressDto> GetCourseProgressAsync(int courseId, string userId, CancellationToken ct = default)
+        {
+            var course = await _lessonProgressRepo.GetCourseWithStructureAsync(courseId, ct)
+                ?? throw new ArgumentException("Course not found.");
+
+            var enrolled = await _lessonProgressRepo.IsEnrolledAsync(courseId, userId, ct);
+            if (!enrolled) throw new UnauthorizedAccessException("User is not enrolled in this course.");
+
+            var total = await _lessonProgressRepo.CountCourseTotalLessonsAsync(courseId, ct);
+            var completed = await _lessonProgressRepo.CountCourseCompletedLessonsAsync(userId, courseId, ct);
+
+            // CompletedAt = max CompletedAt của các lesson đã done
+            DateTime? courseCompletedAt = null;
+            if (total > 0 && completed >= total)
+            {
+                var lessonIds = course.Modules.SelectMany(m => m.Lessons).Select(l => l.Id).ToList();
+                var map = await _lessonProgressRepo.GetProgressMapAsync(userId, lessonIds, ct);
+                courseCompletedAt = map.Values.Where(p => p.IsDone).Select(p => p.CompletedAt).Where(d => d.HasValue).DefaultIfEmpty().Max();
+            }
+
+            var modules = new List<ModuleProgressDto>();
+            foreach (var m in course.Modules)
+            {
+                var ids = m.Lessons.Select(l => l.Id).ToList();
+                var map = await _lessonProgressRepo.GetProgressMapAsync(userId, ids, ct);
+                var done = map.Values.Count(p => p.IsDone);
+                DateTime? modDoneAt = null;
+                if (ids.Count > 0 && done >= ids.Count)
+                {
+                    modDoneAt = map.Values.Where(p => p.IsDone).Select(p => p.CompletedAt).Where(d => d.HasValue).DefaultIfEmpty().Max();
+                }
+
+                modules.Add(new ModuleProgressDto
+                {
+                    ModuleId = m.Id,
+                    ModuleTitle = m.Title,
+                    CompletedLessons = done,
+                    TotalLessons = ids.Count,
+                    CompletedAt = modDoneAt
+                });
+            }
+
+            return new CourseProgressDto
+            {
+                CourseId = course.CourseId,
+                CourseName = course.CourseName,
+                CompletedLessons = completed,
+                TotalLessons = total,
+                CompletedAt = courseCompletedAt,
+                Modules = modules
+            };
+        }
+
+        public async Task CompleteLessonAsync(int lessonId, string userId, CancellationToken ct = default)
+        {
+            var lesson = await _lessonProgressRepo.GetLessonWithModuleCourseAsync(lessonId, ct)
+                ?? throw new ArgumentException("Lesson not found.");
+
+            var enrolled = await _lessonProgressRepo.IsEnrolledAsync(lesson.Module.CourseId, userId, ct);
+            if (!enrolled) throw new UnauthorizedAccessException("Not enrolled in this course.");
+            if (lesson.Type == LessonType.Quiz)
+            {
+                if (lesson.QuizId is null || lesson.QuizId <= 0)
+                    throw new InvalidOperationException("Quiz is not configured for this lesson.");
+
+                var passed = await _lessonProgressRepo.HasUserPassedQuizAsync(lesson.QuizId.Value, userId, ct);
+
+                if (!passed)
+                    throw new InvalidOperationException(
+                        "Bạn cần hoàn thành bài Quiz và đạt yêu cầu (PASS) trước khi đánh dấu hoàn thành."
+                    );
+            }
+            await _lessonProgressRepo.UpsertDoneAsync(userId, lessonId, done: true, ct);
+            await _lessonProgressRepo.SaveChangesAsync(ct);
+
+            await _lessonProgressRepo.AddHistoryAsync(new CourseHistory
+            {
+                Action = CourseAction.ProgressUpdated, // enum bạn đã đổi ở trên
+                ActionDate = DateTime.UtcNow,
+                UserId = userId,
+                CourseId = lesson.Module.CourseId,
+                Description = $"Completed lesson '{lesson.Title}' (Module {lesson.ModuleId})."
+            }, ct);
+            await _lessonProgressRepo.SaveChangesAsync(ct);
+
+            // Nếu hoàn tất cả lessons -> ghi Completed
+            var total = await _lessonProgressRepo.CountCourseTotalLessonsAsync(lesson.Module.CourseId, ct);
+            var completed = await _lessonProgressRepo.CountCourseCompletedLessonsAsync(userId, lesson.Module.CourseId, ct);
+            if (total > 0 && completed >= total)
+            {
+                await _lessonProgressRepo.AddHistoryAsync(new CourseHistory
+                {
+                    Action = CourseAction.Completed,
+                    ActionDate = DateTime.UtcNow,
+                    UserId = userId,
+                    CourseId = lesson.Module.CourseId,
+                    Description = $"Completed course '{lesson.Module.Course.CourseName}'."
+                }, ct);
+                await _lessonProgressRepo.SaveChangesAsync(ct);
+            }
+        }
+
+        public async Task UndoCompleteLessonAsync(int lessonId, string userId, CancellationToken ct = default)
+        {
+            var lesson = await _lessonProgressRepo.GetLessonWithModuleCourseAsync(lessonId, ct)
+                ?? throw new ArgumentException("Lesson not found.");
+
+            var enrolled = await _lessonProgressRepo.IsEnrolledAsync(lesson.Module.CourseId, userId, ct);
+            if (!enrolled) throw new UnauthorizedAccessException("Not enrolled in this course.");
+
+            await _lessonProgressRepo.UpsertDoneAsync(userId, lessonId, done: false, ct);
+            await _lessonProgressRepo.SaveChangesAsync(ct);
+
+            await _lessonProgressRepo.AddHistoryAsync(new CourseHistory
+            {
+                Action = CourseAction.ProgressUpdated,
+                ActionDate = DateTime.UtcNow,
+                UserId = userId,
+                CourseId = lesson.Module.CourseId,
+                Description = $"Undo completed lesson '{lesson.Title}'."
+            }, ct);
+            await _lessonProgressRepo.SaveChangesAsync(ct);
+        }
+        public async Task<CourseLearningDto> GetCourseLearningAsync(
+    int courseId,
+    string userId,
+    CancellationToken ct = default)
+        {
+            // 1) Load course + module + lesson
+            var course = await _lessonProgressRepo.GetCourseWithStructureAsync(courseId, ct)
+                ?? throw new ArgumentException("Course not found.");
+
+            // 2) Kiểm tra đã ghi danh chưa
+            var enrolled = await _lessonProgressRepo.IsEnrolledAsync(courseId, userId, ct);
+            if (!enrolled)
+                throw new UnauthorizedAccessException("User is not enrolled in this course.");
+
+            // 3) Lấy progress của từng bài học
+            var lessonIds = course.Modules.SelectMany(m => m.Lessons).Select(l => l.Id).ToList();
+            var progressMap = await _lessonProgressRepo.GetProgressMapAsync(userId, lessonIds, ct);
+
+            // 4) Tính tổng progress khóa học
+            var totalLessons = lessonIds.Count;
+            var completedLessons = progressMap.Values.Count(p => p.IsDone);
+            var progressPercent = totalLessons == 0 ? 0 : completedLessons * 100 / totalLessons;
+
+            // 5) Khởi tạo DTO khóa học
+            var dto = new CourseLearningDto
+            {
+                CourseId = course.CourseId,
+                CourseName = course.CourseName,
+                CourseCode = course.Code,
+                Description = course.Description,
+                Duration = course.Duration,
+                Level = course.Level,
+                CategoryName = course.CourseCategory?.CategoryName ?? "",
+                Progress = progressPercent,
+                Modules = new()
+            };
+
+            // 6) Module + Lesson
+            foreach (var module in course.Modules.OrderBy(m => m.OrderIndex))
+            {
+                var moduleDto = new ModuleLearningDto
+                {
+                    ModuleId = module.Id,
+                    Title = module.Title,
+                    Description = module.Description,
+                    OrderIndex = module.OrderIndex,
+                    Lessons = new(),
+                };
+
+                foreach (var lesson in module.Lessons.OrderBy(l => l.OrderIndex))
+                {
+                    progressMap.TryGetValue(lesson.Id, out var lp);
+
+                    moduleDto.Lessons.Add(new LessonLearningDto
+                    {
+                        LessonId = lesson.Id,
+                        ModuleId = module.Id,
+                        Title = lesson.Title,
+                        Description = lesson.Description,
+                        Type = lesson.Type.ToString(),
+                        OrderIndex = lesson.OrderIndex,
+                        ContentUrl = lesson.ContentUrl,
+                        QuizId = lesson.QuizId,
+                        IsCompleted = lp?.IsDone ?? false,
+                        CompletedDate = lp?.CompletedAt
+                    });
+                }
+
+                moduleDto.CompletedLessons = moduleDto.Lessons.Count(l => l.IsCompleted);
+
+                dto.Modules.Add(moduleDto);
+            }
+
+            return dto;
         }
     }
 }

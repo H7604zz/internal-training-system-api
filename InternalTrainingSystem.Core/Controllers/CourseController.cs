@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,10 +25,11 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hub;
         private readonly ICategoryService _categoryService;
+        private readonly ICourseMaterialService _courseMaterialService;
 
         public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
             IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService,
-            ICategoryService categoryService)
+            ICategoryService categoryService, ICourseMaterialService courseMaterialService)
         {
             _courseService = courseService;
             _hub = hub;
@@ -35,7 +37,8 @@ namespace InternalTrainingSystem.Core.Controllers
             _userService = userService;
             _categoryService = categoryService;
             _notificationService = notificationService;
-        } 
+            _courseMaterialService = courseMaterialService;
+        }
 
         // PUT: /api/courses/{id}
         [HttpPut("{id}")]
@@ -550,7 +553,89 @@ namespace InternalTrainingSystem.Core.Controllers
                 return StatusCode(500, new { message = "Failed to resubmit course." });
             }
         }
+        //Staff lam course
+        private string RequireUserId()
+        {
+            var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(uid))
+                throw new UnauthorizedAccessException("No user id.");
+            return uid;
+        }
 
+        [HttpGet("{courseId:int}/outline")]
+        [Authorize]
+        public async Task<ActionResult<CourseOutlineDto>> GetOutline(int courseId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                var dto = await _courseMaterialService.GetOutlineAsync(courseId, userId, ct);
+                return Ok(dto);
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+        }
 
+        [HttpGet("{courseId:int}/progress")]
+        [Authorize]
+        public async Task<ActionResult<CourseProgressDto>> GetCourseProgress(int courseId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                var dto = await _courseMaterialService.GetCourseProgressAsync(courseId, userId, ct);
+                return Ok(dto);
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+        }
+
+        [HttpPost("lessons/{lessonId:int}/complete")]
+        [Authorize]
+        public async Task<IActionResult> CompleteLesson(int lessonId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                await _courseMaterialService.CompleteLessonAsync(lessonId, userId, ct);
+                return NoContent(); 
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); } // 409 khi chưa pass quiz
+        }
+
+        [HttpDelete("lessons/{lessonId:int}/complete")]
+        [Authorize]
+        public async Task<IActionResult> UndoCompleteLesson(int lessonId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                await _courseMaterialService.UndoCompleteLessonAsync(lessonId, userId, ct);
+                return NoContent(); 
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+        }
+        [HttpGet("{courseId:int}/learning")]
+        [Authorize]
+        public async Task<ActionResult<CourseLearningDto>> GetLearning(int courseId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                var dto = await _courseMaterialService.GetCourseLearningAsync(courseId, userId, ct);
+                return Ok(dto);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
     }
 }
