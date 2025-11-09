@@ -21,10 +21,10 @@ namespace InternalTrainingSystem.Core.Models
         public string UserId { get; set; } = string.Empty;
         [Required]
         public int CourseId { get; set; }
-        public int? EnrollmentId { get; set; }            
-        public int? QuizId { get; set; }           
-        public int? QuizAttemptId { get; set; }    
-        public int? ScheduleId { get; set; }       
+        public int? EnrollmentId { get; set; }
+        public int? QuizId { get; set; }
+        public int? QuizAttemptId { get; set; }
+        public int? ScheduleId { get; set; }
 
         [ForeignKey(nameof(UserId))]
         public virtual ApplicationUser User { get; set; } = null!;
@@ -71,11 +71,10 @@ namespace InternalTrainingSystem.Core.Models
 
         FeedbackSubmitted = 50,
 
-        // ?? Thêm nhóm hành ??ng duy?t khóa h?c
-        CourseSubmittedForApproval = 60, // Khi ng??i t?o g?i lên ch? duy?t
-        CourseApproved = 61,             // Khi Ban giám ??c duy?t
-        CourseRejected = 62,             // Khi b? t? ch?i
-        CourseReSubmitted = 63,          // Khi ng??i t?o ch?nh l?i và g?i l?i
-        CourseDeletedByManagement = 64   // Khi BOD xóa khóa h?c ?ã duy?t
+        CourseSubmittedForApproval = 60,
+        CourseApproved = 61,
+        CourseRejected = 62,
+        CourseReSubmitted = 63,
+        CourseDeletedByManagement = 64
     }
 }

@@ -53,6 +53,8 @@ namespace InternalTrainingSystem.Core.Models
         StaffConfirm = 4,
         Certificate = 5,
         CourseFinalized = 6,
+        CourseApproved = 18,
+        CourseRejected = 19,
 
         // --- Notification types for User ---
         UserWelcome = 7,
@@ -70,10 +72,6 @@ namespace InternalTrainingSystem.Core.Models
         ClassCancelled = 14,
         ClassReminder = 15,
         ClassAttendance = 16,
-
-        //
-        CourseApproved = 18,
-        CourseRejected = 19,
 
         // --- For custom or unspecified cases ---
         Custom = 99
