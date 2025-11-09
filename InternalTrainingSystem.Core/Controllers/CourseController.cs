@@ -561,7 +561,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 throw new UnauthorizedAccessException("No user id.");
             return uid;
         }
-
+        // lấy outline khóa học cho staff để học
         [HttpGet("{courseId:int}/outline")]
         [Authorize]
         public async Task<ActionResult<CourseOutlineDto>> GetOutline(int courseId, CancellationToken ct)
@@ -575,7 +575,7 @@ namespace InternalTrainingSystem.Core.Controllers
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
             catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
         }
-
+        // lấy tiến độ của staff
         [HttpGet("{courseId:int}/progress")]
         [Authorize]
         public async Task<ActionResult<CourseProgressDto>> GetCourseProgress(int courseId, CancellationToken ct)
@@ -589,7 +589,7 @@ namespace InternalTrainingSystem.Core.Controllers
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
             catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
         }
-
+        // đánh dấu hoàn thành lesson
         [HttpPost("lessons/{lessonId:int}/complete")]
         [Authorize]
         public async Task<IActionResult> CompleteLesson(int lessonId, CancellationToken ct)
@@ -604,7 +604,7 @@ namespace InternalTrainingSystem.Core.Controllers
             catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
             catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); } // 409 khi chưa pass quiz
         }
-
+        // hủy đánh dấu hoàn thành lesson
         [HttpDelete("lessons/{lessonId:int}/complete")]
         [Authorize]
         public async Task<IActionResult> UndoCompleteLesson(int lessonId, CancellationToken ct)
@@ -618,6 +618,7 @@ namespace InternalTrainingSystem.Core.Controllers
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
             catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
         }
+        // trả toàn bộ course với tình trạng đã hoàn thành lesson hoặc chưa
         [HttpGet("{courseId:int}/learning")]
         [Authorize]
         public async Task<ActionResult<CourseLearningDto>> GetLearning(int courseId, CancellationToken ct)
