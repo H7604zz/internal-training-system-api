@@ -16,15 +16,13 @@ namespace InternalTrainingSystem.Core.Controllers
     public class CertificateController : ControllerBase
     {
         private readonly ICertificateService _certificateService;
-        private readonly INotificationService _notificationService;
         private readonly IUserService _userService;
         private readonly string _baseUrl;
 
-        public CertificateController(ICertificateService certificateService, INotificationService notificationService,
+        public CertificateController(ICertificateService certificateService,
             IUserService userServices, IConfiguration config)
         {
             _certificateService = certificateService;
-            _notificationService = notificationService;
             _userService = userServices;
             _baseUrl = config["ApplicationSettings:ApiBaseUrl"] ?? "http://localhost:7001";
         }
@@ -62,6 +60,23 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
-        
+        /// <summary>
+        /// Lấy chi tiết 1 chứng chỉ theo Id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetCertificateById(int id, [FromQuery] string userId)
+        {
+            var certificate = await _certificateService.GetCertificateByIdAsync(id, userId);
+            if (certificate == null)
+            {
+                return NotFound("Không tìm thấy chứng chỉ.");
+            }
+            return Ok(certificate);
+        }
+
+
     }
 }
