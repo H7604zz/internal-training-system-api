@@ -58,8 +58,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 CertificateName = certificate.CertificateName,
                 IssueDate = certificate.IssueDate,
                 ExpirationDate = certificate.ExpirationDate,
-                FilePath = certificate.FilePath,
-                UserFullName = user.FullName,
+                FullName = user.FullName,
             };
         }
 
@@ -78,8 +77,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 CertificateName = certificate.CertificateName,
                 IssueDate = certificate.IssueDate,
                 ExpirationDate = certificate.ExpirationDate,
-                FilePath = certificate.FilePath,
-                UserFullName = certificate.User.FullName,
+                FullName = certificate.User.FullName,
             };
         }
 
@@ -94,7 +92,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 CertificateId = c.CertificateId,
                 CertificateName = c.CertificateName,
                 CourseName = c.Course.CourseName,
-                FilePath = c.FilePath,
                 IssueDate = c.IssueDate,
                 ExpirationDate = c.ExpirationDate
             })

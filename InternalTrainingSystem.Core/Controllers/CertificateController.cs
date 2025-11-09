@@ -76,7 +76,5 @@ namespace InternalTrainingSystem.Core.Controllers
             }
             return Ok(certificate);
         }
-
-
     }
 }
