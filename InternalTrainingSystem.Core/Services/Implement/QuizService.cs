@@ -15,6 +15,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         private readonly ICourseMaterialRepository _lessonRepo;
         private readonly ICourseHistoryRepository _historyRepo;
         private readonly ILessonProgressRepository _lessonProgressRepo;
+        private readonly IQuizAttemptRepository _quizAttemptRepo;
         private readonly IUnitOfWork _uow;
 
         public QuizService(
@@ -24,6 +25,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             ICourseMaterialRepository lessonRepo,
             ILessonProgressRepository lessonProgressRepo,
             ICourseHistoryRepository historyRepo,
+            IQuizAttemptRepository quizAttemptRepo,
             IUnitOfWork uow)
         {
             _quizRepo = quizRepo;
@@ -32,6 +34,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _lessonRepo = lessonRepo;
             _lessonProgressRepo = lessonProgressRepo;
             _historyRepo = historyRepo;
+            _quizAttemptRepo = quizAttemptRepo;
             _uow = uow;
         }
 
@@ -484,6 +487,37 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (dto is null)
                 throw new KeyNotFoundException($"Quiz {quizId} not found.");
             return dto;
+        }
+        public async Task<QuizInfoDto?> GetQuizInfoByLessonAsync(int quizId, string userId, CancellationToken ct = default)
+        {
+
+            var quiz = await _quizRepo.GetActiveQuizAsync(quizId, ct);
+            if (quiz == null) return null;
+
+            var attempts = await _quizAttemptRepo.GetUserAttemptsAsync(quiz.QuizId, userId, ct);
+
+            // lấy attempt đã nộp
+            var submittedAttempts = attempts.Where(a => a.Status == QuizConstants.Status.Completed);
+
+            var info = new QuizInfoDto
+            {
+                QuizId = quiz.QuizId,
+                Title = quiz.Title,
+                TimeLimit = quiz.TimeLimit,
+                MaxAttempts = quiz.MaxAttempts,
+                PassingScore = quiz.PassingScore,
+
+                UserAttemptCount = attempts.Count,
+
+                HasPassed = submittedAttempts.Any(a => a.IsPassed),
+
+                BestScore = submittedAttempts
+                    .Select(a => (int?)a.Percentage)
+                    .DefaultIfEmpty(null)
+                    .Max()
+            };
+
+            return info;
         }
     }
 }
