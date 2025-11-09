@@ -569,7 +569,7 @@ namespace InternalTrainingSystem.Core.Controllers
             try
             {
                 var userId = RequireUserId();
-                var dto = await _courseMaterialService.GetOutlineAsync(courseId, userId, ct);
+                var dto = await _courseService.GetOutlineAsync(courseId, userId, ct);
                 return Ok(dto);
             }
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
@@ -583,7 +583,7 @@ namespace InternalTrainingSystem.Core.Controllers
             try
             {
                 var userId = RequireUserId();
-                var dto = await _courseMaterialService.GetCourseProgressAsync(courseId, userId, ct);
+                var dto = await _courseService.GetCourseProgressAsync(courseId, userId, ct);
                 return Ok(dto);
             }
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
@@ -597,7 +597,7 @@ namespace InternalTrainingSystem.Core.Controllers
             try
             {
                 var userId = RequireUserId();
-                await _courseMaterialService.CompleteLessonAsync(lessonId, userId, ct);
+                await _courseService.CompleteLessonAsync(lessonId, userId, ct);
                 return NoContent(); 
             }
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
@@ -612,7 +612,7 @@ namespace InternalTrainingSystem.Core.Controllers
             try
             {
                 var userId = RequireUserId();
-                await _courseMaterialService.UndoCompleteLessonAsync(lessonId, userId, ct);
+                await _courseService.UndoCompleteLessonAsync(lessonId, userId, ct);
                 return NoContent(); 
             }
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
@@ -625,7 +625,7 @@ namespace InternalTrainingSystem.Core.Controllers
             try
             {
                 var userId = RequireUserId();
-                var dto = await _courseMaterialService.GetCourseLearningAsync(courseId, userId, ct);
+                var dto = await _courseService.GetCourseLearningAsync(courseId, userId, ct);
                 return Ok(dto);
             }
             catch (UnauthorizedAccessException ex)
