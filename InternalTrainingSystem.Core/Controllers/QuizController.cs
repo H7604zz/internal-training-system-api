@@ -27,7 +27,7 @@ namespace InternalTrainingSystem.Core.Controllers
 			if (string.IsNullOrEmpty(uid)) throw new UnauthorizedAccessException("User not authenticated.");
 			return uid;
 		}
-
+		// lấy quiz (cho staff làm)
 		[HttpGet("{quizId:int}/attempt/{attemptId:int}")]
 		public async Task<ActionResult<QuizDetailDto>> GetQuizForAttempt(int quizId, int attemptId, [FromQuery] bool shuffleQuestions = true, [FromQuery] bool shuffleAnswers = true, CancellationToken ct = default)
 		{
@@ -35,41 +35,42 @@ namespace InternalTrainingSystem.Core.Controllers
 			if (result == null) return NotFound();
 			return Ok(result);
 		}
-
+		// bắt đầu làm
 		[HttpPost("{quizId:int}/start")]
 		public async Task<ActionResult<StartQuizResponse>> Start(int quizId, CancellationToken ct)
 		{
 			var res = await _service.StartAttemptAsync(quizId, GetUserId(), ct);
 			return Ok(res);
 		}
-
+		//submit bài làm quiz
 		[HttpPost("attempt/{attemptId:int}/submit")]
 		public async Task<ActionResult<AttemptResultDto>> Submit(int attemptId, [FromBody] SubmitAttemptRequest req, CancellationToken ct)
 		{
 			var res = await _service.SubmitAttemptAsync(attemptId, GetUserId(), req, ct);
 			return Ok(res);
 		}
-
+		// lấy kết quả bài làm quiz
 		[HttpGet("attempt/{attemptId:int}/result")]
 		public async Task<ActionResult<AttemptResultDto>> Result(int attemptId, CancellationToken ct)
 		{
 			var res = await _service.GetAttemptResultAsync(attemptId, GetUserId(), ct);
 			return Ok(res);
 		}
-
+		// lấy lịch sử làm bài của 1 quiz
 		[HttpGet("{quizId:int}/history")]
 		public async Task<ActionResult<PagedResult<AttemptHistoryItem>>> History(int quizId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
 		{
 			var res = await _service.GetAttemptHistoryAsync(quizId, GetUserId(), page, pageSize, ct);
 			return Ok(res);
 		}
+		// bắt đầu làm quiz theo lesson
 		[HttpPost("~/api/lesson/{lessonId:int}/quiz/start")]
 		public async Task<ActionResult<StartQuizResponse>> StartByLesson(int lessonId, CancellationToken ct)
 		{
 			var res = await _service.StartAttemptByLessonAsync(lessonId, GetUserId(), ct);
 			return Ok(res);
 		}
-
+		// submit bài làm quiz theo lesson
 		[HttpPost("~/api/lesson/{lessonId:int}/quiz/attempt/{attemptId:int}/submit")]
 		public async Task<ActionResult<AttemptResultDto>> SubmitByLesson(int lessonId, int attemptId, [FromBody] SubmitAttemptRequest req, CancellationToken ct)
 		{
@@ -92,6 +93,21 @@ namespace InternalTrainingSystem.Core.Controllers
 
 			var result = await _courseService.GetUserQuizHistoryAsync(userId, courseId, quizId);
 			return Ok(result);
+		}
+		[HttpGet("{id:int}")]
+		public async Task<IActionResult> GetDetail(
+			[FromRoute] int id,
+			CancellationToken ct = default)
+		{
+			try
+			{
+				var dto = await _service.GetDetailAsync(id, ct);
+				return Ok(dto);
+			}
+			catch (KeyNotFoundException)
+			{
+				return NotFound();
+			}
 		}
 	}
 }

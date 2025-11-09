@@ -166,5 +166,93 @@ namespace InternalTrainingSystem.Core.DTOs
         public List<IFormFile> LessonFiles { get; set; } = new();
     }
 
+    public class LessonOutlineDto
+    {
+        public int LessonId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int OrderIndex { get; set; }
+        public LessonType Type { get; set; }
+        public bool IsDone { get; set; }
+        public DateTime? CompletedAt { get; set; }
+    }
+
+    public class ModuleOutlineDto
+    {
+        public int ModuleId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int OrderIndex { get; set; }
+        public List<LessonOutlineDto> Lessons { get; set; } = new();
+    }
+
+    public class CourseOutlineDto
+    {
+        public int CourseId { get; set; }
+        public string CourseName { get; set; } = string.Empty;
+        public List<ModuleOutlineDto> Modules { get; set; } = new();
+    }
+
+    public class ModuleProgressDto
+    {
+        public int ModuleId { get; set; }
+        public string ModuleTitle { get; set; } = string.Empty;
+        public int CompletedLessons { get; set; }
+        public int TotalLessons { get; set; }
+        public bool IsCompleted => TotalLessons > 0 && CompletedLessons >= TotalLessons;
+        public DateTime? CompletedAt { get; set; }
+    }
+
+    public class CourseProgressDto
+    {
+        public int CourseId { get; set; }
+        public string CourseName { get; set; } = string.Empty;
+        public int CompletedLessons { get; set; }
+        public int TotalLessons { get; set; }
+        public double Percent => TotalLessons == 0 ? 0 : (CompletedLessons * 100.0 / TotalLessons);
+        public bool IsCompleted => TotalLessons > 0 && CompletedLessons >= TotalLessons;
+        public DateTime? CompletedAt { get; set; }
+        public List<ModuleProgressDto> Modules { get; set; } = new();
+    }
+    public class CourseLearningDto
+    {
+        public int CourseId { get; set; }
+        public string CourseName { get; set; } = string.Empty;
+        public string CourseCode { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int Duration { get; set; }
+        public string Level { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public int Progress { get; set; } 
+        public List<ModuleLearningDto> Modules { get; set; } = new();
+
+    }
+
+    public class ModuleLearningDto
+    {
+        public int ModuleId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int OrderIndex { get; set; }
+        public int CompletedLessons { get; set; }
+        public List<LessonLearningDto> Lessons { get; set; } = new();
+
+    }
+    public class LessonLearningDto
+    {
+        public int LessonId { get; set; }
+        public int ModuleId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        // Video / Reading / Quiz…
+        public string Type { get; set; } = string.Empty;
+        public int OrderIndex { get; set; }
+        public string? ContentUrl { get; set; }
+        public string? AttachmentUrl { get; set; }
+        public int? QuizId { get; set; }
+        public bool IsCompleted { get; set; }
+        public DateTime? CompletedDate { get; set; }
+
+    }
+
+
 
 }

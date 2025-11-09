@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,10 +26,11 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IHubContext<NotificationHub> _hub;
         private readonly ICategoryService _categoryService;
         private readonly ICourseHistoryService _courseHistoryService;
+        private readonly ICourseMaterialService _courseMaterialService;
 
         public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
             IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService,
-            ICategoryService categoryService, ICourseHistoryService courseHistoryService)
+            ICategoryService categoryService, ICourseMaterialService courseMaterialService, ICourseHistoryService courseHistoryService)
         {
             _courseService = courseService;
             _hub = hub;
@@ -37,7 +39,8 @@ namespace InternalTrainingSystem.Core.Controllers
             _categoryService = categoryService;
             _notificationService = notificationService;
             _courseHistoryService = courseHistoryService;
-        } 
+            _courseMaterialService = courseMaterialService;
+        }
 
         // PUT: /api/courses/{id}
         [HttpPut("{id}")]
@@ -570,6 +573,92 @@ namespace InternalTrainingSystem.Core.Controllers
                 total = result.Count,
                 data = result
             });
+        }
+
+        //Staff lam course
+        private string RequireUserId()
+        {
+            var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(uid))
+                throw new UnauthorizedAccessException("No user id.");
+            return uid;
+        }
+        // lấy outline khóa học cho staff để học
+        [HttpGet("{courseId:int}/outline")]
+        [Authorize]
+        public async Task<ActionResult<CourseOutlineDto>> GetOutline(int courseId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                var dto = await _courseService.GetOutlineAsync(courseId, userId, ct);
+                return Ok(dto);
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+        }
+        // lấy tiến độ của staff
+        [HttpGet("{courseId:int}/progress")]
+        [Authorize]
+        public async Task<ActionResult<CourseProgressDto>> GetCourseProgress(int courseId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                var dto = await _courseService.GetCourseProgressAsync(courseId, userId, ct);
+                return Ok(dto);
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+        }
+        // đánh dấu hoàn thành lesson
+        [HttpPost("lessons/{lessonId:int}/complete")]
+        [Authorize]
+        public async Task<IActionResult> CompleteLesson(int lessonId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                await _courseService.CompleteLessonAsync(lessonId, userId, ct);
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); } // 409 khi chưa pass quiz
+        }
+        // hủy đánh dấu hoàn thành lesson
+        [HttpDelete("lessons/{lessonId:int}/complete")]
+        [Authorize]
+        public async Task<IActionResult> UndoCompleteLesson(int lessonId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                await _courseService.UndoCompleteLessonAsync(lessonId, userId, ct);
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+        }
+        // trả toàn bộ course với tình trạng đã hoàn thành lesson hoặc chưa
+        [HttpGet("{courseId:int}/learning")]
+        [Authorize]
+        public async Task<ActionResult<CourseLearningDto>> GetLearning(int courseId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                var dto = await _courseService.GetCourseLearningAsync(courseId, userId, ct);
+                return Ok(dto);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
 
     }

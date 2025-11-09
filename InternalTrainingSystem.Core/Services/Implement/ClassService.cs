@@ -53,7 +53,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.GetClassDetailAsync(classId);
         }
 
-        public async Task<List<ClassDto>> GetClassesByCourseAsync(int courseId)
+        public async Task<List<ClassListDto>> GetClassesByCourseAsync(int courseId)
         {
             return await _classRepo.GetClassesByCourseAsync(courseId);
         }

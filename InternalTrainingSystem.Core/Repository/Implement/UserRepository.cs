@@ -83,11 +83,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                   .Any(dep => dep.Id == d.Id)
                               && !_context.Certificates
                                   .Any(c => c.UserId == u.Id && c.CourseId == courseId)
-                             && (string.IsNullOrEmpty(searchDto.Search)
+                              && (string.IsNullOrEmpty(searchDto.Search)
                                   || u.FullName.Contains(searchDto.Search)
                                   || u.EmployeeId!.Contains(searchDto.Search)
                                   || u.Email!.Contains(searchDto.Search))
                               && (string.IsNullOrEmpty(searchDto.Status)
+                                  || (searchDto.Status == EnrollmentConstants.Status.NotEnrolled && e == null)
                                   || (e != null && e.Status == searchDto.Status))
                         orderby u.FullName
                         select new EligibleStaffResponse
@@ -99,7 +100,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             Department = d.Name,
                             Position = u.Position,
                             Status = e.Status ?? EnrollmentConstants.Status.NotEnrolled,
-                            Reason = e.RejectionReason ?? "Chưa có phản hồi"
+                            Reason = e.RejectionReason ?? "N/A"
                         };
 
             int totalCount = query.Count();

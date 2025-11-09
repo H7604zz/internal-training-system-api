@@ -304,16 +304,7 @@ namespace InternalTrainingSystem.Core.Controllers
         public async Task<IActionResult> GetClassesByCourse(int courseId)
         {
             var classList = await _classService.GetClassesByCourseAsync(courseId);
-
-            if (!classList.Any())
-                return NotFound(new { success = false, message = "Không tìm thấy lớp học cho khóa học này." });
-
-            return Ok(new
-            {
-                success = true,
-                message = $"Tìm thấy {classList.Count} lớp học thuộc khóa học.",
-                data = classList
-            });
+            return Ok(classList);
         }
     }
 }

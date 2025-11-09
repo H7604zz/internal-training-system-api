@@ -1,6 +1,7 @@
 ﻿using Amazon.S3.Model;
 using Amazon.S3;
 using InternalTrainingSystem.Core.Services.Interface;
+using InternalTrainingSystem.Core.Utils;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -22,38 +23,40 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         public async Task<(string url, string relativePath)> SaveAsync(
-    IFormFile file, string subFolder, CancellationToken ct = default)
+    IFormFile file,
+    string subFolder,
+    StorageObjectMetadata meta,
+    CancellationToken ct = default)
         {
             var ext = Path.GetExtension(file.FileName);
-            var name = Path.GetFileNameWithoutExtension(file.FileName);
-
-            var safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
-            var key = $"{subFolder.Trim('/')}/{safeName}_{Guid.NewGuid():N}{ext}".Replace("\\", "/");
+            var key = $"{subFolder.TrimEnd('/')}/{Guid.NewGuid():N}{ext}";
 
             using var stream = file.OpenReadStream();
+
             var put = new PutObjectRequest
             {
                 BucketName = _bucket,
                 Key = key,
                 InputStream = stream,
-                ContentType = string.IsNullOrWhiteSpace(file.ContentType)
-                    ? "application/octet-stream"
-                    : file.ContentType
+                ContentType = meta.ContentType, // e.g. "text/plain; charset=utf-8"
             };
 
-            var resp = await _s3.PutObjectAsync(put, ct);
-            if ((int)resp.HttpStatusCode >= 300)
-                throw new InvalidOperationException($"S3 upload failed ({resp.HttpStatusCode}).");
+            // Only if you actually gzip the payload:
+            // if (meta.ContentEncoding == "gzip")
+            //     put.Headers.ContentEncoding = "gzip";
 
-            // nếu có public base url => trả public url (bucket mở policy public)
-            // nếu không => trả presigned url ngắn hạn
-            var url = _publicBaseUrl is not null
-                      ? $"{_publicBaseUrl}/{key}"
-                      : GetReadUrl(key, TimeSpan.FromMinutes(10));
+            // Vietnamese filename displayed correctly
+            put.Headers.ContentDisposition = meta.ContentDisposition;
 
+            await _s3.PutObjectAsync(put, ct);
+
+            var url = !string.IsNullOrWhiteSpace(_publicBaseUrl)
+                ? $"{_publicBaseUrl!.TrimEnd('/')}/{key}"
+                : $"https://{_bucket}.s3.amazonaws.com/{key}";
 
             return (url, key);
         }
+
 
         public async Task<bool> DeleteAsync(string relativePath, CancellationToken ct = default)
         {

@@ -41,5 +41,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 				.OrderByDescending(x => x.SubmissionTime)
 				.ToListAsync();
 		}
-	}
+        public Task AddHistoryAsync(CourseHistory history, CancellationToken ct = default)
+        {
+            _context.CourseHistories.Add(history);
+            return Task.CompletedTask; 
+        }
+
+    }
 }
