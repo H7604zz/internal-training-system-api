@@ -488,13 +488,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 throw new KeyNotFoundException($"Quiz {quizId} not found.");
             return dto;
         }
-        public async Task<QuizInfoDto?> GetQuizInfoByLessonAsync(int lessonId, string userId, CancellationToken ct = default)
+        public async Task<QuizInfoDto?> GetQuizInfoByLessonAsync(int quizId, string userId, CancellationToken ct = default)
         {
-            var lesson = await _lessonRepo.GetLessonAsync(lessonId, ct);
-            if (lesson == null || lesson.Type != LessonType.Quiz || !lesson.QuizId.HasValue)
-                return null;
 
-            var quiz = await _quizRepo.GetActiveQuizAsync(lesson.QuizId.Value, ct);
+            var quiz = await _quizRepo.GetActiveQuizAsync(quizId, ct);
             if (quiz == null) return null;
 
             var attempts = await _quizAttemptRepo.GetUserAttemptsAsync(quiz.QuizId, userId, ct);

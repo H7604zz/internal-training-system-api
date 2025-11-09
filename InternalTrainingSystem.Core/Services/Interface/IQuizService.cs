@@ -14,6 +14,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<StartQuizResponse> StartAttemptByLessonAsync(int lessonId, string userId, CancellationToken ct = default);
         Task<AttemptResultDto> SubmitAttemptByLessonAsync(int lessonId, int attemptId, string userId, SubmitAttemptRequest req, CancellationToken ct = default);
         Task<QuizDetailDto2> GetDetailAsync(int quizId, CancellationToken ct);
-        Task<QuizInfoDto?> GetQuizInfoByLessonAsync(int lessonId, string userId, CancellationToken ct = default);
+        Task<QuizInfoDto?> GetQuizInfoByLessonAsync(int quizId, string userId, CancellationToken ct = default);
     }
 }

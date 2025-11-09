@@ -94,10 +94,10 @@ namespace InternalTrainingSystem.Core.Controllers
 		/// <summary>
 		/// Lấy info quiz theo lesson để Staff xem trước khi làm (MaxAttempts, PassingScore, TimeLimit, RemainingAttempts, IsLocked, HasPassed, BestScore…)
 		/// </summary>
-		[HttpGet("~/api/lesson/{lessonId:int}/quiz/info")]
-		public async Task<ActionResult<QuizInfoDto>> GetQuizInfoByLesson(int lessonId, CancellationToken ct = default)
+		[HttpGet("~/api/lesson/{quizId:int}/quiz/info")]
+		public async Task<ActionResult<QuizInfoDto>> GetQuizInfoByLesson(int quizId, CancellationToken ct = default)
 		{
-			var result = await _service.GetQuizInfoByLessonAsync(lessonId, GetUserId(), ct);
+			var result = await _service.GetQuizInfoByLessonAsync(quizId, GetUserId(), ct);
 			if (result == null) return NotFound();
 			return Ok(result);
 		}
