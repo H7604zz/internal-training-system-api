@@ -59,7 +59,6 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Lấy kết quả attempt (bao gồm Score, MaxScore, Percentage, Status, IsPassed…)
         /// </summary>
         [HttpGet("attempt/{attemptId:int}/result")]
-        [HttpGet("attempt/{attemptId:int}/result")]
 		public async Task<ActionResult<AttemptResultDto>> Result(int attemptId, CancellationToken ct)
 		{
 			var res = await _service.GetAttemptResultAsync(attemptId, GetUserId(), ct);
@@ -108,7 +107,7 @@ namespace InternalTrainingSystem.Core.Controllers
             /// <param name="courseId"></param>
             /// <param name="quizId"></param>
             /// <returns></returns>
-            [HttpGet("{courseId}/{quizId}/history")]
+        [HttpGet("{courseId}/{quizId}/history")]
 		public async Task<IActionResult> GetUserQuizHistory(int courseId, int quizId)
 		{
 			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
