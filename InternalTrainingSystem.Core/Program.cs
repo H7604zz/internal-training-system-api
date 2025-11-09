@@ -89,6 +89,7 @@ builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddSingleton<IFileStorage, S3FileStorage>();
 builder.Services.AddScoped<ITrackProgressService, TrackProgressService>();
+builder.Services.AddScoped<ICourseHistoryService, CourseHistoryService>();
 
 // Configure JWT Authentication
 // Read from configuration instead of environment variables directly

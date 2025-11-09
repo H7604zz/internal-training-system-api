@@ -14,6 +14,14 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 		{
 			_context = context;
 		}
+    
+    public async Task<IEnumerable<CourseHistory>> GetCourseHistoriesAsync()
+        {
+            return await _context.CourseHistories
+                .Include(h => h.User) // để lấy thông tin người thực hiện
+                .OrderByDescending(h => h.ActionDate)
+                .ToListAsync();
+        }
 
 		public async Task<IEnumerable<UserQuizHistoryResponse>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId)
 		{
