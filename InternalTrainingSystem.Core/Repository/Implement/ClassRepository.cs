@@ -89,6 +89,17 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
 
             _context.Classes.AddRange(createdClasses);
+
+            var userIds = confirmedUsers.Select(u => u.Id).ToList();
+            var enrollments = await _context.CourseEnrollments
+                .Where(e => e.CourseId == request.CourseId && userIds.Contains(e.UserId))
+                .ToListAsync();
+
+            foreach (var e in enrollments)
+            {
+                e.Status = EnrollmentConstants.Status.InProgress;
+            }
+
             await _context.SaveChangesAsync();
 
             return true;
