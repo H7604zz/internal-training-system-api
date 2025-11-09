@@ -21,13 +21,5 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<(string url, string relativePath)> UploadLessonBinaryAsync(int lessonId, IFormFile file, CancellationToken ct = default);
         Task<bool> ClearLessonFileAsync(int lessonId, CancellationToken ct = default);
         Task<Lesson> CreateQuizLessonFromExcelAsync(CreateQuizLessonRequest req, CancellationToken ct = default);
-        Task<CourseOutlineDto> GetOutlineAsync(int courseId, string userId, CancellationToken ct = default);
-        Task<CourseProgressDto> GetCourseProgressAsync(int courseId, string userId, CancellationToken ct = default);
-        Task CompleteLessonAsync(int lessonId, string userId, CancellationToken ct = default);
-        Task UndoCompleteLessonAsync(int lessonId, string userId, CancellationToken ct = default);
-        Task<CourseLearningDto> GetCourseLearningAsync(
-            int courseId,
-            string userId,
-            CancellationToken ct = default);
     }
 }

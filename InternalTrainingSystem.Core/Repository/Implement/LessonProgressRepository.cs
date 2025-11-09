@@ -124,11 +124,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         public Task<int> CountCourseTotalLessonsAsync(int courseId, CancellationToken ct = default)
             => _db.Lessons.CountAsync(l => l.Module.CourseId == courseId, ct);
 
-        public Task AddHistoryAsync(CourseHistory history, CancellationToken ct = default)
-        {
-            _db.CourseHistories.Add(history);
-            return Task.CompletedTask;
-        }
         public async Task<bool> HasUserPassedQuizAsync(int quizId, string userId, CancellationToken ct = default)
         {
             var attempt = await _db.QuizAttempts

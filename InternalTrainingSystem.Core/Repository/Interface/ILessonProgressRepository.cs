@@ -24,8 +24,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
 
         Task<int> CountCourseTotalLessonsAsync(int courseId, CancellationToken ct = default);
 
-        Task AddHistoryAsync(CourseHistory history, CancellationToken ct = default);
-
         Task SaveChangesAsync(CancellationToken ct = default);
         Task<bool> HasUserPassedQuizAsync(int quizId, string userId, CancellationToken ct = default);
     }
