@@ -21,10 +21,10 @@ namespace InternalTrainingSystem.Core.Models
         public string UserId { get; set; } = string.Empty;
         [Required]
         public int CourseId { get; set; }
-        public int? EnrollmentId { get; set; }            
-        public int? QuizId { get; set; }           
-        public int? QuizAttemptId { get; set; }    
-        public int? ScheduleId { get; set; }       
+        public int? EnrollmentId { get; set; }
+        public int? QuizId { get; set; }
+        public int? QuizAttemptId { get; set; }
+        public int? ScheduleId { get; set; }
 
         [ForeignKey(nameof(UserId))]
         public virtual ApplicationUser User { get; set; } = null!;
@@ -69,6 +69,12 @@ namespace InternalTrainingSystem.Core.Models
         MaterialAccessed = 41,
         MaterialDownloaded = 42,
 
-        FeedbackSubmitted = 50
+        FeedbackSubmitted = 50,
+
+        CourseSubmittedForApproval = 60,
+        CourseApproved = 61,
+        CourseRejected = 62,
+        CourseReSubmitted = 63,
+        CourseDeletedByManagement = 64
     }
 }

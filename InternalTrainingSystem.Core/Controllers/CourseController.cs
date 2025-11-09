@@ -25,11 +25,12 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hub;
         private readonly ICategoryService _categoryService;
+        private readonly ICourseHistoryService _courseHistoryService;
         private readonly ICourseMaterialService _courseMaterialService;
 
         public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
             IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService,
-            ICategoryService categoryService, ICourseMaterialService courseMaterialService)
+            ICategoryService categoryService, ICourseMaterialService courseMaterialService, ICourseHistoryService courseHistoryService)
         {
             _courseService = courseService;
             _hub = hub;
@@ -37,6 +38,7 @@ namespace InternalTrainingSystem.Core.Controllers
             _userService = userService;
             _categoryService = categoryService;
             _notificationService = notificationService;
+            _courseHistoryService = courseHistoryService;
             _courseMaterialService = courseMaterialService;
         }
 
@@ -185,30 +187,19 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(dto);
         }
 
-        //api này không cần thiết
-        /// <summary>Hiển thị các course có status = Pending (Ban giám đốc duyệt).</summary>
-        [HttpGet("pending")]
-        [ProducesResponseType(typeof(IEnumerable<CourseListItemDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<CourseListItemDto>>> GetPendingCourses()
-        {
-            var request = new GetAllCoursesRequest
-            {
-                Page = 1,
-                PageSize = int.MaxValue,
-                Status = CourseConstants.Status.Pending
-            };
-            var items = await _courseService.GetAllCoursesPagedAsync(request);
-            return Ok(items);
-        }
-
-        
-
         [HttpPatch("update-pending-status/{courseId}")]
+        //[Authorize(Roles = UserRoles.DirectManager)]
         public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdatePendingCourseStatusRequest request)
         {
+            // ✅ Lấy userId từ JWT
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? User.FindFirstValue("sub")     // phổ biến nhất
+                          ?? User.FindFirstValue("id")
+                          ?? User.FindFirstValue("uid")
+                          ?? "SYSTEM_BOD"; // fallback nếu token không có
             try
             {
-                var result = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus, request.RejectReason);
+                var result = await _courseService.UpdatePendingCourseStatusAsync(userId, courseId, request.NewStatus, request.RejectReason);
 
                 if (!result)
                     return BadRequest("Không thể cập nhật trạng thái. Có thể khóa học không tồn tại hoặc không ở trạng thái Pending.");
@@ -553,6 +544,37 @@ namespace InternalTrainingSystem.Core.Controllers
                 return StatusCode(500, new { message = "Failed to resubmit course." });
             }
         }
+
+        //[Authorize(Roles = UserRoles.)]
+        [HttpGet("histories")]
+        public async Task<IActionResult> GetCourseHistories()
+        {
+            // Lấy danh sách lịch sử từ service
+            var histories = await _courseHistoryService.GetCourseHistoriesAsync();
+
+            if (histories == null || !histories.Any())
+                return NotFound(new { message = "Không có lịch sử khóa học nào." });
+
+            // Map sang DTO gọn cho FE
+            var result = histories.Select(h => new CourseHistoryDto
+            {
+                HistoryId = h.HistoryId,
+                CourseId = h.CourseId,
+                UserId = h.UserId,
+                UserName = h.User?.FullName ?? "Hệ thống",
+                ActionName = h.Action.ToString(),
+                Description = h.Description,
+                ActionDate = h.ActionDate
+            }).ToList();
+
+            // Trả về list JSON
+            return Ok(new
+            {
+                total = result.Count,
+                data = result
+            });
+        }
+
         //Staff lam course
         private string RequireUserId()
         {
@@ -598,7 +620,7 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 var userId = RequireUserId();
                 await _courseService.CompleteLessonAsync(lessonId, userId, ct);
-                return NoContent(); 
+                return NoContent();
             }
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
             catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
@@ -613,7 +635,7 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 var userId = RequireUserId();
                 await _courseService.UndoCompleteLessonAsync(lessonId, userId, ct);
-                return NoContent(); 
+                return NoContent();
             }
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
             catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
@@ -638,5 +660,6 @@ namespace InternalTrainingSystem.Core.Controllers
                 return NotFound(new { message = ex.Message });
             }
         }
+
     }
 }
