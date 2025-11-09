@@ -24,7 +24,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
 		{
 			_courseRepo = courseRepo;
 			_courseHistoryRepository = courseHistoryRepository;
-		}
+            _lessonProgressRepo = lessonProgressRepository;
+
+        }
 
 		public async Task<Course> GetCourseByCourseCodeAsync(string courseCode)
 		{
