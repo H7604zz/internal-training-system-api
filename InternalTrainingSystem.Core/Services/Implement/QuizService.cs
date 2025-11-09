@@ -13,6 +13,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         private readonly IQuizAttemptRepository _attemptRepo;
         private readonly IUserAnswerRepository _userAnswerRepo;
         private readonly ICourseMaterialRepository _lessonRepo;
+        private readonly ICourseHistoryRepository _historyRepo;
         private readonly ILessonProgressRepository _lessonProgressRepo;
         private readonly IUnitOfWork _uow;
 
@@ -22,6 +23,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             IUserAnswerRepository userAnswerRepo,
             ICourseMaterialRepository lessonRepo,
             ILessonProgressRepository lessonProgressRepo,
+            ICourseHistoryRepository historyRepo,
             IUnitOfWork uow)
         {
             _quizRepo = quizRepo;
@@ -29,6 +31,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _userAnswerRepo = userAnswerRepo;
             _lessonRepo = lessonRepo;
             _lessonProgressRepo = lessonProgressRepo;
+            _historyRepo = historyRepo;
             _uow = uow;
         }
 
@@ -136,6 +139,17 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             attempt = await _attemptRepo.AddAttemptAsync(attempt, ct);
 
+            await _historyRepo.AddHistoryAsync(new CourseHistory
+            {
+                Action = CourseAction.QuizStarted,
+                ActionDate = DateTime.UtcNow,
+                UserId = userId,
+                QuizId = quiz.QuizId,
+                QuizAttemptId = attempt.AttemptId,
+                Description = $"Start attempt #{nextAttemptNumber} for quiz '{quiz.Title}'."
+            }, ct);
+            await _uow.SaveChangesAsync(ct);
+
             return new StartQuizResponse
             {
                 AttemptId = attempt.AttemptId,
@@ -154,7 +168,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (attempt.Status != QuizConstants.Status.InProgress)
                 throw new InvalidOperationException("Attempt already submitted or closed.");
 
-            //get quiz + question + answer
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(attempt.QuizId, ct)
                        ?? throw new InvalidOperationException("Quiz not found or inactive.");
 
@@ -166,7 +179,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             int totalScore = 0;
             var now = DateTime.UtcNow;
-
             var toInsert = new List<UserAnswer>();
 
             foreach (var item in req.Answers)
@@ -221,6 +233,35 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             await _uow.SaveChangesAsync(ct);
 
+            //  Ghi CourseHistory: QuizCompleted
+            await _historyRepo.AddHistoryAsync(new CourseHistory
+            {
+                Action = CourseAction.QuizCompleted,
+                ActionDate = DateTime.UtcNow,
+                UserId = userId,
+                CourseId = quiz.CourseId,
+                QuizId = quiz.QuizId,
+                QuizAttemptId = attempt.AttemptId,
+                Description = $"Attempt #{attempt.AttemptNumber} completed: {attempt.Score}/{attempt.MaxScore} ({attempt.Percentage:F1}%)."
+            }, ct);
+
+            //  Ghi CourseHistory: QuizPassed hoặc QuizFailed
+            await _historyRepo.AddHistoryAsync(new CourseHistory
+            {
+                Action = attempt.IsPassed ? CourseAction.QuizPassed : CourseAction.QuizFailed,
+                ActionDate = DateTime.UtcNow,
+                UserId = userId,
+                CourseId = quiz.CourseId,
+                QuizId = quiz.QuizId,
+                QuizAttemptId = attempt.AttemptId,
+                Description = attempt.IsPassed
+                    ? $"Passed quiz '{quiz.Title}' with {attempt.Percentage:F1}%."
+                    : $"Failed quiz '{quiz.Title}' with {attempt.Percentage:F1}%."
+            }, ct);
+
+            await _uow.SaveChangesAsync(ct);
+
+            // Build result DTO như cũ...
             var result = new AttemptResultDto
             {
                 AttemptId = attempt.AttemptId,
@@ -367,10 +408,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (lesson.Type != LessonType.Quiz || lesson.QuizId == null)
                 throw new InvalidOperationException("This lesson is not a quiz.");
 
-            // Ghi nhận đã bắt đầu lesson (nếu chưa)
             await _lessonProgressRepo.EnsureStartedAsync(userId, lessonId, ct);
 
-            // Reuse flow start theo quizId
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(lesson.QuizId.Value, ct)
                        ?? throw new InvalidOperationException("Quiz not found or inactive.");
 
@@ -397,7 +436,19 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
 
             attempt = await _attemptRepo.AddAttemptAsync(attempt, ct);
+            await _uow.SaveChangesAsync(ct);
 
+            // Ghi CourseHistory: QuizStarted
+            await _historyRepo.AddHistoryAsync(new CourseHistory
+            {
+                Action = CourseAction.QuizStarted,
+                ActionDate = DateTime.UtcNow,
+                UserId = userId,
+                CourseId = lesson.Module.CourseId,
+                QuizId = quiz.QuizId,
+                QuizAttemptId = attempt.AttemptId,
+                Description = $"Start attempt #{nextAttemptNumber} for quiz '{quiz.Title}'."
+            }, ct);
             await _uow.SaveChangesAsync(ct);
 
             return new StartQuizResponse
