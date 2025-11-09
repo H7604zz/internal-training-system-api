@@ -257,9 +257,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _lessonProgressRepo.SaveChangesAsync(ct);
         }
         public async Task<CourseLearningDto> GetCourseLearningAsync(
-    int courseId,
-    string userId,
-    CancellationToken ct = default)
+                                                                    int courseId,
+                                                                    string userId,
+                                                                    CancellationToken ct = default)
         {
             // 1) Load course + module + lesson
             var course = await _lessonProgressRepo.GetCourseWithStructureAsync(courseId, ct)
@@ -318,6 +318,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         Type = lesson.Type.ToString(),
                         OrderIndex = lesson.OrderIndex,
                         ContentUrl = lesson.ContentUrl,
+                        AttachmentUrl = lesson.AttachmentUrl,
                         QuizId = lesson.QuizId,
                         IsCompleted = lp?.IsDone ?? false,
                         CompletedDate = lp?.CompletedAt
