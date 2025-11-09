@@ -562,8 +562,8 @@ namespace InternalTrainingSystem.Core.Controllers
             return uid;
         }
 
-        // GET /api/courses/{courseId}/outline
         [HttpGet("{courseId:int}/outline")]
+        [Authorize]
         public async Task<ActionResult<CourseOutlineDto>> GetOutline(int courseId, CancellationToken ct)
         {
             try
@@ -576,8 +576,8 @@ namespace InternalTrainingSystem.Core.Controllers
             catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
         }
 
-        // GET /api/courses/{courseId}/progress
         [HttpGet("{courseId:int}/progress")]
+        [Authorize]
         public async Task<ActionResult<CourseProgressDto>> GetCourseProgress(int courseId, CancellationToken ct)
         {
             try
@@ -590,15 +590,15 @@ namespace InternalTrainingSystem.Core.Controllers
             catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
         }
 
-        // POST /api/lessons/{lessonId}/complete
         [HttpPost("lessons/{lessonId:int}/complete")]
+        [Authorize]
         public async Task<IActionResult> CompleteLesson(int lessonId, CancellationToken ct)
         {
             try
             {
                 var userId = RequireUserId();
                 await _courseMaterialService.CompleteLessonAsync(lessonId, userId, ct);
-                return NoContent(); // idempotent
+                return NoContent(); 
             }
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
             catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
@@ -606,18 +606,20 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpDelete("lessons/{lessonId:int}/complete")]
+        [Authorize]
         public async Task<IActionResult> UndoCompleteLesson(int lessonId, CancellationToken ct)
         {
             try
             {
                 var userId = RequireUserId();
                 await _courseMaterialService.UndoCompleteLessonAsync(lessonId, userId, ct);
-                return NoContent(); // idempotent
+                return NoContent(); 
             }
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
             catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
         }
         [HttpGet("{courseId:int}/learning")]
+        [Authorize]
         public async Task<ActionResult<CourseLearningDto>> GetLearning(int courseId, CancellationToken ct)
         {
             try
