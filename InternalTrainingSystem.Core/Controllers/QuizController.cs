@@ -13,11 +13,11 @@ namespace InternalTrainingSystem.Core.Controllers
 	[Authorize]
 	public class QuizController : ControllerBase
 	{
-		private readonly IQuizService _service;
+		private readonly IQuizService _quizService;
 		private readonly ICourseService _courseService;
 		public QuizController(IQuizService service, ICourseService courseService)
 		{
-			_service = service;
+			_quizService = service;
 			_courseService = courseService;
 		}
 
@@ -33,7 +33,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpGet("{quizId:int}/attempt/{attemptId:int}")]
 		public async Task<ActionResult<QuizDetailDto>> GetQuizForAttempt(int quizId, int attemptId, [FromQuery] bool shuffleQuestions = true, [FromQuery] bool shuffleAnswers = true, CancellationToken ct = default)
 		{
-			var result = await _service.GetQuizForAttemptAsync(quizId, attemptId, GetUserId(), shuffleQuestions, shuffleAnswers, ct);
+			var result = await _quizService.GetQuizForAttemptAsync(quizId, attemptId, GetUserId(), shuffleQuestions, shuffleAnswers, ct);
 			if (result == null) return NotFound();
 			return Ok(result);
 		}
@@ -43,7 +43,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPost("{quizId:int}/start")]
 		public async Task<ActionResult<StartQuizResponse>> Start(int quizId, CancellationToken ct)
 		{
-			var res = await _service.StartAttemptAsync(quizId, GetUserId(), ct);
+			var res = await _quizService.StartAttemptAsync(quizId, GetUserId(), ct);
 			return Ok(res);
 		}
         /// <summary>
@@ -52,7 +52,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPost("attempt/{attemptId:int}/submit")]
 		public async Task<ActionResult<AttemptResultDto>> Submit(int attemptId, [FromBody] SubmitAttemptRequest req, CancellationToken ct)
 		{
-			var res = await _service.SubmitAttemptAsync(attemptId, GetUserId(), req, ct);
+			var res = await _quizService.SubmitAttemptAsync(attemptId, GetUserId(), req, ct);
 			return Ok(res);
 		}
         /// <summary>
@@ -61,7 +61,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpGet("attempt/{attemptId:int}/result")]
 		public async Task<ActionResult<AttemptResultDto>> Result(int attemptId, CancellationToken ct)
 		{
-			var res = await _service.GetAttemptResultAsync(attemptId, GetUserId(), ct);
+			var res = await _quizService.GetAttemptResultAsync(attemptId, GetUserId(), ct);
 			return Ok(res);
 		}
         /// <summary>
@@ -70,7 +70,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpGet("{quizId:int}/history")]
 		public async Task<ActionResult<PagedResult<AttemptHistoryItem>>> History(int quizId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
 		{
-			var res = await _service.GetAttemptHistoryAsync(quizId, GetUserId(), page, pageSize, ct);
+			var res = await _quizService.GetAttemptHistoryAsync(quizId, GetUserId(), page, pageSize, ct);
 			return Ok(res);
 		}
         /// <summary>
@@ -79,7 +79,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPost("~/api/lesson/{lessonId:int}/quiz/start")]
 		public async Task<ActionResult<StartQuizResponse>> StartByLesson(int lessonId, CancellationToken ct)
 		{
-			var res = await _service.StartAttemptByLessonAsync(lessonId, GetUserId(), ct);
+			var res = await _quizService.StartAttemptByLessonAsync(lessonId, GetUserId(), ct);
 			return Ok(res);
 		}
         /// <summary>
@@ -88,25 +88,27 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPost("~/api/lesson/{lessonId:int}/quiz/attempt/{attemptId:int}/submit")]
 		public async Task<ActionResult<AttemptResultDto>> SubmitByLesson(int lessonId, int attemptId, [FromBody] SubmitAttemptRequest req, CancellationToken ct)
 		{
-			var res = await _service.SubmitAttemptByLessonAsync(lessonId, attemptId, GetUserId(), req, ct);
+			var res = await _quizService.SubmitAttemptByLessonAsync(lessonId, attemptId, GetUserId(), req, ct);
 			return Ok(res);
 		}
+
 		/// <summary>
 		/// Lấy info quiz theo lesson để Staff xem trước khi làm (MaxAttempts, PassingScore, TimeLimit, RemainingAttempts, IsLocked, HasPassed, BestScore…)
 		/// </summary>
-		[HttpGet("~/api/lesson/{quizId:int}/quiz/info")]
-		public async Task<ActionResult<QuizInfoDto>> GetQuizInfoByLesson(int quizId, CancellationToken ct = default)
+		[HttpGet("{quizId:int}/info")]
+		public async Task<ActionResult<QuizInfoDto>> GetQuizInfo(int quizId, CancellationToken ct = default)
 		{
-			var result = await _service.GetQuizInfoByLessonAsync(quizId, GetUserId(), ct);
+			var result = await _quizService.GetQuizInfoAsync(quizId, GetUserId(), ct);
 			if (result == null) return NotFound();
 			return Ok(result);
 		}
-            /// <summary>
-            /// lay ra lich su lam quiz
-            /// </summary>
-            /// <param name="courseId"></param>
-            /// <param name="quizId"></param>
-            /// <returns></returns>
+
+        /// <summary>
+        /// lay ra lich su lam quiz
+        /// </summary>
+        /// <param name="courseId"></param>
+        /// <param name="quizId"></param>
+        /// <returns></returns>
         [HttpGet("{courseId}/{quizId}/history")]
 		public async Task<IActionResult> GetUserQuizHistory(int courseId, int quizId)
 		{
@@ -117,6 +119,7 @@ namespace InternalTrainingSystem.Core.Controllers
 			var result = await _courseService.GetUserQuizHistoryAsync(userId, courseId, quizId);
 			return Ok(result);
 		}
+
 		[HttpGet("{id:int}")]
 		public async Task<IActionResult> GetDetail(
 			[FromRoute] int id,
@@ -124,7 +127,7 @@ namespace InternalTrainingSystem.Core.Controllers
 		{
 			try
 			{
-				var dto = await _service.GetDetailAsync(id, ct);
+				var dto = await _quizService.GetDetailAsync(id, ct);
 				return Ok(dto);
 			}
 			catch (KeyNotFoundException)

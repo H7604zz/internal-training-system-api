@@ -488,7 +488,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 throw new KeyNotFoundException($"Quiz {quizId} not found.");
             return dto;
         }
-        public async Task<QuizInfoDto?> GetQuizInfoByLessonAsync(int quizId, string userId, CancellationToken ct = default)
+        public async Task<QuizInfoDto?> GetQuizInfoAsync(int quizId, string userId, CancellationToken ct = default)
         {
 
             var quiz = await _quizRepo.GetActiveQuizAsync(quizId, ct);
@@ -510,11 +510,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 UserAttemptCount = attempts.Count,
 
                 HasPassed = submittedAttempts.Any(a => a.IsPassed),
-
-                BestScore = submittedAttempts
-                    .Select(a => (int?)a.Percentage)
-                    .DefaultIfEmpty(null)
-                    .Max()
             };
 
             return info;

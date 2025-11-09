@@ -142,6 +142,5 @@ namespace InternalTrainingSystem.Core.DTOs
         public int RemainingAttempts => Math.Max(0, MaxAttempts - UserAttemptCount);
         public bool IsLocked => RemainingAttempts <= 0;
         public bool HasPassed { get; set; }
-        public int? BestScore { get; set; }
     }
 }
