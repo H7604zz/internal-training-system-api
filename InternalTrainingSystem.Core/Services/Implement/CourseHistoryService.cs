@@ -2,6 +2,7 @@
 ﻿using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
+using DocumentFormat.OpenXml.Office2010.Excel;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -13,9 +14,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             _courseHistoryRepository = courseHistoryRepository;
         }
-        public async Task<IEnumerable<CourseHistory>> GetCourseHistoriesAsync()
+        public async Task<IEnumerable<CourseHistory>> GetCourseHistoriesByIdAsync(int Id)
         {
-            return await _courseHistoryRepository.GetCourseHistoriesAsync();
+            return await _courseHistoryRepository.GetCourseHistoriesByIdAsync(Id);
         }
     }
 }

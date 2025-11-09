@@ -547,10 +547,10 @@ namespace InternalTrainingSystem.Core.Controllers
 
         //[Authorize(Roles = UserRoles.)]
         [HttpGet("histories")]
-        public async Task<IActionResult> GetCourseHistories()
+        public async Task<IActionResult> GetCourseHistoriesByIdAsync(int Id)
         {
             // Lấy danh sách lịch sử từ service
-            var histories = await _courseHistoryService.GetCourseHistoriesAsync();
+            var histories = await _courseHistoryService.GetCourseHistoriesByIdAsync(Id);
 
             if (histories == null || !histories.Any())
                 return NotFound(new { message = "Không có lịch sử khóa học nào." });
@@ -568,11 +568,7 @@ namespace InternalTrainingSystem.Core.Controllers
             }).ToList();
 
             // Trả về list JSON
-            return Ok(new
-            {
-                total = result.Count,
-                data = result
-            });
+            return Ok(result);
         }
 
         //Staff lam course
