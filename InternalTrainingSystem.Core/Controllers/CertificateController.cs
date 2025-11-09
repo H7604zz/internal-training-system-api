@@ -20,7 +20,7 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IUserService _userService;
         private readonly string _baseUrl;
 
-        public CertificateController(ICertificateService certificateService, INotificationService notificationService, 
+        public CertificateController(ICertificateService certificateService, INotificationService notificationService,
             IUserService userServices, IConfiguration config)
         {
             _certificateService = certificateService;
@@ -62,5 +62,6 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
+        
     }
 }

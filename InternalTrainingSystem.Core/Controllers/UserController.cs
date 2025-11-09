@@ -240,6 +240,12 @@ namespace InternalTrainingSystem.Core.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("{certificate}/issue-certificate")]
+        public async Task<IActionResult> IssueCertificate(int courseId)
+        {
+        }
+
     }
 }
                                                             
