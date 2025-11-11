@@ -27,10 +27,12 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly ICategoryService _categoryService;
         private readonly ICourseHistoryService _courseHistoryService;
         private readonly ICourseMaterialService _courseMaterialService;
+        private readonly IClassService _classService;
 
         public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
             IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService,
-            ICategoryService categoryService, ICourseMaterialService courseMaterialService, ICourseHistoryService courseHistoryService)
+            ICategoryService categoryService, ICourseMaterialService courseMaterialService, ICourseHistoryService courseHistoryService,
+            IClassService classService)
         {
             _courseService = courseService;
             _hub = hub;
@@ -40,6 +42,7 @@ namespace InternalTrainingSystem.Core.Controllers
             _notificationService = notificationService;
             _courseHistoryService = courseHistoryService;
             _courseMaterialService = courseMaterialService;
+            _classService = classService;
         }
 
         // PUT: /api/courses/{id}
@@ -645,6 +648,31 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 return NotFound(new { message = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// thong ke so lieu theo khoa hoc
+        /// </summary>
+        /// <param name="courseId"></param>
+        /// <returns></returns>
+        [HttpGet("statistics/{courseId}")]
+        public async Task<IActionResult> GetClassCountByCourse(int courseId)
+        {
+            var classList = await _classService.GetClassesByCourseAsync(courseId);
+            var countStudent = 0;
+            foreach (var c in classList)
+            {
+                var students = await _classService.GetUserByClassAsync(c.ClassId);
+                countStudent += students.Count;
+            }
+            var countClass = classList?.Count() ?? 0;
+            var result = new CourseClassCountDto
+            {
+                ClassCount = countClass,
+                StudentCount = countStudent
+            };
+
+            return Ok(result);
         }
 
     }
