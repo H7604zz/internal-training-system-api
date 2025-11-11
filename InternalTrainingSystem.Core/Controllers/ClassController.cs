@@ -73,19 +73,21 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.TrainingDepartment)]
         public async Task<IActionResult> CreateWeeklySchedules([FromBody] CreateWeeklyScheduleRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest("Dữ liệu không hợp lệ.");
-
-            var result = await _classService.CreateWeeklySchedulesAsync(request);
-
-            if (!result.Success)
-                return BadRequest(new { success = false, message = result.Message });
-
-            return Ok(new
+            try
             {
-                success = true,
-                message = result.Message,
-            });
+                if (!ModelState.IsValid)
+                    return BadRequest("Dữ liệu không hợp lệ.");
+
+                var result = await _classService.CreateWeeklySchedulesAsync(request);
+                if (!result)
+                    return BadRequest("Không thể tạo lịch học hàng tuần.");
+
+                return Ok("Tạo lịch học hàng tuần thành công.");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         /// <summary>
@@ -212,38 +214,40 @@ namespace InternalTrainingSystem.Core.Controllers
         //[Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> RequestClassSwap([FromBody] SwapClassRequest request)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            try
             {
-                return NotFound("User not found");
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized("Không xác định được người dùng.");
+
+                var u = await _userService.GetUserProfileAsync(userId);
+                if (u == null || u.EmployeeId != request.EmployeeIdFrom)
+                    return NotFound("Không tìm thấy học viên.");
+
+                var result = await _classService.CreateClassSwapRequestAsync(request);
+                if (!result)
+                    return BadRequest("Không thể gửi yêu cầu đổi lớp.");
+
+                await _notificationService.SaveNotificationAsync(new Notification
+                {
+                    Type = NotificationType.UserSwapClass,
+                    SentAt = DateTime.Now,
+                    Message = "Có 1 yêu cầu đổi lớp đang đợi bạn phản hồi"
+                },
+                userIds: new List<string> { request.EmployeeIdTo });
+
+                await _hub.Clients.User(request.EmployeeIdTo).SendAsync("ReceiveNotification", new
+                {
+                    Type = "UserSwapClass",
+                    Message = "Bạn có một yêu cầu đổi lớp đang chờ phản hồi."
+                });
+
+                return Ok("Gửi yêu cầu đổi lớp thành công.");
             }
-
-            var u = await _userService.GetUserProfileAsync(userId);
-            if (u!.EmployeeId!= request.EmployeeIdFrom)
+            catch (ArgumentException ex)
             {
-                return NotFound("Không tìm thấy học viên.");
+                return BadRequest(ex.Message);
             }
-
-            var result = await _classService.CreateClassSwapRequestAsync(request);
-            if (!result.Success)
-                return BadRequest(result.Message);
-
-            await _notificationService.SaveNotificationAsync(new Notification
-            {
-                Type = NotificationType.UserSwapClass,
-                SentAt = DateTime.Now,
-                Message = "Có 1 yêu cầu đổi lớp đang đợi bạn phản hồi",
-            },
-               userIds: new List<string> { request.EmployeeIdTo }
-            );
-
-            await _hub.Clients.User(request.EmployeeIdTo).SendAsync("ReceiveNotification", new
-            {
-                Type = "UserSwapClass",
-                Message = "Bạn có một yêu cầu đổi lớp đang chờ phản hồi."
-            });
-
-            return Ok(result.Message);
         }
 
         /// <summary>
@@ -255,15 +259,22 @@ namespace InternalTrainingSystem.Core.Controllers
         //[Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> RespondToSwapRequest([FromBody] RespondSwapRequest request)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(currentUserId))
-                return Unauthorized("Không xác định được người dùng.");
+            try
+            {
+                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(currentUserId))
+                    return Unauthorized("Không xác định được người dùng.");
 
-            var result = await _classService.RespondToClassSwapAsync(request, currentUserId);
-            if (!result.Success)
-                return BadRequest(result.Message);
+                var result = await _classService.RespondToClassSwapAsync(request, currentUserId);
+                if (!result)
+                    return BadRequest("Không thể xử lý yêu cầu đổi lớp.");
 
-            return Ok(result.Message);
+                return Ok("Phản hồi yêu cầu đổi lớp thành công.");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         /// <summary>
@@ -293,11 +304,18 @@ namespace InternalTrainingSystem.Core.Controllers
         //[Authorize(Roles = UserRoles.Mentor)]
         public async Task<IActionResult> Reschedule(int scheduleId, [FromBody] RescheduleRequest request)
         {
-            var result = await _classService.RescheduleAsync(scheduleId, request);
-            if (!result.Success)
-                return BadRequest(result.Message);
+            try
+            {
+                var result = await _classService.RescheduleAsync(scheduleId, request);
+                if (!result)
+                    return BadRequest("Không thể thay đổi lịch học.");
 
-            return Ok();
+                return Ok("Đổi lịch học thành công.");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("by-course/{courseId}")]

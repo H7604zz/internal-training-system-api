@@ -79,9 +79,8 @@
 
         public static class ParticipantStatus
         {
-            public const string Registered = "Registered";
-            public const string Attended = "Attended";
-            public const string NoShow = "NoShow";
+            public const string InProgress = "InProgress";
+            public const string Completed = "Completed";
             public const string Cancelled = "Cancelled";
         }
     }

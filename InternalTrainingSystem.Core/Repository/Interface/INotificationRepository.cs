@@ -4,7 +4,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
 {
     public interface INotificationRepository
     {
-        Task SaveNotificationAsync(Notification courseNotification);
+        Task SaveNotificationAsync(Notification courseNotification, List<string>? userIds = null, List<string>? roleNames = null);
         Notification? GetNotificationByCourseAndType(int courseId, NotificationType type);
         Notification? GetNotificationByClassAndType(int classId, NotificationType type);
         Task<bool> HasRecentNotification(NotificationType type, int courseId, int? days = 7);

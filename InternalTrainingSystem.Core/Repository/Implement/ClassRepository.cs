@@ -105,21 +105,21 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return true;
         }
 
-        public async Task<(bool Success, string Message)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
+        public async Task<bool> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
         {
             var classEntity = await _context.Classes
                 .Include(c => c.Employees)
                 .FirstOrDefaultAsync(c => c.ClassId == request.ClassId);
 
             if (classEntity == null)
-                return (false, "Không tìm thấy lớp học.");
+                throw new ArgumentException("Không tìm thấy lớp học.");
 
             var instructor = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.MentorId);
             if (instructor == null)
-                return (false, "Không tìm thấy giảng viên.");
+                throw new ArgumentException("Không tìm thấy giảng viên.");
 
             if (request.WeeklySchedules == null || request.WeeklySchedules.Count == 0)
-                return (false, "Chưa có buổi học trong tuần đầu.");
+                throw new ArgumentException("Chưa có buổi học trong tuần đầu.");
 
             string joinUrl = await ZoomHelper.CreateRecurringMeetingAndGetJoinUrlAsync();
 
@@ -132,7 +132,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 foreach (var item in request.WeeklySchedules)
                 {
                     if (!Enum.TryParse<DayOfWeek>(item.DayOfWeek, true, out var day))
-                        return (false, $"Ngày '{item.DayOfWeek}' không hợp lệ.");
+                        throw new ArgumentException($"Ngày '{item.DayOfWeek}' không hợp lệ.");
 
                     var date = baseDate.AddDays((int)day - (int)request.StartWeek.DayOfWeek);
                     if (date < baseDate)
@@ -167,7 +167,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             .ToList();
 
                         var conflictList = string.Join(", ", conflictedStudents.Take(5));
-                        return (false, $"Lịch học bị trùng cho các học viên: {conflictList}...");
+                        throw new ArgumentException($"Lịch học bị trùng cho các học viên: {conflictList}...");
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.Location))
@@ -194,7 +194,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 .ToList();
 
                             var classList = string.Join(", ", classNames.Take(3));
-                            return (false, $"Phòng '{item.Location}' đã có lớp ({classList}) trong khung giờ này.");
+                            throw new ArgumentException($"Phòng '{item.Location}' đã có lớp ({classList}) trong khung giờ này.");
                         }
                     }
 
@@ -233,7 +233,28 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             _context.Classes.Update(classEntity);
             await _context.SaveChangesAsync();
 
-            return (true, $"Đã tạo {allSchedules.Count} buổi học cho {request.NumberOfWeeks} tuần.");
+            var scheduleParticipants = new List<ScheduleParticipant>();
+
+            foreach (var schedule in allSchedules)
+            {
+                foreach (var student in classEntity.Employees)
+                {
+                    scheduleParticipants.Add(new ScheduleParticipant
+                    {
+                        ScheduleId = schedule.ScheduleId,
+                        UserId = student.Id,
+                        AttendanceDate = null
+                    });
+                }
+            }
+
+            if (scheduleParticipants.Count > 0)
+            {
+                _context.ScheduleParticipants.AddRange(scheduleParticipants);
+                await _context.SaveChangesAsync();
+            }
+
+            return true;
         }
 
         public async Task<ClassScheduleResponse> GetClassScheduleAsync(int classId)
@@ -266,7 +287,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
         }
 
-        public async Task<UserScheduleResponse> GetUserScheduleAsync(string staffId)
+        public async Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string staffId)
         {
             var staffClasses = await _context.Classes
                 .Include(c => c.Employees)
@@ -276,12 +297,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             if (staffClasses == null || staffClasses.Count == 0)
             {
-                return new UserScheduleResponse
-                {
-                    Success = false,
-                    Message = "Nhân viên chưa được xếp vào lớp nào.",
-                    Schedules = new List<ScheduleItemResponseDto>()
-                };
+                return new List<ScheduleItemResponseDto>();
             }
 
             var schedules = await _context.Schedules
@@ -307,12 +323,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 })
                 .ToListAsync();
 
-            return new UserScheduleResponse
-            {
-                Success = true,
-                Message = "Lấy lịch học thành công",
-                Schedules = schedules
-            };
+            return schedules;
         }
 
         public async Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId)
@@ -394,16 +405,16 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }).ToList();
         }
 
-        public async Task<(bool Success, string Message)> CreateClassSwapRequestAsync(SwapClassRequest request)
+        public async Task<bool> CreateClassSwapRequestAsync(SwapClassRequest request)
         {
             if (request.EmployeeIdFrom == request.EmployeeIdTo)
-                return (false, "Không thể đổi lớp với chính mình.");
+                return false;
 
             var userFrom = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeIdFrom);
             var userTo = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeIdTo);
 
             if (userFrom == null || userTo == null)
-                return (false, "Không tìm thấy 1 hoặc cả 2 học viên.");
+                throw new ArgumentException("Không tìm thấy 1 hoặc cả 2 học viên.");
 
             var class1 = await _context.Classes
                 .Include(c => c.Employees)
@@ -416,23 +427,23 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .FirstOrDefaultAsync(c => c.ClassId == request.ClassIdTo);
 
             if (class1 == null || class2 == null)
-                return (false, "Không tìm thấy 1 hoặc cả 2 lớp học.");
+                return false;
 
             if (class1.CourseId != class2.CourseId)
-                return (false, $"Hai lớp '{class1.ClassName}' và '{class2.ClassName}' không cùng một môn học, không thể đổi.");
+                throw new ArgumentException($"Hai lớp '{class1.ClassName}' và '{class2.ClassName}' không cùng một môn học, không thể đổi.");
 
             if (!class1.Employees.Any(e => e.EmployeeId == userFrom.EmployeeId))
-                return (false, $"{userFrom.FullName} không thuộc lớp {class1.ClassName}.");
+                throw new ArgumentException($"{userFrom.FullName} không thuộc lớp {class1.ClassName}.");
 
             if (!class2.Employees.Any(e => e.EmployeeId == userTo.EmployeeId))
-                return (false, $"{userTo.FullName} không thuộc lớp {class2.ClassName}.");
+                throw new ArgumentException($"{userTo.FullName} không thuộc lớp {class2.ClassName}.");
 
             var existingRequest = await _context.ClassSwaps.FirstOrDefaultAsync(x =>
             (x.RequesterId == request.EmployeeIdFrom && x.TargetId == request.EmployeeIdTo) ||
             (x.RequesterId == request.EmployeeIdTo && x.TargetId == request.EmployeeIdFrom));
 
             if (existingRequest != null && existingRequest.Status == ClassSwapConstants.Pending)
-                return (false, "Đã có yêu cầu đổi lớp đang chờ xử lý giữa hai học viên.");
+                throw new ArgumentException("Đã có yêu cầu đổi lớp đang chờ xử lý giữa hai học viên.");
 
             var swapRequest = new ClassSwap
             {
@@ -449,7 +460,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             _context.ClassSwaps.Add(swapRequest);
             await _context.SaveChangesAsync();
 
-            return (true, $"Gửi yêu cầu đổi lớp thành công. Vui lòng chờ phản hồi.");
+            return true;
         }
 
         public async Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize)
@@ -492,7 +503,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
         }
 
-        public async Task<(bool Success, string Message)> RespondToClassSwapAsync(RespondSwapRequest request, string responderId)
+        public async Task<bool> RespondToClassSwapAsync(RespondSwapRequest request, string responderId)
         {
             try
             {
@@ -500,23 +511,23 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     .FirstOrDefaultAsync(r => r.Id == request.SwapRequestId);
 
                 if (swapRequest == null)
-                    return (false, "Không tìm thấy yêu cầu đổi lớp.");
+                    return false;
 
                 if (swapRequest.Status != ClassSwapConstants.Pending)
-                    return (false, "Yêu cầu này đã được xử lý trước đó.");
+                    return false;
 
                 var classTo = await _context.Classes.FirstOrDefaultAsync(c => c.ClassId == swapRequest.ToClassId);
                 var classFrom = await _context.Classes.FirstOrDefaultAsync(c => c.ClassId == swapRequest.FromClassId);
 
                 if (classTo == null || classFrom == null)
-                    return (false, "Không tìm thấy thông tin lớp học.");
+                    return false;
 
                 if (classTo.StartDate <= DateTime.Now || classFrom.StartDate <= DateTime.Now)
                 {
                     swapRequest.Status = ClassSwapConstants.Cancelled;
                     await _context.SaveChangesAsync();
 
-                    return (false, "Không thể đổi lớp vì một trong hai lớp đã bắt đầu. Yêu cầu đã bị hủy.");
+                    throw new ArgumentException("Không thể đổi lớp vì một trong hai lớp đã bắt đầu. Yêu cầu đã bị hủy.");
                 }
 
                 if (request.Accepted)
@@ -527,7 +538,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                         .FirstOrDefaultAsync(u => u.EmployeeId == swapRequest.TargetId);
 
                     if (userFrom == null || userTo == null)
-                        return (false, "Không tìm thấy thông tin học viên.");
+                        return false;
     
                     classFrom.Employees.Remove(userFrom);
                     classTo.Employees.Remove(userTo);
@@ -540,7 +551,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
                     await _context.SaveChangesAsync();
 
-                    return (true, "Đổi lớp thành công.");
+                    return true;
                 }
                 else
                 {
@@ -548,23 +559,23 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     swapRequest.RespondedById = responderId;
                     await _context.SaveChangesAsync();
 
-                    return (true, "Từ chối yêu cầu đổi lớp thành công.");
+                    return true;
                 }
             }
             catch (Exception ex)
             {
-                return (false, $"Lỗi khi xử lý yêu cầu đổi lớp: {ex.Message}");
+                throw new ArgumentException($"Lỗi khi xử lý yêu cầu đổi lớp: {ex.Message}");
             }
         }
 
-        public async Task<(bool Success, string Message)> RescheduleAsync(int scheduleId, RescheduleRequest request)
+        public async Task<bool> RescheduleAsync(int scheduleId, RescheduleRequest request)
         {
             var schedule = await _context.Schedules.FirstOrDefaultAsync(sh => sh.ScheduleId == scheduleId);
             if (schedule == null)
-                return (false, "Không tìm thấy lịch học.");
+                return false;
 
             if (schedule.Date < DateTime.Today)
-                return (false, "Không thể đổi lịch cho buổi học đã diễn ra.");
+                return false;
 
             var instructorConflict = await _context.Schedules.AnyAsync(sh =>
                 sh.InstructorId == schedule.InstructorId &&
@@ -578,7 +589,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             );
 
             if (instructorConflict)
-                return (false, "Giảng viên đã có buổi học khác trong khoảng thời gian này.");
+                throw new ArgumentException("Giảng viên đã có buổi học khác trong khoảng thời gian này.");
 
             if (!string.IsNullOrWhiteSpace(schedule.Location))
             {
@@ -594,7 +605,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 );
 
                 if (roomConflict)
-                    return (false, $"Phòng học \"{schedule.Location}\" đã có buổi khác trong khoảng thời gian này.");
+                    throw new ArgumentException($"Phòng học \"{schedule.Location}\" đã có buổi khác trong khoảng thời gian này.");
             }
 
             var studentIds = schedule.ScheduleParticipants.Select(p => p.UserId).ToList();
@@ -615,7 +626,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     );
 
                 if (studentConflict)
-                    return (false, "Một hoặc nhiều học viên đã có lịch học khác trong khoảng thời gian này.");
+                    throw new ArgumentException("Một hoặc nhiều học viên đã có lịch học khác trong khoảng thời gian này.");
             }
 
             schedule.Date = request.NewDate;
@@ -625,7 +636,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
 
             await _context.SaveChangesAsync();
-            return (true, "Đổi lịch thành công.");
+            return true;
         }
 
         public async Task<Schedule?> GetClassScheduleByIdAsync(int scheduleId)

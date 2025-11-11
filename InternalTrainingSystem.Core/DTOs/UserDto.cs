@@ -111,13 +111,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public int PageSize { get; set; } = 10;
     }
 
-    public class UserScheduleResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public List<ScheduleItemResponseDto> Schedules { get; set; } = new();
-    }
-
     public class UserAttendanceResponse
     {
         public int ClassId { get; set; }

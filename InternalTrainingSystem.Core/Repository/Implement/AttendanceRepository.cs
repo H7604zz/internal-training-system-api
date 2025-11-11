@@ -19,15 +19,28 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         {
             foreach (var item in list)
             {
-                var attendance = new Attendance
-                {
-                    ScheduleId = scheduleId,
-                    UserId = item.UserId,
-                    Status = item.Status!,
-                    CheckOutTime = DateTime.Now
-                };
+                var participantExists = await _context.ScheduleParticipants
+                    .AnyAsync(sp => sp.ScheduleId == scheduleId && sp.UserId == item.UserId);
+                if (!participantExists)
+                    continue;
 
-                _context.Attendances.Add(attendance);
+                var existing = await _context.Attendances
+                    .FirstOrDefaultAsync(a => a.ScheduleId == scheduleId && a.UserId == item.UserId);
+
+                if (existing == null)
+                {
+                    _context.Attendances.Add(new Attendance
+                    {
+                        ScheduleId = scheduleId,
+                        UserId = item.UserId,
+                        Status = item.Status!,
+                        CheckInTime = DateTime.Now,
+                    });
+                }
+                else
+                {
+                    existing.Status = item.Status!;
+                }
             }
 
             await _context.SaveChangesAsync();

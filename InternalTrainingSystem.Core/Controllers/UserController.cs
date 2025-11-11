@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Constants;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
@@ -20,16 +21,18 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IClassService _classService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
+        private readonly ICertificateService _certificateService;
 
         private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR };
 
         public UserController(IUserService userServices, UserManager<ApplicationUser> userManager, 
-            ICourseEnrollmentService courseEnrollmentService, IClassService classService)
+            ICourseEnrollmentService courseEnrollmentService, IClassService classService, ICertificateService certificateService)
         {
             _userService = userServices;
             _userManager = userManager;
             _courseEnrollmentService = courseEnrollmentService;
             _classService = classService;
+            _certificateService = certificateService;
         }
 
         /// <summary>
@@ -212,15 +215,10 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             var result = await _classService.GetUserScheduleAsync(userId);
 
-            if (!result.Success)
-                return NotFound(new { success = false, message = result.Message });
+            if (!result.Any())
+                return NotFound();
 
-            return Ok(new
-            {
-                success = true,
-                message = result.Message,
-                schedules = result.Schedules
-            });
+            return Ok(result);
         }
 
         [HttpGet("attendance")]
@@ -236,10 +234,23 @@ namespace InternalTrainingSystem.Core.Controllers
             var result = await _userService.GetUserAttendanceSummaryAsync(userId);
 
             if (result == null || !result.Any())
-                return NotFound(new { success = false, message = "Không có dữ liệu điểm danh cho lớp này." });
+                return NotFound("Không có dữ liệu điểm danh cho lớp này.");
 
             return Ok(result);
         }
+
+        [HttpGet("certificates")]
+
+        public async Task<IActionResult> GetCertificatesByUser(string userId)
+        {
+            var certificates = await _certificateService.GetCertificateByUserAsync(userId);
+            if (certificates == null || certificates.Count == 0)
+            {
+                return NotFound("Không tìm thấy chứng chỉ nào cho người dùng này.");
+            }
+            return Ok(certificates);
+        }
+
     }
 }
                                                             
