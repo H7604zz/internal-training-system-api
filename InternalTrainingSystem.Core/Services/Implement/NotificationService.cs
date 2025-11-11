@@ -20,7 +20,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public async Task SaveNotificationAsync(Notification notification, List<string>? userIds = null, List<string>? roleNames = null)
         {
-            await _notificationRepo.SaveNotificationAsync(notification);
+            await _notificationRepo.SaveNotificationAsync(notification, userIds, roleNames);
         }
 
         public Notification? GetNotificationByCourseAndType(int courseId, NotificationType type)

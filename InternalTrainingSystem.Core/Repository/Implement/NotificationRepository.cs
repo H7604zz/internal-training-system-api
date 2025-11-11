@@ -14,16 +14,55 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             _context = applicationDbContext;
         }
 
-        public async Task SaveNotificationAsync(Notification courseNotification)
+        public async Task SaveNotificationAsync(
+            Notification courseNotification,
+            List<string>? userIds = null,
+            List<string>? roleNames = null)
         {
+            if (courseNotification == null)
+                throw new ArgumentNullException(nameof(courseNotification));
+
             try
             {
+                using var transaction = await _context.Database.BeginTransactionAsync();
+
                 _context.Notifications.Add(courseNotification);
                 await _context.SaveChangesAsync();
+
+                var recipients = new List<NotificationRecipient>();
+
+                if (userIds != null && userIds.Any())
+                {
+                    recipients.AddRange(userIds.Select(userId => new NotificationRecipient
+                    {
+                        NotificationId = courseNotification.Id,
+                        UserId = userId,
+                        RoleName = null
+                    }));
+                }
+
+                if (roleNames != null && roleNames.Any())
+                {
+                    recipients.AddRange(roleNames.Select(role => new NotificationRecipient
+                    {
+                        NotificationId = courseNotification.Id,
+                        UserId = string.Empty,
+                        RoleName = role
+                    }));
+                }
+
+                if (recipients.Any())
+                {
+                    _context.NotificationRecipients.AddRange(recipients);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"{ex.Message}", ex);
+                await _context.Database.RollbackTransactionAsync();
+                throw new InvalidOperationException("Không thể lưu thông báo: " + ex.Message, ex);
             }
         }
 
