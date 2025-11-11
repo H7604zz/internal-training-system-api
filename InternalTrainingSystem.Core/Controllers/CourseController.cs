@@ -237,10 +237,22 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(new { message = "Khóa học đã được chuyển sang trạng thái Deleted.", reason = rejectReason });
         }
 
-        [HttpPost("{courseId}/enrollments/{userId}/confirm")]
+        /// <summary>
+        /// DirectManager comfirm li do cua staff
+        /// </summary>
+        /// <param name="courseId"></param>
+        /// <param name="isConfirmed"></param>
+        /// <returns></returns>
+        [HttpPost("{courseId}/enrollments/confirm")]
         [Authorize(Roles = UserRoles.DirectManager)]
-        public async Task<IActionResult> ConfirmEnrollment(int courseId, string userId, [FromQuery] bool isConfirmed)
+        public async Task<IActionResult> ConfirmEnrollment(int courseId, [FromQuery] bool isConfirmed)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized();
+            } 
+
             var enrollment = await _courseEnrollmentService.GetCourseEnrollment(courseId, userId);
 
             if (enrollment == null)
@@ -273,10 +285,22 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
-        [HttpPatch("{courseId}/enrollments/{userId}/status")]
+        /// <summary>
+        /// staff confirm khoa hoc
+        /// </summary>
+        /// <param name="courseId"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPatch("{courseId}/enrollments/status")]
         [Authorize(Roles = UserRoles.Staff)]
-        public async Task<IActionResult> UpdateEnrollmentStatus(int courseId, string userId, [FromBody] EnrollmentStatusUpdateRequest request)
+        public async Task<IActionResult> UpdateEnrollmentStatus(int courseId, [FromBody] EnrollmentStatusUpdateRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
             var course = await _courseService.GetCourseByCourseIdAsync(courseId);
             if (course == null)
                 return NotFound();
