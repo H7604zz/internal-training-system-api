@@ -28,7 +28,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.CreateClassesAsync(request, confirmedUsers, createdById);
         }
 
-        public async Task<(bool Success, string Message)> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
+        public async Task<bool> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request)
         {
             return await _classRepo.CreateWeeklySchedulesAsync(request);
         }
@@ -58,7 +58,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.GetClassesByCourseAsync(courseId);
         }
 
-        public Task<(bool Success, string Message)> CreateClassSwapRequestAsync(SwapClassRequest request)
+        public Task<bool> CreateClassSwapRequestAsync(SwapClassRequest request)
         {
             return _classRepo.CreateClassSwapRequestAsync(request);
         }
@@ -68,12 +68,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.GetClassesAsync(page, pageSize);
         }
 
-        public async Task<(bool Success, string Message)> RespondToClassSwapAsync(RespondSwapRequest request, string responderId)
+        public async Task<bool> RespondToClassSwapAsync(RespondSwapRequest request, string responderId)
         {
             return await _classRepo.RespondToClassSwapAsync(request, responderId);
         }
 
-        public async Task<(bool Success, string Message)> RescheduleAsync(int scheduleId, RescheduleRequest request)
+        public async Task<bool> RescheduleAsync(int scheduleId, RescheduleRequest request)
         {
             return await _classRepo.RescheduleAsync(scheduleId, request);
         }
