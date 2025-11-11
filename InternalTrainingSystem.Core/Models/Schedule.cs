@@ -9,12 +9,8 @@ namespace InternalTrainingSystem.Core.Models
         [Key]
         public int ScheduleId { get; set; }
 
-        [Required]
-        [StringLength(200)]
-        public string Title { get; set; } = string.Empty;
-
-        [StringLength(500)]
-        public string? Description { get; set; }
+        [StringLength(20)]
+        public string DayOfWeek { get; set; } = "";
 
         [Required]
         public DateTime Date { get; set; }

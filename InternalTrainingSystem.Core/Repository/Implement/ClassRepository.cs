@@ -200,7 +200,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
                     allSchedules.Add(new Schedule
                     {
-                        Description = item.Description,
+                        DayOfWeek = item.DayOfWeek,
                         Date = date,
                         StartTime = item.StartTime,
                         EndTime = item.EndTime,
@@ -629,6 +629,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     throw new ArgumentException("Một hoặc nhiều học viên đã có lịch học khác trong khoảng thời gian này.");
             }
 
+            schedule.DayOfWeek = request.NewDayOfWeek!;
             schedule.Date = request.NewDate;
             schedule.StartTime = request.NewStartTime;
             schedule.EndTime = request.NewEndTime;

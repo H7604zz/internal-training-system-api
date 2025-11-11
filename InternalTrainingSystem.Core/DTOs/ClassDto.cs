@@ -77,7 +77,6 @@ namespace InternalTrainingSystem.Core.DTOs
     public class WeeklyScheduleItemRequestDto
     {
         public string DayOfWeek { get; set; } = ""; // Monday, Tuesday,...
-        public string? Description { get; set; }
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
         public string? Location { get; set; }
@@ -123,8 +122,9 @@ namespace InternalTrainingSystem.Core.DTOs
     public class RescheduleRequest
     {
         [Required]
+        public string? NewDayOfWeek { get; set; }
+        [Required]
         public DateTime NewDate { get; set; }
-
         [Required]
         public TimeSpan NewStartTime { get; set; }
         [Required]
