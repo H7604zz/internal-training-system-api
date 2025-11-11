@@ -273,7 +273,7 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
-        [HttpPost("{courseId}/enrollments/{userId}/status")]
+        [HttpPatch("{courseId}/enrollments/{userId}/status")]
         [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> UpdateEnrollmentStatus(int courseId, string userId, [FromBody] EnrollmentStatusUpdateRequest request)
         {
