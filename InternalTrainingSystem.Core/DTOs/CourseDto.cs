@@ -112,7 +112,6 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class GetAllCoursesRequest
     {
-        public string UserId { get; set; } = string.Empty;
         public string? Search { get; set; }
         public string? Status { get; set; }
         public int Page { get; set; } = 1;

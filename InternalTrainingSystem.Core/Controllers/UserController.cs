@@ -197,7 +197,9 @@ namespace InternalTrainingSystem.Core.Controllers
         [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> GetUserCourses([FromQuery] GetAllCoursesRequest request)
         {
-            var result = await _courseEnrollmentService.GetAllCoursesEnrollmentsByStaffAsync(request);
+            var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(uid)) throw new UnauthorizedAccessException("Người dùng chưa được xác thực.");
+            var result = await _courseEnrollmentService.GetAllCoursesEnrollmentsByStaffAsync(request, uid);
             return Ok(result);
 
         }
