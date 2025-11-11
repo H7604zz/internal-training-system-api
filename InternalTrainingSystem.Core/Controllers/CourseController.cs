@@ -281,14 +281,9 @@ namespace InternalTrainingSystem.Core.Controllers
             if (course == null)
                 return NotFound();
 
-
-            var enrollment = new CourseEnrollment
-            {
-                CourseId = course.CourseId,
-                UserId = userId,
-                EnrollmentDate = DateTime.Now,
-                LastAccessedDate = DateTime.Now
-            };
+            var enrollment = await _courseEnrollmentService.GetCourseEnrollment(courseId, userId);
+            if (enrollment == null)
+                return NotFound();
 
             if (course.IsOnline || course.IsMandatory)
             {
@@ -307,7 +302,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 }
             }
 
-            await _courseEnrollmentService.AddCourseEnrollment(enrollment);
+            await _courseEnrollmentService.UpdateCourseEnrollment(enrollment);
 
             await _hub.Clients.Group($"course-{courseId}")
             .SendAsync("EnrollmentStatusChanged", new
