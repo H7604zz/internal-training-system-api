@@ -12,7 +12,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
              List<StaffConfirmCourseResponse> confirmedUsers, string createdById);
         Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId);
         Task<ClassDto?> GetClassDetailAsync(int classId);
-        Task<List<ClassDto>> GetClassesByCourseAsync(int courseId);
+        Task<List<ClassListDto>> GetClassesByCourseAsync(int courseId);
         Task<bool> CreateClassSwapRequestAsync(SwapClassRequest request);
         Task<bool> RespondToClassSwapAsync(RespondSwapRequest request, string responderId);
         Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize);

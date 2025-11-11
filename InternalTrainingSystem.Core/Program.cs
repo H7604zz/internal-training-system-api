@@ -71,6 +71,7 @@ builder.Services.AddScoped<IQuizRepository, QuizRepository>();
 builder.Services.AddScoped<IUserAnswerRepository, UserAnswerRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ILessonProgressRepository, LessonProgressRepository>();
+builder.Services.AddScoped<ICourseHistoryRepository, CourseHistoryRepository>();
 builder.Services.AddScoped<ICertificateRepository, CertificateRepository>();
 
 
@@ -89,6 +90,7 @@ builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddSingleton<IFileStorage, S3FileStorage>();
 builder.Services.AddScoped<ITrackProgressService, TrackProgressService>();
+builder.Services.AddScoped<ICourseHistoryService, CourseHistoryService>();
 builder.Services.AddScoped<ICertificateService, CertificateService>();
 
 // Configure JWT Authentication

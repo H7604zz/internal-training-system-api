@@ -51,6 +51,16 @@ namespace InternalTrainingSystem.Core.DTOs
         public int PageSize { get; set; }
     }
 
+    public class ClassListDto
+    {
+        public int ClassId { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+        public string MentorId { get; set; } = string.Empty;
+        public string? MentorName { get; set; }
+        public bool IsActive { get; set; } = true;
+        public string? Status { get; set; }
+    }
+
     // Schedule DTOs ----------------------
     public class CreateWeeklyScheduleRequest
     {

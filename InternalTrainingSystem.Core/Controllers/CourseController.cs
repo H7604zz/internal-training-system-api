@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,15 +21,16 @@ namespace InternalTrainingSystem.Core.Controllers
     {
         private readonly ICourseService _courseService;
         private readonly IUserService _userService;
-        private readonly IClassService _classService;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
         private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hub;
         private readonly ICategoryService _categoryService;
+        private readonly ICourseHistoryService _courseHistoryService;
+        private readonly ICourseMaterialService _courseMaterialService;
 
         public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
             IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService,
-            ICategoryService categoryService, IClassService classService)
+            ICategoryService categoryService, ICourseMaterialService courseMaterialService, ICourseHistoryService courseHistoryService)
         {
             _courseService = courseService;
             _hub = hub;
@@ -36,8 +38,9 @@ namespace InternalTrainingSystem.Core.Controllers
             _userService = userService;
             _categoryService = categoryService;
             _notificationService = notificationService;
-            _classService = classService;
-        } 
+            _courseHistoryService = courseHistoryService;
+            _courseMaterialService = courseMaterialService;
+        }
 
         // PUT: /api/courses/{id}
         [HttpPut("{id}")]
@@ -184,30 +187,19 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(dto);
         }
 
-        //api này không cần thiết
-        /// <summary>Hiển thị các course có status = Pending (Ban giám đốc duyệt).</summary>
-        [HttpGet("pending")]
-        [ProducesResponseType(typeof(IEnumerable<CourseListItemDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<CourseListItemDto>>> GetPendingCourses()
-        {
-            var request = new GetAllCoursesRequest
-            {
-                Page = 1,
-                PageSize = int.MaxValue,
-                Status = CourseConstants.Status.Pending
-            };
-            var items = await _courseService.GetAllCoursesPagedAsync(request);
-            return Ok(items);
-        }
-
-        
-
         [HttpPatch("update-pending-status/{courseId}")]
+        //[Authorize(Roles = UserRoles.DirectManager)]
         public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdatePendingCourseStatusRequest request)
         {
+            // ✅ Lấy userId từ JWT
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? User.FindFirstValue("sub")     // phổ biến nhất
+                          ?? User.FindFirstValue("id")
+                          ?? User.FindFirstValue("uid")
+                          ?? "SYSTEM_BOD"; // fallback nếu token không có
             try
             {
-                var result = await _courseService.UpdatePendingCourseStatusAsync(courseId, request.NewStatus, request.RejectReason);
+                var result = await _courseService.UpdatePendingCourseStatusAsync(userId, courseId, request.NewStatus, request.RejectReason);
 
                 if (!result)
                     return BadRequest("Không thể cập nhật trạng thái. Có thể khóa học không tồn tại hoặc không ở trạng thái Pending.");
@@ -231,7 +223,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
         /// <summary>Chuyển 1 course từ Active -> Deleted (xóa mềm theo status).</summary>
         [HttpPatch("{courseId}")]
-        
+
         public async Task<IActionResult> DeleteActiveCourse(int courseId, [FromBody] string? rejectReason)
         {
             if (string.IsNullOrWhiteSpace(rejectReason))
@@ -449,28 +441,11 @@ namespace InternalTrainingSystem.Core.Controllers
             {
                 Page = 1,
                 PageSize = int.MaxValue,
+                Status = EnrollmentConstants.Status.NotEnrolled
             };
 
             var eligiblePaged = _userService.GetEligibleStaff(course.CourseId, searchDto);
-            var enrollmentsToAdd = new List<CourseEnrollment>();
-            foreach (var user in eligiblePaged.Items)
-            {
-                if (user.Status == EnrollmentConstants.Status.NotEnrolled)
-                {
-                    enrollmentsToAdd.Add(new CourseEnrollment
-                    {
-                        CourseId = course.CourseId,
-                        UserId = user.Id!,
-                        Status = EnrollmentConstants.Status.Enrolled,
-                        EnrollmentDate = DateTime.Now,
-                        LastAccessedDate = DateTime.Now
-                    });
-                }
-            }
-            if (enrollmentsToAdd.Any())
-            { 
-                await _courseEnrollmentService.AddRangeAsync(enrollmentsToAdd);
-            }
+            await _courseEnrollmentService.BulkUpdateEnrollmentsToEnrolledAsync(eligiblePaged.Items.ToList(), courseId);
 
             await _notificationService.SaveNotificationAsync(
                 new Notification
@@ -493,32 +468,17 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok("Danh sách nhân viên tham gia khóa học đã được chốt thành công.");
         }
 
+        //HttpGet /categories
         [HttpGet("/categories")]
-        public ActionResult<IEnumerable<CourseCategory>> GetAll()
+        public ActionResult<IEnumerable<CourseCategory>> GetCategories()
         {
             var items = _categoryService.GetCategories();
             return Ok(items);
         }
 
-        [HttpGet("/{courseId}/classes")]
-        public async Task<IActionResult> GetClassesByCourse(int courseId)
-        {
-            var classList = await _classService.GetClassesByCourseAsync(courseId);
-
-            if (!classList.Any())
-                return NotFound(new { success = false, message = "Không tìm thấy lớp học cho khóa học này." });
-
-            return Ok(new
-            {
-                success = true,
-                message = $"Tìm thấy {classList.Count} lớp học thuộc khóa học.",
-                data = classList
-            });
-        }
-
         [HttpPut("{id:int}/resubmit")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> ResubmitAfterReject(int id,[FromForm(Name = "metadata")] string metadata,[FromForm] List<IFormFile> lessonFiles,[FromForm] string? resubmitNote,
+        public async Task<IActionResult> ResubmitAfterReject(int id, [FromForm(Name = "metadata")] string metadata, [FromForm] List<IFormFile> lessonFiles, [FromForm] string? resubmitNote,
         CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(metadata))
@@ -568,6 +528,105 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
+        //[Authorize(Roles = UserRoles.)]
+        [HttpGet("histories")]
+        public async Task<IActionResult> GetCourseHistoriesByIdAsync(int Id)
+        {
+            // Lấy danh sách lịch sử từ service
+            var histories = await _courseHistoryService.GetCourseHistoriesByIdAsync(Id);
+
+            if (histories == null || !histories.Any())
+                return NotFound(new { message = "Không có lịch sử khóa học nào." });
+
+            // Trả về list JSON
+            return Ok(histories);
+        }
+
+        //Staff lam course
+        private string RequireUserId()
+        {
+            var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(uid))
+                throw new UnauthorizedAccessException("No user id.");
+            return uid;
+        }
+        // lấy outline khóa học cho staff để học
+        [HttpGet("{courseId:int}/outline")]
+        [Authorize]
+        public async Task<ActionResult<CourseOutlineDto>> GetOutline(int courseId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                var dto = await _courseService.GetOutlineAsync(courseId, userId, ct);
+                return Ok(dto);
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+        }
+        // lấy tiến độ của staff
+        [HttpGet("{courseId:int}/progress")]
+        [Authorize]
+        public async Task<ActionResult<CourseProgressDto>> GetCourseProgress(int courseId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                var dto = await _courseService.GetCourseProgressAsync(courseId, userId, ct);
+                return Ok(dto);
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+        }
+        // đánh dấu hoàn thành lesson
+        [HttpPost("lessons/{lessonId:int}/complete")]
+        [Authorize]
+        public async Task<IActionResult> CompleteLesson(int lessonId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                await _courseService.CompleteLessonAsync(lessonId, userId, ct);
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); } // 409 khi chưa pass quiz
+        }
+        // hủy đánh dấu hoàn thành lesson
+        [HttpDelete("lessons/{lessonId:int}/complete")]
+        [Authorize]
+        public async Task<IActionResult> UndoCompleteLesson(int lessonId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                await _courseService.UndoCompleteLessonAsync(lessonId, userId, ct);
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
+        }
+        // trả toàn bộ course với tình trạng đã hoàn thành lesson hoặc chưa
+        [HttpGet("{courseId:int}/learning")]
+        [Authorize]
+        public async Task<ActionResult<CourseLearningDto>> GetLearning(int courseId, CancellationToken ct)
+        {
+            try
+            {
+                var userId = RequireUserId();
+                var dto = await _courseService.GetCourseLearningAsync(courseId, userId, ct);
+                return Ok(dto);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
 
     }
 }

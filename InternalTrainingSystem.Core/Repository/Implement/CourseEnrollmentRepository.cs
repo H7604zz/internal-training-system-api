@@ -1,4 +1,5 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
@@ -144,6 +145,29 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         public async Task AddRangeAsync(IEnumerable<CourseEnrollment> enrollments)
         {
             await _context.CourseEnrollments.AddRangeAsync(enrollments);
+        }
+
+        public async Task BulkUpdateEnrollmentsToEnrolledAsync(List<EligibleStaffResponse> eligibleUsers, int courseId)
+        {
+            if (eligibleUsers == null || eligibleUsers.Count == 0)
+                return;
+
+            var userIds = eligibleUsers
+                .Where(u => u.Status == EnrollmentConstants.Status.NotEnrolled)
+                .Select(u => u.Id!)
+                .ToList();
+
+            if (!userIds.Any())
+                return;
+
+            // Bulk update
+            await _context.CourseEnrollments
+                .Where(e => e.CourseId == courseId && userIds.Contains(e.UserId))
+                .ExecuteUpdateAsync(e => e
+                    .SetProperty(x => x.Status, EnrollmentConstants.Status.Enrolled)
+                    .SetProperty(x => x.EnrollmentDate, DateTime.Now)
+                    .SetProperty(x => x.LastAccessedDate, DateTime.Now)
+                );
         }
     }
 }

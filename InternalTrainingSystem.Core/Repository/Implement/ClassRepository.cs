@@ -89,6 +89,17 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
 
             _context.Classes.AddRange(createdClasses);
+
+            var userIds = confirmedUsers.Select(u => u.Id).ToList();
+            var enrollments = await _context.CourseEnrollments
+                .Where(e => e.CourseId == request.CourseId && userIds.Contains(e.UserId))
+                .ToListAsync();
+
+            foreach (var e in enrollments)
+            {
+                e.Status = EnrollmentConstants.Status.InProgress;
+            }
+
             await _context.SaveChangesAsync();
 
             return true;
@@ -375,7 +386,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
         }
 
-        public async Task<List<ClassDto>> GetClassesByCourseAsync(int courseId)
+        public async Task<List<ClassListDto>> GetClassesByCourseAsync(int courseId)
         {
             var classes = await _context.Classes
                 .Include(c => c.Mentor)
@@ -383,16 +394,14 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Where(c => c.CourseId == courseId)
                 .ToListAsync();
 
-            return classes.Select(c => new ClassDto
+            return classes.Select(c => new ClassListDto
             {
                 ClassId = c.ClassId,
                 ClassName = c.ClassName,
                 MentorId = c.MentorId!,
-                MentorName = c.Mentor?.FullName,
+                MentorName = c.Mentor?.FullName ?? "N/A",
                 IsActive = c.IsActive,
-                Status = c.Status,
-                CreatedDate = c.CreatedDate,
-                MaxStudents = c.Employees.Count
+                Status = c.Status
             }).ToList();
         }
 

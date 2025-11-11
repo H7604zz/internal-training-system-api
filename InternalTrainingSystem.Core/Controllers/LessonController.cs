@@ -1,10 +1,13 @@
-﻿using InternalTrainingSystem.Core.DTOs;
+﻿using System.Security.Claims;
+using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/modules/{moduleId:int}/lessons")]
     public class LessonController : ControllerBase
     {

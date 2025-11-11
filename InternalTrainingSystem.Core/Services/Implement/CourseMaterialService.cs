@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
+using InternalTrainingSystem.Core.Repository.Implement;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -78,11 +79,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             int lessonId, IFormFile file, CancellationToken ct = default)
         {
             return await _courseMaterialRepo.UploadLessonBinaryAsync(lessonId, file, ct);
-        }
-        public async Task<(string url, string relativePath)> UploadLessonAttachmentAsync(
-            int lessonId, IFormFile file, CancellationToken ct = default)
-        {
-            return await _courseMaterialRepo.UploadLessonAttachmentAsync(lessonId, file, ct);
         }
 
         public async Task<bool> ClearLessonFileAsync(int lessonId, CancellationToken ct = default)
