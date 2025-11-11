@@ -656,7 +656,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="courseId"></param>
         /// <returns></returns>
         [HttpGet("statistics/{courseId}")]
-        public async Task<IActionResult> GetClassCountByCourse(int courseId)
+        public async Task<IActionResult> GetStatisticsCourse(int courseId)
         {
             var classList = await _classService.GetClassesByCourseAsync(courseId);
             var countStudent = 0;
