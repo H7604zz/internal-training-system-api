@@ -666,7 +666,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 countStudent += students.Count;
             }
             var countClass = classList?.Count() ?? 0;
-            var result = new CourseClassCountDto
+            var result = new StatisticsCourseDto
             {
                 ClassCount = countClass,
                 StudentCount = countStudent
