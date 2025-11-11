@@ -230,5 +230,12 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? RejectReason { get; init; }
     }
 
+    public class CourseClassCountDto
+    {
+        public int ClassCount { get; set; }
+        public int StudentCount { get; set; }
+    }
+
+
 
 }

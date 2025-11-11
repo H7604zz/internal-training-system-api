@@ -324,5 +324,25 @@ namespace InternalTrainingSystem.Core.Controllers
             var classList = await _classService.GetClassesByCourseAsync(courseId);
             return Ok(classList);
         }
+
+        [HttpGet("count-by-course/{courseId}")]
+        public async Task<IActionResult> GetClassCountByCourse(int courseId)
+        {
+            var classList = await _classService.GetClassesByCourseAsync(courseId);
+            var countStudent = 0;
+            foreach(var c in classList)
+            {
+                var students = await _classService.GetUserByClassAsync(c.ClassId);
+                countStudent += students.Count;
+            }
+            var countClass = classList?.Count() ?? 0;
+            var result = new CourseClassCountDto
+            {
+                ClassCount = countClass,
+                StudentCount = countStudent
+            };
+
+            return Ok(result);
+        }
     }
 }
