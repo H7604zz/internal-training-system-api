@@ -188,10 +188,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var now = DateTime.UtcNow;
             var isTimedOut = attempt.EndTime.HasValue && now >= attempt.EndTime.Value;
 
-            // (tuỳ chọn) grace window 30s để xử lý lệch clock
-            const int GRACE_SECONDS = 30;
-            var hardLate = attempt.EndTime.HasValue && now > attempt.EndTime.Value.AddSeconds(GRACE_SECONDS);
-
             var questions = quiz.Questions.Where(q => q.IsActive).OrderBy(q => q.OrderIndex).ToList();
             var qMap = questions.ToDictionary(q => q.QuestionId);
 
