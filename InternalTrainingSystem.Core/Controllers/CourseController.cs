@@ -312,7 +312,7 @@ namespace InternalTrainingSystem.Core.Controllers
             if (enrollment == null)
                 return NotFound();
 
-            if (course.IsOnline || course.IsMandatory)
+            if (course.IsMandatory)
             {
                 enrollment.Status = EnrollmentConstants.Status.Enrolled;
             }
@@ -642,7 +642,7 @@ namespace InternalTrainingSystem.Core.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Forbid(ex.Message);
+                return Forbid();
             }
             catch (ArgumentException ex)
             {
