@@ -318,11 +318,33 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
+        /// <summary>
+        /// lay ra danh sach lop hoc theo khoa hoc
+        /// </summary>
+        /// <param name="courseId"></param>
+        /// <returns></returns>
         [HttpGet("by-course/{courseId}")]
         public async Task<IActionResult> GetClassesByCourse(int courseId)
         {
             var classList = await _classService.GetClassesByCourseAsync(courseId);
             return Ok(classList);
+        }
+
+        /// <summary>
+        /// lay ra danh sach yeu cau doi lop
+        /// </summary>
+        /// <param name="classSwapId"></param>
+        /// <returns></returns>
+        [HttpGet("swap-request/{classSwapId}")]
+        public async Task<IActionResult> GetSwapClassRequest(int classSwapId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("Không xác định được người dùng.");
+
+            var result = await _classService.GetSwapClassRequestAsync(userId, classSwapId);
+            if (result.Count == 0) return NotFound("Không có yêu cầu đổi lớp nào đang diễn ra!.");
+            return Ok(result);
         }
     }
 }
