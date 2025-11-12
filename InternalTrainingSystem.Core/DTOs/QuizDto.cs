@@ -12,7 +12,8 @@ namespace InternalTrainingSystem.Core.DTOs
 		public int TimeLimit { get; set; } // minutes
 		public int MaxAttempts { get; set; }
 		public int PassingScore { get; set; } // percentage
-		public IReadOnlyList<QuestionDto> Questions { get; set; } = new List<QuestionDto>();
+        public int? RemainingSeconds { get; set; }
+        public IReadOnlyList<QuestionDto> Questions { get; set; } = new List<QuestionDto>();
 	}
 
 	public class QuestionDto

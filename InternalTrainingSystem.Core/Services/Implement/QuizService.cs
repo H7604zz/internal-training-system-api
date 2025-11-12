@@ -45,7 +45,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             var attempt = await _attemptRepo.GetAttemptAsync(attemptId, userId, ct)
                          ?? throw new InvalidOperationException("Lượt làm bài không hợp lệ.");
-
+            if (attempt.Status == QuizConstants.Status.InProgress
+                && attempt.EndTime.HasValue
+                && DateTime.UtcNow >= attempt.EndTime.Value)
+            {
+                throw new InvalidOperationException("Bài làm đã hết thời gian. Hãy submit các câu trả lời đang lưu ở FE.");
+            }
             var baseQuestions = quiz.Questions.Where(q => q.IsActive).ToList();
 
             List<Question> finalQuestions;
@@ -61,6 +66,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     .ThenBy(q => q.QuestionId)
                     .ToList();
             }
+            int? remainingSeconds = null;
+            if (attempt.EndTime.HasValue)
+            {
+                var diff = (int)(attempt.EndTime.Value - DateTime.UtcNow).TotalSeconds;
+                remainingSeconds = diff > 0 ? diff : 0;
+            }
 
             return new QuizDetailDto
             {
@@ -70,6 +81,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 TimeLimit = quiz.TimeLimit,
                 MaxAttempts = quiz.MaxAttempts,
                 PassingScore = quiz.PassingScore,
+                RemainingSeconds = remainingSeconds,
                 Questions = finalQuestions.Select(q =>
                 {
                     var baseAnswers = q.Answers.Where(a => a.IsActive).ToList();
@@ -132,7 +144,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 UserId = userId,
                 AttemptNumber = nextAttemptNumber,
                 StartTime = now,
-                EndTime = null,
+                EndTime = end,
                 Status = QuizConstants.Status.InProgress,
                 Score = 0,
                 MaxScore = maxScore,
@@ -165,23 +177,25 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public async Task<AttemptResultDto> SubmitAttemptAsync(int attemptId, string userId, SubmitAttemptRequest req, CancellationToken ct = default)
         {
-            var attempt = await _attemptRepo.GetAttemptAsync(attemptId, userId, ct);
-            if (attempt == null) throw new InvalidOperationException("Không tìm thấy lượt làm bài.");
-
+            var attempt = await _attemptRepo.GetAttemptAsync(attemptId, userId, ct)
+                         ?? throw new InvalidOperationException("Không tìm thấy lượt làm bài.");
             if (attempt.Status != QuizConstants.Status.InProgress)
                 throw new InvalidOperationException("Lượt làm bài này đã được nộp hoặc đã kết thúc.");
 
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(attempt.QuizId, ct)
-                       ?? throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc bài kiểm tra đã bị vô hiệu hóa.");
+                       ?? throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc đã bị vô hiệu hóa.");
 
-            var questions = quiz.Questions.Where(q => q.IsActive)
-                                          .OrderBy(q => q.OrderIndex)
-                                          .ToList();
+            var now = DateTime.UtcNow;
+            var isTimedOut = attempt.EndTime.HasValue && now >= attempt.EndTime.Value;
 
+            // (tuỳ chọn) grace window 30s để xử lý lệch clock
+            const int GRACE_SECONDS = 30;
+            var hardLate = attempt.EndTime.HasValue && now > attempt.EndTime.Value.AddSeconds(GRACE_SECONDS);
+
+            var questions = quiz.Questions.Where(q => q.IsActive).OrderBy(q => q.OrderIndex).ToList();
             var qMap = questions.ToDictionary(q => q.QuestionId);
 
             int totalScore = 0;
-            var now = DateTime.UtcNow;
             var toInsert = new List<UserAnswer>();
 
             foreach (var item in req.Answers)
@@ -207,8 +221,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         {
                             AttemptId = attempt.AttemptId,
                             QuestionId = q.QuestionId,
-                            AnswerId = ansId,
-                            AnswerText = null
+                            AnswerId = ansId
                         });
                     }
 
@@ -222,13 +235,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (toInsert.Count > 0)
                 await _userAnswerRepo.AddRangeAsync(toInsert, ct);
 
-            var status = QuizConstants.Status.Completed;
-            if (quiz.TimeLimit > 0 && attempt.StartTime.AddMinutes(quiz.TimeLimit) < now)
-            {
-                status = QuizConstants.Status.TimedOut;
-            }
+            // Nếu quá giờ -> vẫn chấm điểm, nhưng Status = TimedOut.
+            var status = isTimedOut ? QuizConstants.Status.TimedOut : QuizConstants.Status.Completed;
 
-            attempt.EndTime = now;
+            // EndTime: nếu đã có EndTime (deadline) thì giữ lại; nếu chưa có thì set now
+            attempt.EndTime = attempt.EndTime ?? now;
             attempt.Score = totalScore;
             attempt.Percentage = attempt.MaxScore > 0 ? (totalScore * 100.0 / attempt.MaxScore) : 0;
             attempt.IsPassed = attempt.Percentage >= quiz.PassingScore;
@@ -244,7 +255,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 CourseId = quiz.CourseId,
                 QuizId = quiz.QuizId,
                 QuizAttemptId = attempt.AttemptId,
-                Description = $"Hoàn thành lượt làm bài #{attempt.AttemptNumber}: {attempt.Score}/{attempt.MaxScore} điểm ({attempt.Percentage:F1}%)."
+                Description = isTimedOut
+                    ? $"(Timed out) Nộp bài với {attempt.Score}/{attempt.MaxScore} điểm ({attempt.Percentage:F1}%)."
+                    : $"Hoàn thành lượt làm bài #{attempt.AttemptNumber}: {attempt.Score}/{attempt.MaxScore} điểm ({attempt.Percentage:F1}%)."
             }, ct);
 
             await _historyRepo.AddHistoryAsync(new CourseHistory
@@ -256,13 +269,49 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 QuizId = quiz.QuizId,
                 QuizAttemptId = attempt.AttemptId,
                 Description = attempt.IsPassed
-                    ? $"Đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%."
-                    : $"Không đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%."
+                    ? (isTimedOut ? $"(Timed out) Đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%."
+                                  : $"Đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%.")
+                    : (isTimedOut ? $"(Timed out) Không đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%."
+                                  : $"Không đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%.")
             }, ct);
 
             await _uow.SaveChangesAsync(ct);
 
-            var result = new AttemptResultDto
+            var resultQuestions = questions.Select(q =>
+            {
+                if (q.QuestionType == QuizConstants.QuestionTypes.Essay)
+                {
+                    var essay = toInsert.FirstOrDefault(x => x.QuestionId == q.QuestionId)?.AnswerText;
+                    return new QuestionResultDto
+                    {
+                        QuestionId = q.QuestionId,
+                        QuestionType = q.QuestionType,
+                        Points = q.Points,
+                        EarnedPoints = 0,
+                        EssayText = essay
+                    };
+                }
+                else
+                {
+                    var selected = toInsert.Where(x => x.QuestionId == q.QuestionId && x.AnswerId.HasValue)
+                                           .Select(x => x.AnswerId!.Value)
+                                           .Distinct().OrderBy(x => x).ToList();
+                    var correct = q.Answers.Where(a => a.IsCorrect).Select(a => a.AnswerId).OrderBy(x => x).ToList();
+                    int earned = selected.SequenceEqual(correct) ? q.Points : 0;
+
+                    return new QuestionResultDto
+                    {
+                        QuestionId = q.QuestionId,
+                        QuestionType = q.QuestionType,
+                        Points = q.Points,
+                        EarnedPoints = earned,
+                        SelectedAnswerIds = selected,
+                        CorrectAnswerIds = correct
+                    };
+                }
+            }).ToList();
+
+            return new AttemptResultDto
             {
                 AttemptId = attempt.AttemptId,
                 Status = attempt.Status,
@@ -272,44 +321,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 IsPassed = attempt.IsPassed,
                 StartTimeUtc = attempt.StartTime,
                 EndTimeUtc = attempt.EndTime,
-                Questions = questions.Select(q =>
-                {
-                    if (q.QuestionType == QuizConstants.QuestionTypes.Essay)
-                    {
-                        var essay = toInsert.FirstOrDefault(x => x.QuestionId == q.QuestionId)?.AnswerText;
-                        return new QuestionResultDto
-                        {
-                            QuestionId = q.QuestionId,
-                            QuestionType = q.QuestionType,
-                            Points = q.Points,
-                            EarnedPoints = 0,
-                            EssayText = essay
-                        };
-                    }
-                    else
-                    {
-                        var selected = toInsert.Where(x => x.QuestionId == q.QuestionId && x.AnswerId.HasValue)
-                                               .Select(x => x.AnswerId!.Value)
-                                               .Distinct().OrderBy(x => x).ToList();
-
-                        var correct = q.Answers.Where(a => a.IsCorrect).Select(a => a.AnswerId).OrderBy(x => x).ToList();
-                        int earned = selected.SequenceEqual(correct) ? q.Points : 0;
-
-                        return new QuestionResultDto
-                        {
-                            QuestionId = q.QuestionId,
-                            QuestionType = q.QuestionType,
-                            Points = q.Points,
-                            EarnedPoints = earned,
-                            SelectedAnswerIds = selected,
-                            CorrectAnswerIds = correct
-                        };
-                    }
-                }).ToList()
+                Questions = resultQuestions
             };
-
-            return result;
         }
+
 
         public async Task<AttemptResultDto> GetAttemptResultAsync(int attemptId, string userId, CancellationToken ct = default)
         {
@@ -428,6 +443,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 UserId = userId,
                 AttemptNumber = nextAttemptNumber,
                 StartTime = now,
+                EndTime = end,
                 Status = QuizConstants.Status.InProgress,
                 Score = 0,
                 MaxScore = maxScore,
