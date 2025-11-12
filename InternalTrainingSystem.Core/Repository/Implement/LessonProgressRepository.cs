@@ -59,7 +59,9 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         => _db.CourseEnrollments.AnyAsync(
         e => e.CourseId == courseId
           && e.UserId == userId
-          && (e.Status == EnrollmentConstants.Status.Enrolled || e.Status == EnrollmentConstants.Status.Completed),
+          && (e.Status == EnrollmentConstants.Status.Enrolled 
+            || e.Status == EnrollmentConstants.Status.Completed
+            || e.Status == EnrollmentConstants.Status.InProgress),
         ct);
 
         public Task<Course?> GetCourseWithStructureAsync(int courseId, CancellationToken ct = default)
