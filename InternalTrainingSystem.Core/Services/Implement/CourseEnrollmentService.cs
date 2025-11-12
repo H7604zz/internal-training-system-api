@@ -39,9 +39,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
            return await _courseEnrollmentRepo.UpdateCourseEnrollment(courseEnrollment);
         }
 
-        public async Task<PagedResult<CourseListItemDto>> GetAllCoursesEnrollmentsByStaffAsync(GetAllCoursesRequest request)
+        public async Task<PagedResult<CourseListItemDto>> GetAllCoursesEnrollmentsByStaffAsync(GetAllCoursesRequest request, string uid)
         {
-            return await _courseEnrollmentRepo.GetAllCoursesEnrollmentsByStaffAsync(request);
+            return await _courseEnrollmentRepo.GetAllCoursesEnrollmentsByStaffAsync(request, uid);
         }
 
         public async Task AddRangeAsync(IEnumerable<CourseEnrollment> enrollments)

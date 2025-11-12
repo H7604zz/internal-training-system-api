@@ -38,13 +38,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _uow = uow;
         }
 
-        public async Task<QuizDetailDto?> GetQuizForAttemptAsync(int quizId,int attemptId,string userId,bool shuffleQuestions = false,bool shuffleAnswers = false,CancellationToken ct = default)
+        public async Task<QuizDetailDto?> GetQuizForAttemptAsync(int quizId, int attemptId, string userId, bool shuffleQuestions = false, bool shuffleAnswers = false, CancellationToken ct = default)
         {
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(quizId, ct);
             if (quiz == null) return null;
 
             var attempt = await _attemptRepo.GetAttemptAsync(attemptId, userId, ct)
-                         ?? throw new InvalidOperationException("Invalid attempt.");
+                         ?? throw new InvalidOperationException("Lượt làm bài không hợp lệ.");
 
             var baseQuestions = quiz.Questions.Where(q => q.IsActive).ToList();
 
@@ -81,7 +81,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     }
                     else if (shuffleAnswers)
                     {
-                        var rng = new Random(attemptId + q.QuestionId); 
+                        var rng = new Random(attemptId + q.QuestionId);
                         finalAnswers = baseAnswers.OrderBy(_ => rng.Next()).ToList();
                     }
                     else
@@ -113,13 +113,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<StartQuizResponse> StartAttemptAsync(int quizId, string userId, CancellationToken ct = default)
         {
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(quizId, ct);
-            if (quiz == null) throw new InvalidOperationException("Quiz not found or inactive.");
+            if (quiz == null) throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc bài kiểm tra đã bị vô hiệu hóa.");
 
             var currentCount = await _attemptRepo.CountAttemptsAsync(quizId, userId, ct);
             var nextAttemptNumber = currentCount + 1;
 
             if (nextAttemptNumber > quiz.MaxAttempts)
-                throw new InvalidOperationException("Max attempts reached.");
+                throw new InvalidOperationException("Bạn đã vượt quá số lần làm bài tối đa.");
 
             var maxScore = quiz.Questions.Where(x => x.IsActive).Sum(x => x.Points);
 
@@ -149,7 +149,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 UserId = userId,
                 QuizId = quiz.QuizId,
                 QuizAttemptId = attempt.AttemptId,
-                Description = $"Start attempt #{nextAttemptNumber} for quiz '{quiz.Title}'."
+                Description = $"Bắt đầu lượt làm bài #{nextAttemptNumber} cho bài kiểm tra '{quiz.Title}'."
             }, ct);
             await _uow.SaveChangesAsync(ct);
 
@@ -166,13 +166,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<AttemptResultDto> SubmitAttemptAsync(int attemptId, string userId, SubmitAttemptRequest req, CancellationToken ct = default)
         {
             var attempt = await _attemptRepo.GetAttemptAsync(attemptId, userId, ct);
-            if (attempt == null) throw new InvalidOperationException("Attempt not found.");
+            if (attempt == null) throw new InvalidOperationException("Không tìm thấy lượt làm bài.");
 
             if (attempt.Status != QuizConstants.Status.InProgress)
-                throw new InvalidOperationException("Attempt already submitted or closed.");
+                throw new InvalidOperationException("Lượt làm bài này đã được nộp hoặc đã kết thúc.");
 
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(attempt.QuizId, ct)
-                       ?? throw new InvalidOperationException("Quiz not found or inactive.");
+                       ?? throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc bài kiểm tra đã bị vô hiệu hóa.");
 
             var questions = quiz.Questions.Where(q => q.IsActive)
                                           .OrderBy(q => q.OrderIndex)
@@ -236,7 +236,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             await _uow.SaveChangesAsync(ct);
 
-            //  Ghi CourseHistory: QuizCompleted
             await _historyRepo.AddHistoryAsync(new CourseHistory
             {
                 Action = CourseAction.QuizCompleted,
@@ -245,10 +244,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 CourseId = quiz.CourseId,
                 QuizId = quiz.QuizId,
                 QuizAttemptId = attempt.AttemptId,
-                Description = $"Attempt #{attempt.AttemptNumber} completed: {attempt.Score}/{attempt.MaxScore} ({attempt.Percentage:F1}%)."
+                Description = $"Hoàn thành lượt làm bài #{attempt.AttemptNumber}: {attempt.Score}/{attempt.MaxScore} điểm ({attempt.Percentage:F1}%)."
             }, ct);
 
-            //  Ghi CourseHistory: QuizPassed hoặc QuizFailed
             await _historyRepo.AddHistoryAsync(new CourseHistory
             {
                 Action = attempt.IsPassed ? CourseAction.QuizPassed : CourseAction.QuizFailed,
@@ -258,13 +256,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 QuizId = quiz.QuizId,
                 QuizAttemptId = attempt.AttemptId,
                 Description = attempt.IsPassed
-                    ? $"Passed quiz '{quiz.Title}' with {attempt.Percentage:F1}%."
-                    : $"Failed quiz '{quiz.Title}' with {attempt.Percentage:F1}%."
+                    ? $"Đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%."
+                    : $"Không đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%."
             }, ct);
 
             await _uow.SaveChangesAsync(ct);
 
-            // Build result DTO như cũ...
             var result = new AttemptResultDto
             {
                 AttemptId = attempt.AttemptId,
@@ -317,10 +314,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<AttemptResultDto> GetAttemptResultAsync(int attemptId, string userId, CancellationToken ct = default)
         {
             var attempt = await _attemptRepo.GetAttemptAsync(attemptId, userId, ct)
-                          ?? throw new InvalidOperationException("Attempt not found.");
+                          ?? throw new InvalidOperationException("Không tìm thấy lượt làm bài.");
 
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(attempt.QuizId, ct)
-                       ?? throw new InvalidOperationException("Quiz not found.");
+                       ?? throw new InvalidOperationException("Không tìm thấy bài kiểm tra.");
 
             var userAnswers = await _userAnswerRepo.GetByAttemptAsync(attemptId, ct);
 
@@ -336,7 +333,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                             QuestionId = q.QuestionId,
                             QuestionType = q.QuestionType,
                             Points = q.Points,
-                            EarnedPoints = 0, // chấm tay sau
+                            EarnedPoints = 0,
                             EssayText = essay
                         };
                     }
@@ -375,13 +372,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
         }
 
         public async Task<PagedResult<AttemptHistoryItem>> GetAttemptHistoryAsync(
-    int quizId, string userId, int page, int pageSize, CancellationToken ct = default)
+            int quizId, string userId, int page, int pageSize, CancellationToken ct = default)
         {
             if (page <= 0) page = 1;
             if (pageSize <= 0 || pageSize > 100) pageSize = 10;
 
-            var (items, total) = await _attemptRepo.GetAttemptHistoryAsync(
-                quizId, userId, page, pageSize, ct);
+            var (items, total) = await _attemptRepo.GetAttemptHistoryAsync(quizId, userId, page, pageSize, ct);
 
             var results = items.Select(a => new AttemptHistoryItem
             {
@@ -404,22 +400,23 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 PageSize = pageSize
             };
         }
+
         public async Task<StartQuizResponse> StartAttemptByLessonAsync(int lessonId, string userId, CancellationToken ct = default)
         {
             var lesson = await _lessonRepo.GetWithModuleAsync(lessonId, ct)
-                         ?? throw new InvalidOperationException("Lesson not found.");
+                         ?? throw new InvalidOperationException("Không tìm thấy bài học.");
             if (lesson.Type != LessonType.Quiz || lesson.QuizId == null)
-                throw new InvalidOperationException("This lesson is not a quiz.");
+                throw new InvalidOperationException("Bài học này không phải là bài kiểm tra.");
 
             await _lessonProgressRepo.EnsureStartedAsync(userId, lessonId, ct);
 
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(lesson.QuizId.Value, ct)
-                       ?? throw new InvalidOperationException("Quiz not found or inactive.");
+                       ?? throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc bài kiểm tra đã bị vô hiệu hóa.");
 
             var currentCount = await _attemptRepo.CountAttemptsAsync(quiz.QuizId, userId, ct);
             var nextAttemptNumber = currentCount + 1;
             if (nextAttemptNumber > quiz.MaxAttempts)
-                throw new InvalidOperationException("Max attempts reached.");
+                throw new InvalidOperationException("Bạn đã vượt quá số lần làm bài tối đa.");
 
             var maxScore = quiz.Questions.Where(q => q.IsActive).Sum(q => q.Points);
             var now = DateTime.UtcNow;
@@ -441,7 +438,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             attempt = await _attemptRepo.AddAttemptAsync(attempt, ct);
             await _uow.SaveChangesAsync(ct);
 
-            // Ghi CourseHistory: QuizStarted
             await _historyRepo.AddHistoryAsync(new CourseHistory
             {
                 Action = CourseAction.QuizStarted,
@@ -450,7 +446,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 CourseId = lesson.Module.CourseId,
                 QuizId = quiz.QuizId,
                 QuizAttemptId = attempt.AttemptId,
-                Description = $"Start attempt #{nextAttemptNumber} for quiz '{quiz.Title}'."
+                Description = $"Bắt đầu lượt làm bài #{nextAttemptNumber} cho bài kiểm tra '{quiz.Title}'."
             }, ct);
             await _uow.SaveChangesAsync(ct);
 
@@ -467,9 +463,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<AttemptResultDto> SubmitAttemptByLessonAsync(int lessonId, int attemptId, string userId, SubmitAttemptRequest req, CancellationToken ct = default)
         {
             var lesson = await _lessonRepo.GetByIdAsync(lessonId, ct)
-                         ?? throw new InvalidOperationException("Lesson not found.");
+                         ?? throw new InvalidOperationException("Không tìm thấy bài học.");
             if (lesson.Type != LessonType.Quiz || lesson.QuizId == null)
-                throw new InvalidOperationException("This lesson is not a quiz.");
+                throw new InvalidOperationException("Bài học này không phải là bài kiểm tra.");
 
             var result = await SubmitAttemptAsync(attemptId, userId, req, ct);
 
@@ -481,22 +477,22 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             return result;
         }
+
         public async Task<QuizDetailDto2> GetDetailAsync(int quizId, CancellationToken ct)
         {
             var dto = await _quizRepo.GetDetailAsync(quizId, ct);
             if (dto is null)
-                throw new KeyNotFoundException($"Quiz {quizId} not found.");
+                throw new KeyNotFoundException($"Không tìm thấy bài kiểm tra với ID = {quizId}.");
             return dto;
         }
+
         public async Task<QuizInfoDto?> GetQuizInfoAsync(int quizId, string userId, CancellationToken ct = default)
         {
-
             var quiz = await _quizRepo.GetActiveQuizAsync(quizId, ct);
             if (quiz == null) return null;
 
             var attempts = await _quizAttemptRepo.GetUserAttemptsAsync(quiz.QuizId, userId, ct);
 
-            // lấy attempt đã nộp
             var submittedAttempts = attempts.Where(a => a.Status == QuizConstants.Status.Completed);
 
             var info = new QuizInfoDto
@@ -506,9 +502,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 TimeLimit = quiz.TimeLimit,
                 MaxAttempts = quiz.MaxAttempts,
                 PassingScore = quiz.PassingScore,
-
                 UserAttemptCount = attempts.Count,
-
                 HasPassed = submittedAttempts.Any(a => a.IsPassed),
             };
 

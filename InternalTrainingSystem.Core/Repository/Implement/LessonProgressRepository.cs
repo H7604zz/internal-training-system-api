@@ -56,7 +56,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
         }
         public Task<bool> IsEnrolledAsync(int courseId, string userId, CancellationToken ct = default)
-            => _db.CourseEnrollments.AnyAsync(e => e.CourseId == courseId && e.UserId == userId, ct);
+        => _db.CourseEnrollments.AnyAsync(
+        e => e.CourseId == courseId
+          && e.UserId == userId
+          && (e.Status == EnrollmentConstants.Status.Enrolled || e.Status == EnrollmentConstants.Status.Completed),
+        ct);
 
         public Task<Course?> GetCourseWithStructureAsync(int courseId, CancellationToken ct = default)
             => _db.Courses

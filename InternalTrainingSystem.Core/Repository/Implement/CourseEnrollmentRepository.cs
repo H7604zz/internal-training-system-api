@@ -1,10 +1,12 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace InternalTrainingSystem.Core.Repository.Implement
 {
@@ -71,7 +73,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
         }
 
-        public async Task<PagedResult<CourseListItemDto>> GetAllCoursesEnrollmentsByStaffAsync(GetAllCoursesRequest request)
+        public async Task<PagedResult<CourseListItemDto>> GetAllCoursesEnrollmentsByStaffAsync(GetAllCoursesRequest request, string uid)
         {
             // Query từ bảng CourseEnrollment
             var query = _context.CourseEnrollments
@@ -81,7 +83,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     .ThenInclude(c => c.Departments)
                 .Include(e => e.Course)
                     .ThenInclude(c => c.CreatedBy)
-                .Where(e => e.UserId == request.UserId)
+                .Where(e => e.UserId == uid)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(request.Status))
