@@ -104,6 +104,20 @@ namespace InternalTrainingSystem.Core.DTOs
         public List<ScheduleItemResponseDto> Schedules { get; set; } = new();
     }
 
+    public class RescheduleRequest
+    {
+        [Required]
+        public string? NewDayOfWeek { get; set; }
+        [Required]
+        public DateTime NewDate { get; set; }
+        [Required]
+        public TimeSpan NewStartTime { get; set; }
+        [Required]
+        public TimeSpan NewEndTime { get; set; }
+    }
+
+    //class swap dto
+
     public class SwapClassRequest
     {
         public string EmployeeIdFrom { get; set; } = string.Empty;
@@ -119,15 +133,12 @@ namespace InternalTrainingSystem.Core.DTOs
         public bool Accepted { get; set; }
     }
 
-    public class RescheduleRequest
+    public class ClassSwapDto
     {
-        [Required]
-        public string? NewDayOfWeek { get; set; }
-        [Required]
-        public DateTime NewDate { get; set; }
-        [Required]
-        public TimeSpan NewStartTime { get; set; }
-        [Required]
-        public TimeSpan NewEndTime { get; set; }
+        public string RequesterName { get; set; } = string.Empty;
+        public string TargetName { get; set; } = string.Empty;
+        public string FromClassName { get; set; } = string.Empty;
+        public string ToClassName { get; set; } = string.Empty;
+        public DateTime RequestedAt { get; set; }
     }
 }

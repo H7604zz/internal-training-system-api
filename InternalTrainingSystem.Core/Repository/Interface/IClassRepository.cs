@@ -20,5 +20,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize);
         Task<bool> RescheduleAsync(int scheduleId, RescheduleRequest request);
         Task<Schedule?> GetClassScheduleByIdAsync(int scheduleId);
+
+        Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId, int classSwapId);
     }
 }

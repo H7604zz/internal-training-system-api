@@ -13,8 +13,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId);
         Task<ClassDto?> GetClassDetailAsync(int classId);
         Task<List<ClassListDto>> GetClassesByCourseAsync(int courseId);
-        Task<bool> CreateClassSwapRequestAsync(SwapClassRequest request);
-        Task<bool> RespondToClassSwapAsync(RespondSwapRequest request, string responderId);
         Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize);
 
         // schedule service
@@ -23,5 +21,10 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<bool> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
         Task<ClassScheduleResponse> GetClassScheduleAsync(int classId);
         Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string staffId);
+
+        // Swap class
+        Task<bool> CreateClassSwapRequestAsync(SwapClassRequest request);
+        Task<bool> RespondToClassSwapAsync(RespondSwapRequest request, string responderId);
+        Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId, int classSwapId);
     }
 }

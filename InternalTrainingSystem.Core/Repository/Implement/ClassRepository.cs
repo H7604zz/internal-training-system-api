@@ -646,5 +646,25 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Include(s => s.ScheduleParticipants)
                 .FirstOrDefaultAsync(sc => sc.ScheduleId == scheduleId);
         }
+
+        public async Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId, int classSwapId)
+        {
+            return await _context.ClassSwaps
+                .Include(cs => cs.Requester)
+                .Include(cs => cs.Target)
+                .Include(cs => cs.FromClass)
+                .Include(cs => cs.ToClass)
+                .Include(cs => cs.RespondedBy)
+                .Where(cs => cs.TargetId == userId && cs.Id == classSwapId)
+                .Select(cs => new ClassSwapDto
+                {
+                    RequesterName = cs.Requester.FullName,
+                    TargetName = cs.Target.UserName!,
+                    FromClassName = cs.FromClass.ClassName,
+                    ToClassName = cs.ToClass.ClassName,
+                    RequestedAt = cs.RequestedAt,
+                })
+                .ToListAsync();
+                }
     }
 }
