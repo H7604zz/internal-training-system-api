@@ -14,10 +14,10 @@ using System.Security.Claims;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
-	public class CourseService : ICourseService
-	{
-		private readonly ICourseRepository _courseRepo;
-		private readonly ICourseHistoryRepository _courseHistoryRepository;
+    public class CourseService : ICourseService
+    {
+        private readonly ICourseRepository _courseRepo;
+        private readonly ICourseHistoryRepository _courseHistoryRepository;
         private readonly ILessonProgressRepository _lessonProgressRepo;
         private readonly IUserService _userService;
         private readonly INotificationService _notificationService;
@@ -32,46 +32,45 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _lessonProgressRepo = lessonProgressRepository;
         }
 
+        public async Task<Course> GetCourseByCourseCodeAsync(string courseCode)
+        {
+            return await _courseRepo.GetCourseByCourseCodeAsync(courseCode);
+        }
 
-		public async Task<Course> GetCourseByCourseCodeAsync(string courseCode)
-		{
-			return await _courseRepo.GetCourseByCourseCodeAsync(courseCode);
-		}
+        public async Task<bool> DeleteCourseAsync(int id)
+        {
+            return await _courseRepo.DeleteCourseAsync(id);
+        }
 
-		public async Task<bool> DeleteCourseAsync(int id)
-		{
-			return await _courseRepo.DeleteCourseAsync(id);
-		}
+        public async Task<Course> UpdateCourseAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId, CancellationToken ct = default)
+        {
+            return await _courseRepo.UpdateCourseAsync(courseId, meta, lessonFiles, updatedByUserId, ct = default);
+        }
 
-		public async Task<Course> UpdateCourseAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId, CancellationToken ct = default)
-		{
-			return await _courseRepo.UpdateCourseAsync(courseId, meta, lessonFiles, updatedByUserId, ct = default);
-		}
+        public bool ToggleStatus(int id, string status)
+        {
+            return _courseRepo.ToggleStatus(id, status);
+        }
 
-		public bool ToggleStatus(int id, string status)
-		{
-			return _courseRepo.ToggleStatus(id, status);
-		}
+        public async Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default)
+        {
+            return await _courseRepo.SearchAsync(req, ct);
+        }
 
-		public async Task<PagedResult<CourseListItemDto>> SearchAsync(CourseSearchRequest req, CancellationToken ct = default)
-		{
-			return await _courseRepo.SearchAsync(req, ct);
-		}
+        public async Task<Course?> GetCourseByCourseIdAsync(int? couseId)
+        {
+            return await _courseRepo.GetCourseByCourseIdAsync(couseId);
+        }
 
-		public async Task<Course?> GetCourseByCourseIdAsync(int? couseId)
-		{
-			return await _courseRepo.GetCourseByCourseIdAsync(couseId);
-		}
+        public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)
+        {
+            return await _courseRepo.GetAllCoursesPagedAsync(request);
+        }
 
-		public async Task<PagedResult<CourseListItemDto>> GetAllCoursesPagedAsync(GetAllCoursesRequest request)
-		{
-			return await _courseRepo.GetAllCoursesPagedAsync(request);
-		}
-
-		public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default)
-		{
-			return await _courseRepo.GetCourseDetailAsync(courseId, ct);
-		}
+        public async Task<CourseDetailDto?> GetCourseDetailAsync(int courseId, CancellationToken ct = default)
+        {
+            return await _courseRepo.GetCourseDetailAsync(courseId, ct);
+        }
 
         // Duyệt khóa học - ban giám đốc
         public async Task<bool> UpdatePendingCourseStatusAsync(
@@ -161,7 +160,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 CourseId = course.CourseId,
                 Type = isApproved
-                                ? NotificationType.CourseApproved   
+                                ? NotificationType.CourseApproved
                                 : NotificationType.CourseRejected,
                 Message = isApproved
                                 ? $"Khóa học \"{course.CourseName}\" đã được giám đốc phê duyệt."
@@ -186,35 +185,38 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return $"Trạng thái khóa học thay đổi từ '{oldStatus}' sang '{newStatus}'.";
         }
 
-		// Ban giám đốc xóa khóa học đã duyệt
-		public async Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason)
-		{
-			return await _courseRepo.DeleteActiveCourseAsync(courseId, rejectReason);
-		}
+        // Ban giám đốc xóa khóa học đã duyệt
+        public async Task<bool> DeleteActiveCourseAsync(int courseId, string rejectReason)
+        {
+            return await _courseRepo.DeleteActiveCourseAsync(courseId, rejectReason);
+        }
 
-		public async Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta,
-														IList<IFormFile> lessonFiles, string createdByUserId, CancellationToken ct = default)
-		{
-			return await _courseRepo.CreateCourseAsync(meta, lessonFiles, createdByUserId, ct);
-		}
-		public async Task<Course> UpdateAndResubmitToPendingAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId,
-																															string? resubmitNote = null, CancellationToken ct = default)
-		{
-			return await _courseRepo.UpdateAndResubmitToPendingAsync(courseId, meta, lessonFiles, updatedByUserId,
-																															resubmitNote = null, ct = default);
-		}
-		public Task<IEnumerable<UserQuizHistoryResponse>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId)
-		{
-			return _courseHistoryRepository.GetUserQuizHistoryAsync(userId, courseId, quizId);
-		}
-        //Staff hoc course onl
+        public async Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta,
+                                                        IList<IFormFile> lessonFiles, string createdByUserId, CancellationToken ct = default)
+        {
+            return await _courseRepo.CreateCourseAsync(meta, lessonFiles, createdByUserId, ct);
+        }
+
+        public async Task<Course> UpdateAndResubmitToPendingAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId,
+                                                                                                                            string? resubmitNote = null, CancellationToken ct = default)
+        {
+            return await _courseRepo.UpdateAndResubmitToPendingAsync(courseId, meta, lessonFiles, updatedByUserId,
+                                                                                                                            resubmitNote = null, ct = default);
+        }
+
+        public Task<IEnumerable<UserQuizHistoryResponse>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId)
+        {
+            return _courseHistoryRepository.GetUserQuizHistoryAsync(userId, courseId, quizId);
+        }
+
+        // Staff học course online
         public async Task<CourseOutlineDto> GetOutlineAsync(int courseId, string userId, CancellationToken ct = default)
         {
             var course = await _lessonProgressRepo.GetCourseWithStructureAsync(courseId, ct)
-                ?? throw new ArgumentException("Course not found.");
+                ?? throw new ArgumentException("Không tìm thấy khóa học.");
 
             var enrolled = await _lessonProgressRepo.IsEnrolledAsync(courseId, userId, ct);
-            if (!enrolled) throw new UnauthorizedAccessException("User is not enrolled in this course.");
+            if (!enrolled) throw new UnauthorizedAccessException("Bạn chưa được ghi danh vào khóa học này.");
 
             var lessonIds = course.Modules.SelectMany(m => m.Lessons).Select(l => l.Id).ToList();
             var map = await _lessonProgressRepo.GetProgressMapAsync(userId, lessonIds, ct);
@@ -248,10 +250,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<CourseProgressDto> GetCourseProgressAsync(int courseId, string userId, CancellationToken ct = default)
         {
             var course = await _lessonProgressRepo.GetCourseWithStructureAsync(courseId, ct)
-                ?? throw new ArgumentException("Course not found.");
+                ?? throw new ArgumentException("Không tìm thấy khóa học.");
 
             var enrolled = await _lessonProgressRepo.IsEnrolledAsync(courseId, userId, ct);
-            if (!enrolled) throw new UnauthorizedAccessException("User is not enrolled in this course.");
+            if (!enrolled) throw new UnauthorizedAccessException("Bạn chưa được ghi danh vào khóa học này.");
 
             var total = await _lessonProgressRepo.CountCourseTotalLessonsAsync(courseId, ct);
             var completed = await _lessonProgressRepo.CountCourseCompletedLessonsAsync(userId, courseId, ct);
@@ -301,14 +303,15 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task CompleteLessonAsync(int lessonId, string userId, CancellationToken ct = default)
         {
             var lesson = await _lessonProgressRepo.GetLessonWithModuleCourseAsync(lessonId, ct)
-                ?? throw new ArgumentException("Lesson not found.");
+                ?? throw new ArgumentException("Không tìm thấy bài học.");
 
             var enrolled = await _lessonProgressRepo.IsEnrolledAsync(lesson.Module.CourseId, userId, ct);
-            if (!enrolled) throw new UnauthorizedAccessException("Not enrolled in this course.");
+            if (!enrolled) throw new UnauthorizedAccessException("Bạn chưa được ghi danh vào khóa học này.");
+
             if (lesson.Type == LessonType.Quiz)
             {
                 if (lesson.QuizId is null || lesson.QuizId <= 0)
-                    throw new InvalidOperationException("Quiz is not configured for this lesson.");
+                    throw new InvalidOperationException("Bài học này là Quiz nhưng chưa được cấu hình Quiz.");
 
                 var passed = await _lessonProgressRepo.HasUserPassedQuizAsync(lesson.QuizId.Value, userId, ct);
 
@@ -317,16 +320,17 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         "Bạn cần hoàn thành bài Quiz và đạt yêu cầu (PASS) trước khi đánh dấu hoàn thành."
                     );
             }
+
             await _lessonProgressRepo.UpsertDoneAsync(userId, lessonId, done: true, ct);
             await _lessonProgressRepo.SaveChangesAsync(ct);
 
             await _courseHistoryRepository.AddHistoryAsync(new CourseHistory
             {
-                Action = CourseAction.ProgressUpdated, // enum bạn đã đổi ở trên
+                Action = CourseAction.ProgressUpdated,
                 ActionDate = DateTime.UtcNow,
                 UserId = userId,
                 CourseId = lesson.Module.CourseId,
-                Description = $"Completed lesson '{lesson.Title}' (Module {lesson.ModuleId})."
+                Description = $"Đã hoàn thành bài học '{lesson.Title}' (Module {lesson.ModuleId})."
             }, ct);
             await _lessonProgressRepo.SaveChangesAsync(ct);
 
@@ -341,7 +345,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     ActionDate = DateTime.UtcNow,
                     UserId = userId,
                     CourseId = lesson.Module.CourseId,
-                    Description = $"Completed course '{lesson.Module.Course.CourseName}'."
+                    Description = $"Đã hoàn thành toàn bộ khóa học '{lesson.Module.Course.CourseName}'."
                 }, ct);
                 await _lessonProgressRepo.SaveChangesAsync(ct);
             }
@@ -350,10 +354,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task UndoCompleteLessonAsync(int lessonId, string userId, CancellationToken ct = default)
         {
             var lesson = await _lessonProgressRepo.GetLessonWithModuleCourseAsync(lessonId, ct)
-                ?? throw new ArgumentException("Lesson not found.");
+                ?? throw new ArgumentException("Không tìm thấy bài học.");
 
             var enrolled = await _lessonProgressRepo.IsEnrolledAsync(lesson.Module.CourseId, userId, ct);
-            if (!enrolled) throw new UnauthorizedAccessException("Not enrolled in this course.");
+            if (!enrolled) throw new UnauthorizedAccessException("Bạn chưa được ghi danh vào khóa học này.");
 
             await _lessonProgressRepo.UpsertDoneAsync(userId, lessonId, done: false, ct);
             await _lessonProgressRepo.SaveChangesAsync(ct);
@@ -364,10 +368,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 ActionDate = DateTime.UtcNow,
                 UserId = userId,
                 CourseId = lesson.Module.CourseId,
-                Description = $"Undo completed lesson '{lesson.Title}'."
+                Description = $"Hủy đánh dấu hoàn thành bài học '{lesson.Title}'."
             }, ct);
             await _lessonProgressRepo.SaveChangesAsync(ct);
         }
+
         public async Task<CourseLearningDto> GetCourseLearningAsync(
                                                                     int courseId,
                                                                     string userId,
@@ -375,12 +380,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             // 1) Load course + module + lesson
             var course = await _lessonProgressRepo.GetCourseWithStructureAsync(courseId, ct)
-                ?? throw new ArgumentException("Course not found.");
+                ?? throw new ArgumentException("Không tìm thấy khóa học.");
 
             // 2) Kiểm tra đã ghi danh chưa
             var enrolled = await _lessonProgressRepo.IsEnrolledAsync(courseId, userId, ct);
             if (!enrolled)
-                throw new UnauthorizedAccessException("User is not enrolled in this course.");
+                throw new UnauthorizedAccessException("Bạn chưa được ghi danh vào khóa học này.");
 
             // 3) Lấy progress của từng bài học
             var lessonIds = course.Modules.SelectMany(m => m.Lessons).Select(l => l.Id).ToList();
