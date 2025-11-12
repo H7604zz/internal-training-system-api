@@ -24,7 +24,7 @@ namespace InternalTrainingSystem.Core.Controllers
 		private string GetUserId()
 		{
 			var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
-			if (string.IsNullOrEmpty(uid)) throw new UnauthorizedAccessException("User not authenticated.");
+			if (string.IsNullOrEmpty(uid)) throw new UnauthorizedAccessException("Người dùng chưa xác thực.");
 			return uid;
 		}
         /// <summary>
@@ -33,28 +33,17 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpGet("{quizId:int}/attempt/{attemptId:int}")]
 		public async Task<ActionResult<QuizDetailDto>> GetQuizForAttempt(int quizId, int attemptId, [FromQuery] bool shuffleQuestions = true, [FromQuery] bool shuffleAnswers = true, CancellationToken ct = default)
 		{
-			var result = await _quizService.GetQuizForAttemptAsync(quizId, attemptId, GetUserId(), shuffleQuestions, shuffleAnswers, ct);
-			if (result == null) return NotFound();
-			return Ok(result);
-		}
-        /// <summary>
-        /// Bắt đầu làm quiz (theo quizId)
-        /// </summary>
-        [HttpPost("{quizId:int}/start")]
-		public async Task<ActionResult<StartQuizResponse>> Start(int quizId, CancellationToken ct)
-		{
-			var res = await _quizService.StartAttemptAsync(quizId, GetUserId(), ct);
-			return Ok(res);
-		}
-        /// <summary>
-        /// Nộp bài làm quiz (theo attemptId)
-        /// </summary>
-        [HttpPost("attempt/{attemptId:int}/submit")]
-		public async Task<ActionResult<AttemptResultDto>> Submit(int attemptId, [FromBody] SubmitAttemptRequest req, CancellationToken ct)
-		{
-			var res = await _quizService.SubmitAttemptAsync(attemptId, GetUserId(), req, ct);
-			return Ok(res);
-		}
+			try
+			{
+				var result = await _quizService.GetQuizForAttemptAsync(quizId, attemptId, GetUserId(), shuffleQuestions, shuffleAnswers, ct);
+				if (result == null) return NotFound();
+				return Ok(result);
+			}
+            catch (InvalidOperationException ex) when (ex.Message.StartsWith("Bài làm đã hết thời gian"))
+            {
+                return StatusCode(409, new { code = "QUIZ_TIMED_OUT", message = ex.Message });
+            }
+        }
         /// <summary>
         /// Lấy kết quả attempt (bao gồm Score, MaxScore, Percentage, Status, IsPassed…)
         /// </summary>
@@ -76,7 +65,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <summary>
         /// Bắt đầu làm quiz theo lesson (lesson.Type = Quiz)
         /// </summary>
-        [HttpPost("~/api/lesson/{lessonId:int}/quiz/start")]
+        [HttpPost("start/lesson/{lessonId:int}")]
 		public async Task<ActionResult<StartQuizResponse>> StartByLesson(int lessonId, CancellationToken ct)
 		{
 			var res = await _quizService.StartAttemptByLessonAsync(lessonId, GetUserId(), ct);
@@ -85,13 +74,12 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <summary>
         /// Nộp bài làm quiz theo lesson
         /// </summary>
-        [HttpPost("~/api/lesson/{lessonId:int}/quiz/attempt/{attemptId:int}/submit")]
+        [HttpPost("submit/lesson/{lessonId:int}/attempt/{attemptId:int}")]
 		public async Task<ActionResult<AttemptResultDto>> SubmitByLesson(int lessonId, int attemptId, [FromBody] SubmitAttemptRequest req, CancellationToken ct)
 		{
 			var res = await _quizService.SubmitAttemptByLessonAsync(lessonId, attemptId, GetUserId(), req, ct);
 			return Ok(res);
 		}
-
 		/// <summary>
 		/// Lấy info quiz theo lesson để Staff xem trước khi làm (MaxAttempts, PassingScore, TimeLimit, RemainingAttempts, IsLocked, HasPassed, BestScore…)
 		/// </summary>
