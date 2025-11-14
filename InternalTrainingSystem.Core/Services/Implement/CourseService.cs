@@ -3,6 +3,7 @@ using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Implement;
 using InternalTrainingSystem.Core.Repository.Interface;
@@ -21,15 +22,20 @@ namespace InternalTrainingSystem.Core.Services.Implement
         private readonly ILessonProgressRepository _lessonProgressRepo;
         private readonly IUserService _userService;
         private readonly INotificationService _notificationService;
+        private readonly ICertificateService _certificateService;
+        private readonly string _webAppBaseUrl;
 
         public CourseService(ICourseRepository courseRepo, IUserService userService, INotificationService notificationService,
-            ICourseHistoryRepository courseHistoryRepository, ILessonProgressRepository lessonProgressRepository)
+            ICourseHistoryRepository courseHistoryRepository, ILessonProgressRepository lessonProgressRepository, 
+            ICertificateService certificateService, IConfiguration config)
         {
             _courseRepo = courseRepo;
             _userService = userService;
             _notificationService = notificationService;
             _courseHistoryRepository = courseHistoryRepository;
             _lessonProgressRepo = lessonProgressRepository;
+            _certificateService = certificateService;
+            _webAppBaseUrl = config["ApplicationSettings:WebAppBaseUrl"] ?? "http://localhost:5149";
         }
 
         public async Task<Course> GetCourseByCourseCodeAsync(string courseCode)
@@ -334,7 +340,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }, ct);
             await _lessonProgressRepo.SaveChangesAsync(ct);
 
-            // Nếu hoàn tất cả lessons -> ghi Completed
+            // Nếu hoàn tất cả lessons -> ghi Completed và cấp chứng chỉ
             var total = await _lessonProgressRepo.CountCourseTotalLessonsAsync(lesson.Module.CourseId, ct);
             var completed = await _lessonProgressRepo.CountCourseCompletedLessonsAsync(userId, lesson.Module.CourseId, ct);
             if (total > 0 && completed >= total)
@@ -348,6 +354,38 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     Description = $"Đã hoàn thành toàn bộ khóa học '{lesson.Module.Course.CourseName}'."
                 }, ct);
                 await _lessonProgressRepo.SaveChangesAsync(ct);
+
+                // Tự động cấp chứng chỉ khi hoàn thành 100% khóa học
+                try
+                {
+                    var certificateResult = await _certificateService.IssueCertificateAsync(userId, lesson.Module.CourseId);
+                    
+                    // Gửi email thông báo nhận chứng chỉ
+                    var user = await _userService.GetUserProfileAsync(userId);
+                    if (user != null && !string.IsNullOrEmpty(user.Email))
+                    {
+                        string viewCertificatesUrl = $"{_webAppBaseUrl}/profile/certificates";
+                        string emailContent = $@"
+                            Xin chào {user.FullName},<br/><br/>
+                            Chúc mừng bạn đã <b>hoàn thành khóa học {certificateResult.CourseName}</b>! 🎉<br/><br/>
+                            Hệ thống đã cấp cho bạn chứng chỉ hoàn thành khóa học.<br/>
+                            Bạn có thể xem hoặc tải chứng chỉ trong trang <a href='{viewCertificatesUrl}'>Hồ sơ cá nhân</a>.<br/><br/>
+                            Trân trọng,<br/>
+                            <b>Phòng Đào Tạo</b>
+                        ";
+
+                        Hangfire.BackgroundJob.Enqueue(() => EmailHelper.SendEmailAsync(
+                            user.Email,
+                            $"Chúc mừng bạn nhận chứng chỉ khóa học {certificateResult.CourseName}",
+                            emailContent
+                        ));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log lỗi nhưng không làm fail toàn bộ quá trình
+                    Console.WriteLine($"Error issuing certificate: {ex.Message}");
+                }
             }
         }
 
