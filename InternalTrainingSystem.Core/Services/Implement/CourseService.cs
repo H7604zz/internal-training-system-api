@@ -23,11 +23,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
         private readonly IUserService _userService;
         private readonly INotificationService _notificationService;
         private readonly ICertificateService _certificateService;
+        private readonly ICourseEnrollmentRepository _courseEnrollmentRepo;
         private readonly string _webAppBaseUrl;
 
         public CourseService(ICourseRepository courseRepo, IUserService userService, INotificationService notificationService,
             ICourseHistoryRepository courseHistoryRepository, ILessonProgressRepository lessonProgressRepository, 
-            ICertificateService certificateService, IConfiguration config)
+            ICertificateService certificateService, ICourseEnrollmentRepository courseEnrollmentRepo, IConfiguration config)
         {
             _courseRepo = courseRepo;
             _userService = userService;
@@ -35,6 +36,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _courseHistoryRepository = courseHistoryRepository;
             _lessonProgressRepo = lessonProgressRepository;
             _certificateService = certificateService;
+            _courseEnrollmentRepo = courseEnrollmentRepo;
             _webAppBaseUrl = config["ApplicationSettings:WebAppBaseUrl"] ?? "http://localhost:5149";
         }
 
@@ -335,15 +337,14 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var completed = await _lessonProgressRepo.CountCourseCompletedLessonsAsync(userId, lesson.Module.CourseId, ct);
             if (total > 0 && completed >= total)
             {
-                await _courseHistoryRepository.AddHistoryAsync(new CourseHistory
+                // Cập nhật trạng thái CourseEnrollment thành Completed
+                var enrollment = await _courseEnrollmentRepo.GetCourseEnrollment(lesson.Module.CourseId, userId);
+                if (enrollment != null)
                 {
-                    Action = CourseAction.Completed,
-                    ActionDate = DateTime.UtcNow,
-                    UserId = userId,
-                    CourseId = lesson.Module.CourseId,
-                    Description = $"Đã hoàn thành toàn bộ khóa học '{lesson.Module.Course.CourseName}'."
-                }, ct);
-                await _lessonProgressRepo.SaveChangesAsync(ct);
+                    enrollment.Status = EnrollmentConstants.Status.Completed;
+                    enrollment.CompletionDate = DateTime.UtcNow;
+                    await _courseEnrollmentRepo.UpdateCourseEnrollment(enrollment);
+                }
 
                 // Tự động cấp chứng chỉ khi hoàn thành 100% khóa học
                 try
@@ -354,12 +355,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     var user = await _userService.GetUserProfileAsync(userId);
                     if (user != null && !string.IsNullOrEmpty(user.Email))
                     {
-                        string viewCertificatesUrl = $"{_webAppBaseUrl}/profile/certificates";
+                        string viewCertificatesUrl = $"{_webAppBaseUrl}/profile/certificates/{lesson.Module.CourseId}";
                         string emailContent = $@"
                             Xin chào {user.FullName},<br/><br/>
                             Chúc mừng bạn đã <b>hoàn thành khóa học {certificateResult.CourseName}</b>! 🎉<br/><br/>
                             Hệ thống đã cấp cho bạn chứng chỉ hoàn thành khóa học.<br/>
-                            Bạn có thể xem hoặc tải chứng chỉ trong trang <a href='{viewCertificatesUrl}'>Hồ sơ cá nhân</a>.<br/><br/>
+                            Bạn có thể xem hoặc tải chứng chỉ trong trang <a href='{viewCertificatesUrl}'>Chứng chỉ</a>.<br/><br/>
                             Trân trọng,<br/>
                             <b>Phòng Đào Tạo</b>
                         ";
@@ -373,8 +374,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 }
                 catch (Exception ex)
                 {
-                    // Log lỗi nhưng không làm fail toàn bộ quá trình
-                    Console.WriteLine($"Error issuing certificate: {ex.Message}");
+                    
                 }
             }
         }
