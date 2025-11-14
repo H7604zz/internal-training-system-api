@@ -8,6 +8,7 @@ using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using static InternalTrainingSystem.Core.DTOs.CourseStatisticsDto;
 
 namespace InternalTrainingSystem.Core.Repository.Implement
 {
@@ -843,6 +844,56 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             return quiz.QuizId;
         }
+
+        public async Task<TrainingOverviewStatsDto> GetTrainingOverviewStatsByMonthOrYearAsync(TrainingOverviewByMonthFilterDto filter,CancellationToken ct = default)
+        {
+            int year = filter.Year;
+            int? month = filter.Month;
+
+            var courseQuery = _context.Courses
+                .Where(c => c.Status == CourseConstants.Status.Approve &&
+                            c.CreatedDate.Year == year);
+
+            if (month.HasValue && month.Value > 0)
+            {
+                courseQuery = courseQuery.Where(c => c.CreatedDate.Month == month.Value);
+            }
+
+            var courseIds = await courseQuery
+                .Select(c => c.CourseId)
+                .ToListAsync(ct);
+
+            int totalCoursesOpened = courseIds.Count;
+
+            int totalEmployeesTrained = 0;
+
+            if (courseIds.Count > 0)
+            {
+                var enrollQuery = _context.CourseEnrollments
+                    .Where(e => courseIds.Contains(e.CourseId) &&
+                                e.EnrollmentDate.Year == year && e.Status== EnrollmentConstants.Status.Enrolled);
+
+                if (month.HasValue && month.Value > 0)
+                {
+                    enrollQuery = enrollQuery.Where(e => e.EnrollmentDate.Month == month.Value);
+                }
+
+                totalEmployeesTrained = await enrollQuery
+                    .Select(e => e.UserId)
+                    .Distinct()
+                    .CountAsync(ct);
+            }
+
+            return new TrainingOverviewStatsDto
+            {
+                Year = year,
+                Month = month ?? 0,
+                TotalCoursesOpened = totalCoursesOpened,
+                TotalEmployeesTrained = totalEmployeesTrained
+            };
+        }
+
+
 
     }
 }

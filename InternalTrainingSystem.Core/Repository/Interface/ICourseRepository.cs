@@ -1,6 +1,7 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
+using static InternalTrainingSystem.Core.DTOs.CourseStatisticsDto;
 
 namespace InternalTrainingSystem.Core.Repository.Interface
 {
@@ -23,5 +24,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<Course> GetCourseByCourseCodeAsync(string courseCode);
         Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string createdByUserId, 
             CancellationToken ct = default);
+        Task<TrainingOverviewStatsDto> GetTrainingOverviewStatsByMonthOrYearAsync(TrainingOverviewByMonthFilterDto filter,CancellationToken ct = default);
+
     }
 }
