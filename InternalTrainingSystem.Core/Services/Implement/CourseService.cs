@@ -330,16 +330,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _lessonProgressRepo.UpsertDoneAsync(userId, lessonId, done: true, ct);
             await _lessonProgressRepo.SaveChangesAsync(ct);
 
-            await _courseHistoryRepository.AddHistoryAsync(new CourseHistory
-            {
-                Action = CourseAction.ProgressUpdated,
-                ActionDate = DateTime.UtcNow,
-                UserId = userId,
-                CourseId = lesson.Module.CourseId,
-                Description = $"Đã hoàn thành bài học '{lesson.Title}' (Module {lesson.ModuleId})."
-            }, ct);
-            await _lessonProgressRepo.SaveChangesAsync(ct);
-
             // Nếu hoàn tất cả lessons -> ghi Completed và cấp chứng chỉ
             var total = await _lessonProgressRepo.CountCourseTotalLessonsAsync(lesson.Module.CourseId, ct);
             var completed = await _lessonProgressRepo.CountCourseCompletedLessonsAsync(userId, lesson.Module.CourseId, ct);
