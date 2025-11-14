@@ -14,12 +14,14 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IQuizRepository _quizRepo;
+        private readonly IClassRepository _classRepo;
 
-        public TrackProgressRepository(UserManager<ApplicationUser> userManager, ApplicationDbContext context, IQuizRepository quizRepo)
+        public TrackProgressRepository(UserManager<ApplicationUser> userManager, ApplicationDbContext context, IQuizRepository quizRepo, IClassRepository classRepo)
         {
             _context = context;
             _userManager = userManager;
             _quizRepo = quizRepo;
+            _classRepo = classRepo;
         }
         /// <summary>
         /// Kiểm tra Lesson đã hoàn thành chưa:
@@ -202,6 +204,71 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             return dto;
         }
+
+        public async Task<ClassPassResultDto> GetClassPassRateAsync(int classId)
+        {
+            // 1. Tổng số buổi (schedule) của lớp
+            var classSchedules = await _context.Schedules
+                .Where(s => s.ClassId == classId)        // đổi ClassId cho đúng với model của bạn
+                .Select(s => s.ScheduleId)
+                .ToListAsync();
+
+            var totalSessions = classSchedules.Count;
+            if (totalSessions == 0)
+            {
+                return new ClassPassResultDto
+                {
+                    ClassId = classId,
+                    TotalStudents = 0,
+                    PassedStudents = 0,
+                    PassRate = 0
+                };
+            }
+
+            // 2. Danh sách sinh viên của lớp (enroll theo lớp, không phải theo course)
+            var studentIds = await _classRepo.GetUserByClassAsync(classId);
+
+            var totalStudents = studentIds.Count;
+            if (totalStudents == 0)
+            {
+                return new ClassPassResultDto
+                {
+                    ClassId = classId,
+                    TotalStudents = 0,
+                    PassedStudents = 0,
+                    PassRate = 0
+                };
+            }
+
+            // 3. Đếm số buổi mỗi SV đã điểm danh (Present)
+            int passedStudents = 0;
+
+            foreach (var student in studentIds)
+            {
+                var attendedCount = await _context.Attendances
+                    .Where(a => a.UserId == student.EmployeeId
+                                && classSchedules.Contains(a.ScheduleId)
+                                && a.Status == "Present")        // hoặc a.CheckOutTime != null
+                    .CountAsync();
+
+                var attendanceRate = (double)attendedCount / totalSessions;
+
+                if (attendanceRate >= 0.8)   // ≥ 80%
+                {
+                    passedStudents++;
+                }
+            }
+
+            return new ClassPassResultDto
+            {
+                ClassId = classId,
+                TotalStudents = totalStudents,
+                PassedStudents = passedStudents,
+                PassRate = Math.Round((double)passedStudents / totalStudents * 100, 2)
+            };
+        }
+
+
 
     }
 }

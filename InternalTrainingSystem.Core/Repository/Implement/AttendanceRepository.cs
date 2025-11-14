@@ -89,7 +89,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .ToListAsync();
 
             return attendances;
-        }
+        } 
 
     }
 }

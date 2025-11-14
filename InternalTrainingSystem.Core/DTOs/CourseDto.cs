@@ -235,4 +235,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public int StudentCount { get; set; }
     }
 
+    
+
+
 }

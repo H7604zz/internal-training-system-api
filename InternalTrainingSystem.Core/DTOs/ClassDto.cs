@@ -130,4 +130,12 @@ namespace InternalTrainingSystem.Core.DTOs
         [Required]
         public TimeSpan NewEndTime { get; set; }
     }
+
+    public class ClassPassResultDto
+    {
+        public int ClassId { get; set; }
+        public int TotalStudents { get; set; }
+        public int PassedStudents { get; set; }
+        public double PassRate { get; set; }   
+    }
 }
