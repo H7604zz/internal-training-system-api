@@ -67,8 +67,14 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="userId"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetCertificateById(int id, [FromQuery] string userId)
+        public async Task<IActionResult> GetCertificateById(int id)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
             var certificate = await _certificateService.GetCertificateByIdAsync(id, userId);
             if (certificate == null)
             {
