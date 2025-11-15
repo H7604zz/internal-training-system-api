@@ -1,8 +1,8 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.Configuration.Constants;
 using InternalTrainingSystem.Core.DTOs;
-using InternalTrainingSystem.Core.Hubs;
+using InternalTrainingSystem.Core.Helper.Hubs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
@@ -194,12 +194,12 @@ namespace InternalTrainingSystem.Core.Controllers
         //[Authorize(Roles = UserRoles.DirectManager)]
         public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdatePendingCourseStatusRequest request)
         {
-            // ✅ Lấy userId từ JWT
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                          ?? User.FindFirstValue("sub")     // phổ biến nhất
-                          ?? User.FindFirstValue("id")
-                          ?? User.FindFirstValue("uid")
-                          ?? "SYSTEM_BOD"; // fallback nếu token không có
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
             try
             {
                 var result = await _courseService.UpdatePendingCourseStatusAsync(userId, courseId, request.NewStatus, request.RejectReason);

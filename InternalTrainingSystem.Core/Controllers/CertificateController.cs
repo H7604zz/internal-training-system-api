@@ -1,6 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using InternalTrainingSystem.Core.Helper;
-using InternalTrainingSystem.Core.Hubs;
+using InternalTrainingSystem.Core.Helper.Hubs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
@@ -67,8 +67,14 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="userId"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetCertificateById(int id, [FromQuery] string userId)
+        public async Task<IActionResult> GetCertificateById(int id)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return NotFound("User not found");
+            }
+
             var certificate = await _certificateService.GetCertificateByIdAsync(id, userId);
             if (certificate == null)
             {

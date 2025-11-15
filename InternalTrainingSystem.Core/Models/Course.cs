@@ -1,4 +1,4 @@
-using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.Configuration.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -36,6 +36,8 @@ namespace InternalTrainingSystem.Core.Models
         public bool IsOnline { get; set; } = true;
 
         public bool IsMandatory { get; set; } = false;
+
+        public double? PassScore { get; set; }
 
         [StringLength(255)]
         public string? RejectionReason { get; set; }

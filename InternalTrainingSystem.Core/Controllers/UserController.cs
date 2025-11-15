@@ -1,5 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
-using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.Configuration.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Services.Implement;
@@ -243,8 +243,14 @@ namespace InternalTrainingSystem.Core.Controllers
 
         [HttpGet("certificates")]
 
-        public async Task<IActionResult> GetCertificatesByUser(string userId)
+        public async Task<IActionResult> GetCertificatesByUser()
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return NotFound("User not found");
+            }
+
             var certificates = await _certificateService.GetCertificateByUserAsync(userId);
             if (certificates == null || certificates.Count == 0)
             {
