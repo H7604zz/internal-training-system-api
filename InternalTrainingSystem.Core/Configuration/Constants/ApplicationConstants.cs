@@ -46,6 +46,7 @@
             public const string InProgress = "InProgress";
             public const string Completed = "Completed";
             public const string Dropped = "Dropped";
+            public const string NotPass = "NotPass";
         }
     }
 
