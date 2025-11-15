@@ -1,6 +1,5 @@
 ﻿using ClosedXML.Excel;
 using Humanizer;
-using InternalTrainingSystem.Core.Configuration.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;

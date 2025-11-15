@@ -1,5 +1,5 @@
-﻿using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Configuration.Constants;
+﻿using InternalTrainingSystem.Core.Common;
+using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Helper;

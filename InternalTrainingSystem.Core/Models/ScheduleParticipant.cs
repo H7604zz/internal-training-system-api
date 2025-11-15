@@ -1,4 +1,4 @@
-using InternalTrainingSystem.Core.Configuration.Constants;
+using InternalTrainingSystem.Core.Common.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

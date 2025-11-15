@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-using InternalTrainingSystem.Core.Configuration.Constants;
+using InternalTrainingSystem.Core.Common.Constants;
 
 namespace InternalTrainingSystem.Core.Models
 {

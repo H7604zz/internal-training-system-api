@@ -1,5 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
-using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Common;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using Microsoft.AspNetCore.Identity;

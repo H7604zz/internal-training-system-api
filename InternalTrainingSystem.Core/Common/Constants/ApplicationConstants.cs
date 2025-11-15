@@ -1,4 +1,4 @@
-﻿namespace InternalTrainingSystem.Core.Configuration.Constants
+﻿namespace InternalTrainingSystem.Core.Common.Constants
 {
     public static class CourseConstants
     {

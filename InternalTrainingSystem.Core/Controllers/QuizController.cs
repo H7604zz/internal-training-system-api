@@ -1,4 +1,4 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using InternalTrainingSystem.Core.Common;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;

@@ -1,4 +1,4 @@
-﻿namespace InternalTrainingSystem.Core.Configuration
+﻿namespace InternalTrainingSystem.Core.Common
 {
     public class PagedResult<T>
     {

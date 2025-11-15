@@ -1,7 +1,7 @@
 ﻿using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using Microsoft.AspNetCore.Mvc;
-using InternalTrainingSystem.Core.Configuration;
+using InternalTrainingSystem.Core.Common;
 
 namespace InternalTrainingSystem.Core.Services.Interface
 {
