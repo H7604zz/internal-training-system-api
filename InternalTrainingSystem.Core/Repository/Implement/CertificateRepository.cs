@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -11,59 +12,36 @@ namespace InternalTrainingSystem.Core.Repository.Implement
     public class CertificateRepository : ICertificateRepository
     {
         private readonly ApplicationDbContext _context;
-        private readonly ILessonProgressRepository _lessonProgressRepo;
+        private readonly string _webAppBaseUrl;
 
-        public CertificateRepository(ApplicationDbContext context, ILessonProgressRepository lessonProgressRepo)
+        public CertificateRepository(ApplicationDbContext context, IConfiguration config)
         {
             _context = context;
-            _lessonProgressRepo = lessonProgressRepo;
+            _webAppBaseUrl = config["ApplicationSettings:WebAppBaseUrl"] ?? "http://localhost:5143";
         }
 
-        public async Task<CertificateResponse> IssueCertificateAsync(string userId, int courseId)
+        public async Task IssueCertificateAsync(string userId, int courseId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null)
                 throw new Exception("Không tìm thấy học viên.");
 
             var course = await _context.Courses
-                .Include(c => c.Modules.OrderBy(m => m.OrderIndex))
-                    .ThenInclude(m => m.Lessons.OrderBy(l => l.OrderIndex))
+                .Include(c => c.Modules)
+                    .ThenInclude(m => m.Lessons)
                 .FirstOrDefaultAsync(c => c.CourseId == courseId);
 
             if (course == null)
                 throw new Exception("Không tìm thấy khóa học.");
-            if (!course.IsOnline)
-            {
-                bool allSessionsCompletedForUser = await _context.ScheduleParticipants
-                .Where(sp => sp.UserId == userId && sp.Schedule.CourseId == courseId)
-                .AllAsync(sp => sp.Status == ScheduleConstants.ParticipantStatus.Completed);
-                if (!allSessionsCompletedForUser)
-                    throw new Exception("Học viên chưa hoàn thành toàn bộ buổi học, không thể cấp chứng chỉ.");
 
-                var enrollment = await _context.CourseEnrollments
-                    .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId);
+            // Kiểm tra enrollment
+            var enrollment = await _context.CourseEnrollments
+                .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId);
 
-                if (enrollment == null || enrollment.Status != EnrollmentConstants.Status.Completed)
-                    throw new Exception("Học viên chưa hoàn tất khóa học, không thể cấp chứng chỉ.");
-            }
-            else
-            {
-                var lessonIds = course.Modules.SelectMany(m => m.Lessons).Select(l => l.Id).ToList();
-                var progressMap = await _lessonProgressRepo.GetProgressMapAsync(userId, lessonIds);
+            if (enrollment == null)
+                throw new Exception("Học viên chưa được ghi danh vào khóa học này.");
 
-                var totalLessons = lessonIds.Count;
-                var completedLessons = progressMap.Values.Count(p => p.IsDone);
-                var progressPercent = totalLessons == 0 ? 0 : completedLessons * 100 / totalLessons;
-                if (progressPercent < 100)
-                {
-                    throw new Exception("Học viên chưa hoàn thành toàn bộ khóa học, không thể cấp chứng chỉ.");
-                }
-
-                var courseEnrollment = await _context.CourseEnrollments
-                .FirstOrDefaultAsync(ce => ce.CourseId == courseId && ce.UserId == userId);
-                courseEnrollment!.Status = EnrollmentConstants.Status.Completed;
-            }
-
+            // Kiểm tra chứng chỉ đã tồn tại
             var existing = await _context.Certificates
                 .FirstOrDefaultAsync(c => c.UserId == userId && c.CourseId == courseId);
             if (existing != null)
@@ -79,19 +57,28 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
 
             _context.Certificates.Add(certificate);
-
             await _context.SaveChangesAsync();
 
-            return new CertificateResponse
+
+            // Gửi email thông báo nhận chứng chỉ
+            if (!string.IsNullOrEmpty(user.Email))
             {
-                CertificateId = certificate.CertificateId,
-                CourseName = course.CourseName,
-                CourseCode = course.Code!,
-                CertificateName = certificate.CertificateName,
-                IssueDate = certificate.IssueDate,
-                ExpirationDate = certificate.ExpirationDate,
-                FullName = user.FullName,
-            };
+                string viewCertificatesUrl = $"{_webAppBaseUrl}/khoa-hoc/chung-chi/{certificate.CertificateId}";
+                string emailContent = $@"
+                    Xin chào {user.FullName},<br/><br/>
+                    Chúc mừng bạn đã <b>hoàn thành khóa học {course.CourseName}</b>! 🎉<br/><br/>
+                    Hệ thống đã tự động cấp cho bạn chứng chỉ hoàn thành khóa học.<br/>
+                    Bạn có thể xem hoặc tải chứng chỉ trong trang <a href='{viewCertificatesUrl}'>Chứng chỉ của tôi</a>.<br/><br/>
+                    Trân trọng,<br/>
+                    <b>Phòng Đào Tạo</b>
+                ";
+
+                Hangfire.BackgroundJob.Enqueue(() => EmailHelper.SendEmailAsync(
+                    user.Email,
+                    $"Chúc mừng bạn nhận chứng chỉ khóa học {course.CourseName}",
+                    emailContent
+                ));
+            }
         }
 
         public async Task<CertificateResponse?> GetCertificateByIdAsync(int id, string userId)
