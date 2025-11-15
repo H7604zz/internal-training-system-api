@@ -228,9 +228,9 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
-        [HttpGet("attendance")]
+        [HttpGet("course-summary")]
         [Authorize(Roles = UserRoles.Staff)]
-        public async Task<IActionResult> GetUserAttendanceSummary()
+        public async Task<IActionResult> GetUserCourseSummary()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -238,10 +238,10 @@ namespace InternalTrainingSystem.Core.Controllers
                 return NotFound("User not found");
             }
 
-            var result = await _userService.GetUserAttendanceSummaryAsync(userId);
+            var result = await _userService.GetUserCourseSummaryAsync(userId);
 
             if (result == null || !result.Any())
-                return NotFound("Không có dữ liệu điểm danh cho lớp này.");
+                return NotFound("Không có dữ liệu cho lớp này.");
 
             return Ok(result);
         }
