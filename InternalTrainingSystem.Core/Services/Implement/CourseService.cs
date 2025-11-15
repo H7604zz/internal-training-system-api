@@ -349,30 +349,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 // Tự động cấp chứng chỉ khi hoàn thành 100% khóa học
                 try
                 {
-                    var certificateResult = await _certificateService.IssueCertificateAsync(userId, lesson.Module.CourseId);
-                    
-                    // Gửi email thông báo nhận chứng chỉ
-                    var user = await _userService.GetUserProfileAsync(userId);
-                    if (user != null && !string.IsNullOrEmpty(user.Email))
-                    {
-                        string viewCertificatesUrl = $"{_webAppBaseUrl}/profile/certificates/{lesson.Module.CourseId}";
-                        string emailContent = $@"
-                            Xin chào {user.FullName},<br/><br/>
-                            Chúc mừng bạn đã <b>hoàn thành khóa học {certificateResult.CourseName}</b>! 🎉<br/><br/>
-                            Hệ thống đã cấp cho bạn chứng chỉ hoàn thành khóa học.<br/>
-                            Bạn có thể xem hoặc tải chứng chỉ trong trang <a href='{viewCertificatesUrl}'>Chứng chỉ</a>.<br/><br/>
-                            Trân trọng,<br/>
-                            <b>Phòng Đào Tạo</b>
-                        ";
-
-                        Hangfire.BackgroundJob.Enqueue(() => EmailHelper.SendEmailAsync(
-                            user.Email,
-                            $"Chúc mừng bạn nhận chứng chỉ khóa học {certificateResult.CourseName}",
-                            emailContent
-                        ));
-                    }
+                    await _certificateService.IssueCertificateAsync(userId, lesson.Module.CourseId);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     
                 }
