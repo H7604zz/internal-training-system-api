@@ -43,7 +43,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.GetUserScheduleAsync(staffId);
         }
 
-        public async Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId)
+        public async Task<List<ClassEmployeeRecordDto>> GetUserInClassAsync(int classId)
         {
             return await _classRepo.GetUserByClassAsync(classId);
         }
@@ -86,6 +86,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId, int classSwapId)
         {
             return await _classRepo.GetSwapClassRequestAsync(userId, classSwapId);
+        }
+
+        public async Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request)
+        {
+           return await _classRepo.UpdateScoresAsync(mentorId, request);
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using DocumentFormat.OpenXml.InkML;
-using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.Configuration.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;

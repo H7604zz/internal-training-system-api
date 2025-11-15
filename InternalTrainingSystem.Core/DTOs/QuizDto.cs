@@ -1,5 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
-using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.Configuration.Constants;
 using InternalTrainingSystem.Core.Models;
 
 namespace InternalTrainingSystem.Core.DTOs

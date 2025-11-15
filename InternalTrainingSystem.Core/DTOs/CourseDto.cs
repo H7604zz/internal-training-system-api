@@ -1,6 +1,6 @@
 ﻿using InternalTrainingSystem.Core.Models;
-using InternalTrainingSystem.Core.Constants;
 using System.ComponentModel.DataAnnotations;
+using InternalTrainingSystem.Core.Configuration.Constants;
 
 namespace InternalTrainingSystem.Core.DTOs
 {
@@ -22,48 +22,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public List<DepartmentListDto> Departments { get; set; } = new();
         public List<ModuleDetailDto> Modules { get; set; } = new();
     }
-
-    public class CreateCourseDto
-    {
-        [Required(ErrorMessage = "Mã khóa học là bắt buộc.")]
-        [StringLength(50, ErrorMessage = "Mã khóa học không được vượt quá 50 ký tự.")]
-        public string CourseCode { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Tên khóa học là bắt buộc.")]
-        [StringLength(200, ErrorMessage = "Tên khóa học không được vượt quá 200 ký tự.")]
-        public string CourseName { get; set; } = string.Empty;
-
-        [StringLength(1000, ErrorMessage = "Mô tả không được vượt quá 1000 ký tự.")]
-        public string? Description { get; set; }
-
-        [Required(ErrorMessage = "Danh mục khóa học là bắt buộc.")]
-        public int CourseCategoryId { get; set; }
-
-        [Required(ErrorMessage = "Thời lượng là bắt buộc.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Thời lượng phải lớn hơn 0.")]
-        public int Duration { get; set; }
-
-        [RegularExpression("Beginner|Intermediate|Advanced",
-            ErrorMessage = "Cấp độ chỉ được phép là 'Beginner', 'Intermediate' hoặc 'Advanced'.")]
-        public string Level { get; set; } = "Beginner";
-
-        public String Status { get; set; } = "Pending";
-
-        public List<int>? Departments { get; set; } // Danh sách ID phòng ban
-    }
-
     
-
-    public sealed class UpdateCourseRejectDto
-    {
-        public string CourseName { get; set; } = default!;
-        public string? Description { get; set; }
-        public int Duration { get; set; }
-        public string Level { get; set; } = default!;
-        public int CourseCategoryId { get; set; }
-        public List<int> DepartmentIds { get; set; } = new();
-    }
-
     public class CourseSearchRequest
     {
         public string? Q { get; set; }

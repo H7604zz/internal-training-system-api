@@ -13,6 +13,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<bool> CreateUserAsync(CreateUserDto req);
         List<IdentityRole> GetRoles();
         Task<ApplicationUser?> GetUserProfileAsync(string userId);
-        Task<List<UserAttendanceResponse>> GetUserAttendanceSummaryAsync(string userId);
+        Task<List<UserCourseSummaryDto>> GetUserCouresSummaryAsync(string userId);
     }
 }

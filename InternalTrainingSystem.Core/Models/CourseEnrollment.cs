@@ -1,3 +1,4 @@
+using InternalTrainingSystem.Core.Configuration.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -13,12 +14,9 @@ namespace InternalTrainingSystem.Core.Models
         public DateTime? CompletionDate { get; set; }
 
         [StringLength(20)]
-        public string Status { get; set; } = Constants.EnrollmentConstants.Status.NotEnrolled;
+        public string Status { get; set; } = EnrollmentConstants.Status.NotEnrolled;
 
-        public int? Score { get; set; }
-
-        [StringLength(10)]
-        public string? Grade { get; set; }
+        public double? Score { get; set; }
 
         public int Progress { get; set; } = 0; // 0-100%
 

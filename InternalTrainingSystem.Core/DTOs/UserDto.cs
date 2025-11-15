@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using InternalTrainingSystem.Core.Configuration.Constants;
+using InternalTrainingSystem.Core.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace InternalTrainingSystem.Core.DTOs
 {
@@ -111,15 +113,21 @@ namespace InternalTrainingSystem.Core.DTOs
         public int PageSize { get; set; } = 10;
     }
 
-    public class UserAttendanceResponse
+    public class UserCourseSummaryDto
     {
         public int ClassId { get; set; }
         public string ClassName { get; set; } = string.Empty;
         public string CourseCode { get; set; } = string.Empty;
         public string CourseName { get; set; } = string.Empty;
+
+        // Attendance
         public int TotalSessions { get; set; }
         public int AbsentDays { get; set; }
         public double AttendanceRate { get; set; }
+
+        // Course Enrollment Info
+        public string Status { get; set; } = EnrollmentConstants.Status.InProgress;
+        public double? Score { get; set; } 
     }
 
     public class ApiResponseDto<T>

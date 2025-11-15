@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.VariantTypes;
 using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.Configuration.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Helper;
@@ -326,7 +327,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return schedules;
         }
 
-        public async Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId)
+        public async Task<List<ClassEmployeeRecordDto>> GetUserByClassAsync(int classId)
         {
             var classEntity = await _context.Classes
                 .Include(c => c.Employees)
@@ -334,7 +335,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .FirstOrDefaultAsync(c => c.ClassId == classId);
 
             if (classEntity == null)
-                return new List<ClassEmployeeAttendanceDto>();
+                return new List<ClassEmployeeRecordDto>();
 
             var scheduleIds = classEntity.Schedules.Select(s => s.ScheduleId).ToList();
 
@@ -342,13 +343,22 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Where(a => scheduleIds.Contains(a.ScheduleId))
                 .ToListAsync();
 
-            var result = classEntity.Employees.Select(e => new ClassEmployeeAttendanceDto
+            var enrollments = await _context.CourseEnrollments
+               .Where(e => e.CourseId == classEntity.CourseId)
+               .ToListAsync();
+
+            var result = classEntity.Employees.Select(e =>
             {
-                EmployeeId = e.EmployeeId ?? "",
-                FullName = e.FullName,
-                Email = e.Email,
-                AbsentNumberDay = attendances
-            .Count(a => a.UserId == e.Id && a.Status == AttendanceConstants.Status.Absent)
+                var enrollment = enrollments.FirstOrDefault(x => x.UserId == e.Id);
+
+                return new ClassEmployeeRecordDto
+                {
+                    EmployeeId = e.EmployeeId ?? "",
+                    FullName = e.FullName,
+                    Email = e.Email,
+                    AbsentNumberDay = attendances.Count(a => a.UserId == e.Id && a.Status == AttendanceConstants.Status.Absent),
+                    ScoreFinal = enrollment?.Score
+                };
             }).ToList();
 
             return result;
@@ -665,6 +675,69 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     RequestedAt = cs.RequestedAt,
                 })
                 .ToListAsync();
+        }
+
+        public async Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request)
+        {
+            if (request.UserScore == null || !request.UserScore.Any())
+                throw new ArgumentException("Danh sách sinh viên trống.");
+
+            var classEntity = await _context.Classes
+                 .Include(c => c.Employees)
+                 .Include(c => c.Schedules)
+                 .Include(c => c.Course)
+                 .FirstOrDefaultAsync(c => c.ClassId == request.ClassId);
+
+            if (classEntity == null)
+                return false;
+
+            if (classEntity.MentorId != mentorId)
+                return false;
+
+            var inProgressEnrollments = await _context.CourseEnrollments
+                .Where(e => e.CourseId == classEntity.CourseId
+                    && e.Status == EnrollmentConstants.Status.InProgress
+                    && classEntity.Employees.Any(emp => emp.Id == e.UserId))
+                .ToListAsync();
+
+            if (!inProgressEnrollments.Any())
+                return false;
+
+            foreach (var employee in request.UserScore)
+            {
+                var enrollment = await _context.CourseEnrollments
+                    .FirstOrDefaultAsync(e => e.CourseId == classEntity.CourseId 
+                    && e.UserId == employee.UserId
+                    && e.Status == EnrollmentConstants.Status.InProgress);
+                if (enrollment != null)
+                {
+                    try
+                    {
+                        enrollment.Score = employee.Score;
+
+                        if (request.IsSubmitted)
+                        {
+                            bool isPass = enrollment.Score.HasValue && enrollment.Score.Value >= classEntity.Course.PassScore;
+
+                            enrollment.Status = isPass
+                                ? EnrollmentConstants.Status.Completed
+                                : EnrollmentConstants.Status.NotPass;
+
+                            if (isPass)
+                            {
+                                enrollment.CompletionDate = DateTime.Now;
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
                 }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

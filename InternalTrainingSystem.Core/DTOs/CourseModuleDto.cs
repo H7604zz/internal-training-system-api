@@ -151,6 +151,8 @@ namespace InternalTrainingSystem.Core.DTOs
 
         public bool IsMandatory { get; set; } = false;
 
+        public double? PassScore { get; set; }
+
         public List<int> Departments { get; set; } = new();
 
         [Required]

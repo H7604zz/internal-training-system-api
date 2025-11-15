@@ -1,5 +1,4 @@
 ﻿using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Helper;
@@ -57,9 +56,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _userRepo.GetUserProfileAsync(userId);
         }
 
-        public async Task<List<UserAttendanceResponse>> GetUserAttendanceSummaryAsync(string userId)
+        public async Task<List<UserCourseSummaryDto>> GetUserCourseSummaryAsync(string userId)
         {
-            return await _userRepo.GetUserAttendanceSummaryAsync(userId);
+            return await _userRepo.GetUserCouresSummaryAsync(userId);
         }
     }
 }

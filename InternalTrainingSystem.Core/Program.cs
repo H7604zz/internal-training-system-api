@@ -2,7 +2,6 @@
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Extensions;
-using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Middleware;
 using InternalTrainingSystem.Core.Models;
@@ -17,6 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics;
 using System.Text;
+using InternalTrainingSystem.Core.Helper.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -185,7 +185,7 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<NotificationHub>("helper/hubs/notifications");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

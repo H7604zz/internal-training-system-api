@@ -1,4 +1,4 @@
-﻿using static InternalTrainingSystem.Core.DTOs.AttendanceDto;
+﻿using InternalTrainingSystem.Core.DTOs;
 
 namespace InternalTrainingSystem.Core.Services.Interface
 {

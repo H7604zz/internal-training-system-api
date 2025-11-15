@@ -1,6 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using InternalTrainingSystem.Core.Configuration;
-using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.Configuration.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;

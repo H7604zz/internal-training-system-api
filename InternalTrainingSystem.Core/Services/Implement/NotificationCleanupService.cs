@@ -1,5 +1,5 @@
 ﻿
-using InternalTrainingSystem.Core.Constants;
+using InternalTrainingSystem.Core.Configuration.Constants;
 using InternalTrainingSystem.Core.DB;
 using Microsoft.EntityFrameworkCore;
 
