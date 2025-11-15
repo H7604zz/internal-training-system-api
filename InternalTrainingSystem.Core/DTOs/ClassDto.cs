@@ -24,12 +24,13 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Email { get; set; }
     }
 
-    public class ClassEmployeeAttendanceDto
+    public class ClassEmployeeRecordDto
     {
         public string EmployeeId { get; set; } = string.Empty;
         public string? FullName { get; set; }
         public string? Email { get; set; }
-        public int? AbsentNumberDay { get; set; }
+        public int? AbsentNumberDay { get; set; } = 0;
+        public double? ScoreFinal { get; set; } = 0;
     }
 
     public class CreateClassRequestDto

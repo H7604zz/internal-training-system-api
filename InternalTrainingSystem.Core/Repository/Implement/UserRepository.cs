@@ -214,7 +214,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .FirstOrDefaultAsync(u => u.Id == userId);
         }
 
-        public async Task<List<UserAttendanceResponse>> GetUserAttendanceSummaryAsync(string userId)
+        public async Task<List<UserCourseSummaryDto>> GetUserCouresSummaryAsync(string userId)
         {
             var classes = await _context.Classes
                 .Include(c => c.Course)
@@ -223,7 +223,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Where(c => c.Employees.Any(e => e.Id == userId))
                 .ToListAsync();
 
-            var result = new List<UserAttendanceResponse>();
+            var result = new List<UserCourseSummaryDto>();
 
             foreach (var cls in classes)
             {
@@ -239,8 +239,10 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 double attendanceRate = totalSessions > 0
                     ? Math.Round((double)absentDays / totalSessions * 100, 2)
                     : 0;
+                var enrollment = await _context.CourseEnrollments
+                    .FirstOrDefaultAsync(e => e.CourseId == cls.CourseId && e.UserId == userId);
 
-                result.Add(new UserAttendanceResponse
+                result.Add(new UserCourseSummaryDto
                 {
                     ClassId = cls.ClassId,
                     ClassName = cls.ClassName,
@@ -248,7 +250,10 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     CourseName = cls.Course?.CourseName!,
                     TotalSessions = totalSessions,
                     AbsentDays = absentDays,
-                    AttendanceRate = attendanceRate
+                    AttendanceRate = attendanceRate,
+
+                    Status = enrollment?.Status ?? EnrollmentConstants.Status.InProgress,
+                    Score = enrollment?.Score,
                 });
             }
 

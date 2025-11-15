@@ -12,7 +12,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<bool> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
         Task<ClassScheduleResponse> GetClassScheduleAsync(int classId);
         Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string staffId);
-        Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId);
+        Task<List<ClassEmployeeRecordDto>> GetUserByClassAsync(int classId);
         Task<ClassDto?> GetClassDetailAsync(int classId);
         Task<List<ClassListDto>> GetClassesByCourseAsync(int courseId);
         Task<bool> CreateClassSwapRequestAsync(SwapClassRequest request);
@@ -22,5 +22,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<Schedule?> GetClassScheduleByIdAsync(int scheduleId);
 
         Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId, int classSwapId);
+        Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request);
     }
 }

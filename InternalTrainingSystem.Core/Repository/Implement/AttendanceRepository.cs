@@ -3,7 +3,6 @@ using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using Microsoft.EntityFrameworkCore;
-using static InternalTrainingSystem.Core.DTOs.AttendanceDto;
 
 namespace InternalTrainingSystem.Core.Repository.Implement
 {

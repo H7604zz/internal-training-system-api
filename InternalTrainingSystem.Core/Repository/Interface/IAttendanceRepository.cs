@@ -1,6 +1,5 @@
 ﻿using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
-using static InternalTrainingSystem.Core.DTOs.AttendanceDto;
 
 namespace InternalTrainingSystem.Core.Repository.Interface
 {
