@@ -212,9 +212,14 @@ namespace InternalTrainingSystem.Core.Controllers
 
         }
 
-        [HttpGet("{userId}/schedule")]
-        public async Task<IActionResult> GetStudentSchedule(string userId)
+        [HttpGet("schedule")]
+        public async Task<IActionResult> GetStudentSchedule()
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
             var result = await _classService.GetUserScheduleAsync(userId);
 
             if (!result.Any())
@@ -248,7 +253,7 @@ namespace InternalTrainingSystem.Core.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
             {
-                return NotFound("User not found");
+                return Unauthorized();
             }
 
             var certificates = await _certificateService.GetCertificateByUserAsync(userId);

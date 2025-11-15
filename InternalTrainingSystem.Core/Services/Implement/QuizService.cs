@@ -49,6 +49,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 && attempt.EndTime.HasValue
                 && DateTime.UtcNow >= attempt.EndTime.Value)
             {
+                attempt.Status = QuizConstants.Status.TimedOut;
+                await _uow.SaveChangesAsync(ct);
                 throw new InvalidOperationException("Bài làm đã hết thời gian. Hãy submit các câu trả lời đang lưu ở FE.");
             }
             var baseQuestions = quiz.Questions.Where(q => q.IsActive).ToList();
@@ -424,13 +426,43 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(lesson.QuizId.Value, ct)
                        ?? throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc bài kiểm tra đã bị vô hiệu hóa.");
 
-            var currentCount = await _attemptRepo.CountAttemptsAsync(quiz.QuizId, userId, ct);
+            var now = DateTime.UtcNow;
+
+            var attempts = await _quizAttemptRepo.GetUserAttemptsAsync(quiz.QuizId, userId, ct);
+
+            var inProgressAttempt = attempts
+                .Where(a => a.Status == QuizConstants.Status.InProgress)
+                .OrderByDescending(a => a.StartTime)
+                .FirstOrDefault();
+
+            if (inProgressAttempt != null)
+            {
+                if (inProgressAttempt.EndTime.HasValue && inProgressAttempt.EndTime <= now)
+                {
+                    inProgressAttempt.Status = QuizConstants.Status.TimedOut;
+                    await _uow.SaveChangesAsync(ct);
+                }
+                else
+                {
+                    return new StartQuizResponse
+                    {
+                        AttemptId = inProgressAttempt.AttemptId,
+                        AttemptNumber = inProgressAttempt.AttemptNumber,
+                        StartTimeUtc = inProgressAttempt.StartTime,
+                        EndTimeUtc = inProgressAttempt.EndTime,
+                        TimeLimitMinutes = quiz.TimeLimit,
+                        IsResumed = true
+                    };
+                }
+            }
+
+
+            var currentCount = attempts.Count; 
             var nextAttemptNumber = currentCount + 1;
             if (nextAttemptNumber > quiz.MaxAttempts)
                 throw new InvalidOperationException("Bạn đã vượt quá số lần làm bài tối đa.");
 
             var maxScore = quiz.Questions.Where(q => q.IsActive).Sum(q => q.Points);
-            var now = DateTime.UtcNow;
             var end = quiz.TimeLimit > 0 ? now.AddMinutes(quiz.TimeLimit) : (DateTime?)null;
 
             var attempt = new QuizAttempt
@@ -468,7 +500,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 AttemptNumber = nextAttemptNumber,
                 StartTimeUtc = now,
                 EndTimeUtc = end,
-                TimeLimitMinutes = quiz.TimeLimit
+                TimeLimitMinutes = quiz.TimeLimit,
+                IsResumed = false
             };
         }
 

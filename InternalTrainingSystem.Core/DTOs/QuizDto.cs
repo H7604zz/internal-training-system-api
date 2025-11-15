@@ -72,7 +72,8 @@ namespace InternalTrainingSystem.Core.DTOs
 		public DateTime StartTimeUtc { get; set; }
 		public DateTime? EndTimeUtc { get; set; } // = Start + TimeLimit
 		public int TimeLimitMinutes { get; set; }
-	}
+        public bool IsResumed { get; set; }
+    }
 
 	public class SubmitAttemptRequest
 	{
