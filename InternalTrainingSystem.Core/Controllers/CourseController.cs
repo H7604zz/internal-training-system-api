@@ -662,7 +662,7 @@ namespace InternalTrainingSystem.Core.Controllers
             var countStudent = 0;
             foreach (var c in classList)
             {
-                var students = await _classService.GetUserByClassAsync(c.ClassId);
+                var students = await _classService.GetUserInClassAsync(c.ClassId);
                 countStudent += students.Count;
             }
             var countClass = classList?.Count() ?? 0;
