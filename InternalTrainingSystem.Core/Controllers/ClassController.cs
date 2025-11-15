@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
-using static InternalTrainingSystem.Core.DTOs.AttendanceDto;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -114,9 +113,9 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <returns></returns>
         [HttpGet("{classId}/user")]
         //[Authorize]
-        public async Task<IActionResult> GetStudentsByClass(int classId)
+        public async Task<IActionResult> GetStudentsInClass(int classId)
         {
-            var students = await _classService.GetUserByClassAsync(classId);
+            var students = await _classService.GetUserInClassAsync(classId);
 
             if (students.Count == 0)
                 return NotFound("Không tìm thấy người học hoặc lớp học.");
@@ -178,7 +177,7 @@ namespace InternalTrainingSystem.Core.Controllers
         public async Task<IActionResult> UpdateAttendance(int scheduleId, [FromBody] List<AttendanceRequest> attendanceList)
         {
             if (attendanceList == null || !attendanceList.Any())
-                return BadRequest( "Danh sách điểm danh trống.");
+                return BadRequest("Danh sách điểm danh trống.");
 
             var result = await _attendanceService.UpdateAttendanceAsync(scheduleId, attendanceList);
 
@@ -290,7 +289,7 @@ namespace InternalTrainingSystem.Core.Controllers
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
             var result = await _classService.GetClassesAsync(page, pageSize);
-            
+
             return Ok(result);
         }
 
@@ -336,15 +335,35 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="classSwapId"></param>
         /// <returns></returns>
         [HttpGet("swap-request/{classSwapId}")]
+        [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> GetSwapClassRequest(int classSwapId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized("Không xác định được người dùng.");
+                return Unauthorized();
 
             var result = await _classService.GetSwapClassRequestAsync(userId, classSwapId);
             if (result.Count == 0) return NotFound("Không có yêu cầu đổi lớp nào đang diễn ra!.");
             return Ok(result);
+        }
+
+        /// <summary>
+        /// nhap diem cuoi ki cua 1 lop
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPut("scores-final")]
+        [Authorize(Roles = UserRoles.Mentor)]
+        public async Task<IActionResult> UpdateScoresFinal([FromBody] ScoreFinalRequest request)
+        {
+            var mentorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(mentorId))
+                return Unauthorized();
+
+            var result = await _classService.UpdateScoresAsync(mentorId, request);
+            if (!result) return BadRequest();
+
+            return Ok();
         }
     }
 }
