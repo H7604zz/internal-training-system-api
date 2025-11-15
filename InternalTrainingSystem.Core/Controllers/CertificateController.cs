@@ -47,5 +47,36 @@ namespace InternalTrainingSystem.Core.Controllers
             }
             return Ok(certificate);
         }
+
+        /// <summary>
+        /// Tải xuống chứng chỉ dạng PDF
+        /// </summary>
+        /// <param name="courseId"></param>
+        /// <returns></returns>
+        [HttpGet("{courseId}/download")]
+        public async Task<IActionResult> DownloadCertificate(int courseId)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized("Bạn cần đăng nhập để tải chứng chỉ.");
+                }
+
+                var pdfBytes = await _certificateService.GenerateCertificatePdfAsync(courseId, userId);
+                
+                var fileName = $"ChungChi_{courseId}_{DateTime.Now:yyyyMMdd}.pdf";
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Đã xảy ra lỗi khi tạo chứng chỉ PDF.");
+            }
+        }
     }
 }
