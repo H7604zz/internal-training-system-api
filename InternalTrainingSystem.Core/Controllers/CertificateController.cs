@@ -26,24 +26,24 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>
-        /// Lấy chi tiết 1 chứng chỉ theo Id
+        /// Lấy chi tiết 1 chứng chỉ theo courseId và UId
         /// </summary>
         /// <param name="id"></param>
         /// <param name="userId"></param>
         /// <returns></returns>
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetCertificateById(int id)
+        [HttpGet("{courseId}")]
+        public async Task<IActionResult> GetCertificateByCourseId(int courseId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                return Unauthorized("Bạn cần đăng nhập để xem chứng chỉ.");
             }
 
-            var certificate = await _certificateService.GetCertificateByIdAsync(id, userId);
+            var certificate = await _certificateService.GetCertificateAsync(courseId, userId);
             if (certificate == null)
             {
-                return NotFound("Không tìm thấy chứng chỉ.");
+                return NotFound("Không tìm thấy chứng chỉ cho khóa học này.");
             }
             return Ok(certificate);
         }

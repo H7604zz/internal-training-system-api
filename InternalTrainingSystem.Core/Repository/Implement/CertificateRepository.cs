@@ -63,7 +63,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             // Gửi email thông báo nhận chứng chỉ
             if (!string.IsNullOrEmpty(user.Email))
             {
-                string viewCertificatesUrl = $"{_webAppBaseUrl}/khoa-hoc/chung-chi/{certificate.CertificateId}";
+                string viewCertificatesUrl = $"{_webAppBaseUrl}/khoa-hoc/chung-chi/{courseId}";
                 string emailContent = $@"
                     Xin chào {user.FullName},<br/><br/>
                     Chúc mừng bạn đã <b>hoàn thành khóa học {course.CourseName}</b>! 🎉<br/><br/>
@@ -81,16 +81,19 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
         }
 
-        public async Task<CertificateResponse?> GetCertificateByIdAsync(int id, string userId)
+        public async Task<CertificateResponse?> GetCertificateAsync(int courseId, string userId)
         {
             var certificate = await _context.Certificates
                 .Include(c => c.User)
                 .Include(c => c.Course)
-                .FirstOrDefaultAsync(c => c.CertificateId == id && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.CourseId == courseId && c.UserId == userId);
+
+            if (certificate == null)
+                return null;
 
             return new CertificateResponse
             {
-                CertificateId = certificate!.CertificateId,
+                CertificateId = certificate.CertificateId,
                 CourseName = certificate.Course.CourseName,
                 CourseCode = certificate.Course.Code!,
                 CertificateName = certificate.CertificateName,

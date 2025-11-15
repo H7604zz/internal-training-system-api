@@ -13,9 +13,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _certificateRepo = certificateRepo;
         }
 
-        public async Task<CertificateResponse?> GetCertificateByIdAsync(int id, string userId)
+        public async Task<CertificateResponse?> GetCertificateAsync(int courseId, string userId)
         {
-            return await _certificateRepo.GetCertificateByIdAsync(id, userId);
+            return await _certificateRepo.GetCertificateAsync(courseId, userId);
         }
 
         public async Task<List<CertificateResponse>> GetCertificateByUserAsync(string userId)

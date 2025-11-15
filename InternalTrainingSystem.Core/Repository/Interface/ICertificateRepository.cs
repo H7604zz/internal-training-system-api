@@ -7,6 +7,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
     {
         Task IssueCertificateAsync(string userId, int courseId);
         Task<List<CertificateResponse>> GetCertificateByUserAsync(string userId);
-        Task<CertificateResponse?> GetCertificateByIdAsync(int id, string userId);
+        Task<CertificateResponse?> GetCertificateAsync(int courseId, string userId);
     }
 }
