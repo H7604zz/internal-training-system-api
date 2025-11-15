@@ -228,6 +228,10 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// lay thong tin user lien quan den khoa hoc(diem danh, diem so, trang thai)
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("course-summary")]
         [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> GetUserCourseSummary()
