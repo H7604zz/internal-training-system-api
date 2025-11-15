@@ -113,6 +113,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             {
                 CertificateId = c.CertificateId,
                 CertificateName = c.CertificateName,
+                CourseId = c.CourseId,
                 CourseCode = c.Course.Code!,
                 CourseName = c.Course.CourseName,
                 IssueDate = c.IssueDate,

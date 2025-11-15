@@ -6,6 +6,7 @@
         public int CertificateId { get; set; }
         public string CourseCode { get; set; } = string.Empty;
         public string CertificateName { get; set; } = string.Empty;
+        public int CourseId { get; set; }   
         public string CourseName { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public DateTime IssueDate { get; set; }
