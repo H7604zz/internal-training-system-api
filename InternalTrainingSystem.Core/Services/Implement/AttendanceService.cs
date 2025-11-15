@@ -13,17 +13,17 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _attendanceRepo = attendanceRepo;
         }
 
-        public Task<List<AttendanceDto.AttendanceResponse>> GetAttendanceByScheduleAsync(int scheduleId)
+        public Task<List<AttendanceResponse>> GetAttendanceByScheduleAsync(int scheduleId)
         {
             return _attendanceRepo.GetAttendanceByScheduleAsync(scheduleId);
         }
 
-        public async Task MarkAttendanceAsync(int scheduleId, List<AttendanceDto.AttendanceRequest> list)
+        public async Task MarkAttendanceAsync(int scheduleId, List<AttendanceRequest> list)
         {
             await _attendanceRepo.MarkAttendanceAsync(scheduleId, list);
         }
 
-        public async Task<bool> UpdateAttendanceAsync(int scheduleId, List<AttendanceDto.AttendanceRequest> list)
+        public async Task<bool> UpdateAttendanceAsync(int scheduleId, List<AttendanceRequest> list)
         {
             return await _attendanceRepo.UpdateAttendanceAsync(scheduleId, list);
         }

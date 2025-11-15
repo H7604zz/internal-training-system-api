@@ -16,6 +16,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         List<IdentityRole> GetRoles();
         Task<ApplicationUser?> GetUserProfileAsync(string userId);
 
-        Task<List<UserAttendanceResponse>> GetUserAttendanceSummaryAsync(string userId);
+        Task<List<UserCourseSummaryDto>> GetUserCourseSummaryAsync(string userId);
     }
 }

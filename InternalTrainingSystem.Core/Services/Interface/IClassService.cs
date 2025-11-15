@@ -10,7 +10,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         // class service
         Task<bool> CreateClassesAsync(CreateClassRequestDto request,
              List<StaffConfirmCourseResponse> confirmedUsers, string createdById);
-        Task<List<ClassEmployeeAttendanceDto>> GetUserByClassAsync(int classId);
+        Task<List<ClassEmployeeRecordDto>> GetUserInClassAsync(int classId);
         Task<ClassDto?> GetClassDetailAsync(int classId);
         Task<List<ClassListDto>> GetClassesByCourseAsync(int courseId);
         Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize);
@@ -26,5 +26,8 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<bool> CreateClassSwapRequestAsync(SwapClassRequest request);
         Task<bool> RespondToClassSwapAsync(RespondSwapRequest request, string responderId);
         Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId, int classSwapId);
+
+        // score-final
+        Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request);
     }
 }
