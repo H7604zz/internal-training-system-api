@@ -39,6 +39,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .AllAsync(sp => sp.Status == ScheduleConstants.ParticipantStatus.Completed);
                 if (!allSessionsCompletedForUser)
                     throw new Exception("Học viên chưa hoàn thành toàn bộ buổi học, không thể cấp chứng chỉ.");
+
+                var enrollment = await _context.CourseEnrollments
+                    .FirstOrDefaultAsync(e => e.UserId == userId && e.CourseId == courseId);
+
+                if (enrollment == null || enrollment.Status != EnrollmentConstants.Status.Completed)
+                    throw new Exception("Học viên chưa hoàn tất khóa học, không thể cấp chứng chỉ.");
             }
             else
             {
@@ -52,6 +58,10 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 {
                     throw new Exception("Học viên chưa hoàn thành toàn bộ khóa học, không thể cấp chứng chỉ.");
                 }
+
+                var courseEnrollment = await _context.CourseEnrollments
+                .FirstOrDefaultAsync(ce => ce.CourseId == courseId && ce.UserId == userId);
+                courseEnrollment!.Status = EnrollmentConstants.Status.Completed;
             }
 
             var existing = await _context.Certificates
@@ -69,9 +79,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
 
             _context.Certificates.Add(certificate);
-            var courseEnrollment = await _context.CourseEnrollments
-                .FirstOrDefaultAsync(ce => ce.CourseId == courseId && ce.UserId == userId);
-            courseEnrollment!.Status = EnrollmentConstants.Status.Completed;
 
             await _context.SaveChangesAsync();
 
