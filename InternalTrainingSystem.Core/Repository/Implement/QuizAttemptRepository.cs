@@ -29,20 +29,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .FirstOrDefaultAsync(a => a.AttemptId == attemptId && a.UserId == userId, ct);
         }
 
-        public async Task<(IReadOnlyList<QuizAttempt> items, int total)> GetAttemptHistoryAsync(
-            int quizId, string userId, int page, int pageSize, CancellationToken ct = default)
-        {
-            var q = _db.QuizAttempts.AsNoTracking()
-                .Where(a => a.QuizId == quizId && a.UserId == userId)
-                .OrderByDescending(a => a.AttemptNumber);
-
-            var total = await q.CountAsync(ct);
-            var items = await q.Skip((page - 1) * pageSize)
-                               .Take(pageSize)
-                               .ToListAsync(ct);
-
-            return (items, total);
-        }
         public async Task<List<QuizAttempt>> GetUserAttemptsAsync(int quizId, string userId, CancellationToken ct = default)
         {
             return await _db.QuizAttempts

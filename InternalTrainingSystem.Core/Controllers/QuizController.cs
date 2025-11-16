@@ -53,15 +53,7 @@ namespace InternalTrainingSystem.Core.Controllers
 			var res = await _quizService.GetAttemptResultAsync(attemptId, GetUserId(), ct);
 			return Ok(res);
 		}
-        /// <summary>
-        /// Lấy lịch sử làm quiz của user cho 1 quiz 
-        /// </summary>
-        [HttpGet("{quizId:int}/history")]
-		public async Task<ActionResult<PagedResult<AttemptHistoryItem>>> History(int quizId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
-		{
-			var res = await _quizService.GetAttemptHistoryAsync(quizId, GetUserId(), page, pageSize, ct);
-			return Ok(res);
-		}
+
         /// <summary>
         /// Bắt đầu làm quiz theo lesson (lesson.Type = Quiz)
         /// </summary>

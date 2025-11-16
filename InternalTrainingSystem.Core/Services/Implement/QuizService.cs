@@ -384,36 +384,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
         }
 
-        public async Task<PagedResult<AttemptHistoryItem>> GetAttemptHistoryAsync(
-            int quizId, string userId, int page, int pageSize, CancellationToken ct = default)
-        {
-            if (page <= 0) page = 1;
-            if (pageSize <= 0 || pageSize > 100) pageSize = 10;
-
-            var (items, total) = await _attemptRepo.GetAttemptHistoryAsync(quizId, userId, page, pageSize, ct);
-
-            var results = items.Select(a => new AttemptHistoryItem
-            {
-                AttemptId = a.AttemptId,
-                AttemptNumber = a.AttemptNumber,
-                StartTimeUtc = a.StartTime,
-                EndTimeUtc = a.EndTime,
-                Status = a.Status,
-                Score = a.Score,
-                MaxScore = a.MaxScore,
-                Percentage = a.Percentage,
-                IsPassed = a.IsPassed
-            }).ToList();
-
-            return new PagedResult<AttemptHistoryItem>
-            {
-                Items = results,
-                TotalCount = total,
-                Page = page,
-                PageSize = pageSize
-            };
-        }
-
         public async Task<StartQuizResponse> StartAttemptByLessonAsync(int lessonId, string userId, CancellationToken ct = default)
         {
             var lesson = await _lessonRepo.GetWithModuleAsync(lessonId, ct)
