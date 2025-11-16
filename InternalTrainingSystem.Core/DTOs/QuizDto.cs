@@ -120,6 +120,7 @@ namespace InternalTrainingSystem.Core.DTOs
 		public DateTime StartTime { get; set; }
 		public DateTime? SubmissionTime { get; set; }
 		public double? Score { get; set; }
+		public bool IsPassed {  set; get; }
 	}
     public class QuizInfoDto
     {
