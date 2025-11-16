@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
+﻿using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Spreadsheet;
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.Constants;
 using InternalTrainingSystem.Core.DB;
@@ -8,6 +9,7 @@ using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Implement;
 using Microsoft.EntityFrameworkCore;
+using static InternalTrainingSystem.Core.DTOs.CourseStatisticsDto;
 
 
 namespace InternalTrainingSystem.Core.Repository.Implement
@@ -405,6 +407,48 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }).ToList();
         }
 
+        public async Task<TrainingOverviewClassStatsDto> GetClassIdsByYearMonthAsync(TrainingOverviewByMonthFilterDto filter, CancellationToken ct = default)
+        {
+            int year = filter.Year;
+            int? month = filter.Month;
+
+            // 1. Query lớp theo year/month
+            var classQuery = _context.Classes
+                .AsNoTracking()
+                .Where(c => c.CreatedDate.Year == year);
+
+            if (month.HasValue && month.Value > 0)
+            {
+                classQuery = classQuery.Where(c => c.CreatedDate.Month == month.Value);
+            }
+
+            // Lấy danh sách lớp (id)
+            var classIds = await classQuery
+                .Select(c => c.ClassId)
+                .ToListAsync(ct);
+
+            int totalClassesOpened = classIds.Count;
+
+            // 2. Lấy sinh viên trong các lớp đó
+            int totalStudents = 0;
+
+            foreach(var item in classQuery)
+            {
+                totalStudents += item.Employees.Count;
+            }
+
+            return new TrainingOverviewClassStatsDto
+            {
+                Year = year,
+                Month = month ?? 0,
+                TotalClassOpened = totalClassesOpened,
+                TotalEmployeesTrained = totalStudents,
+                ClassIds = classIds
+            };
+        }
+
+
+
         public async Task<bool> CreateClassSwapRequestAsync(SwapClassRequest request)
         {
             if (request.EmployeeIdFrom == request.EmployeeIdTo)
@@ -646,5 +690,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Include(s => s.ScheduleParticipants)
                 .FirstOrDefaultAsync(sc => sc.ScheduleId == scheduleId);
         }
+        
+
     }
 }

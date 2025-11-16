@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 using static InternalTrainingSystem.Core.DTOs.AttendanceDto;
+using static InternalTrainingSystem.Core.DTOs.CourseStatisticsDto;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -24,15 +25,19 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IAttendanceService _attendanceService;
         private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hub;
+        private readonly ITrackProgressService _trackProgressService;
+        private readonly ICourseService _courseService;
 
         public ClassController(IClassService classService, IUserService userService,
-            IAttendanceService attendanceService, INotificationService notificationService, IHubContext<NotificationHub> hub)
+            IAttendanceService attendanceService, INotificationService notificationService, IHubContext<NotificationHub> hub, ITrackProgressService trackProgressService, ICourseService courseService)
         {
             _classService = classService;
             _userService = userService;
             _attendanceService = attendanceService;
             _notificationService = notificationService;
             _hub = hub;
+            _trackProgressService = trackProgressService;
+            _courseService = courseService;
         }
 
         /// <summary>
@@ -323,6 +328,28 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             var classList = await _classService.GetClassesByCourseAsync(courseId);
             return Ok(classList);
+        }
+
+        /// <summary>
+        /// Thống kê tổng quan cho role:
+        /// - Bao nhiêu course được mở / NV được đào tạo
+        /// - Bao nhiêu class được mở / NV trong các class
+        /// - Tỷ lệ pass trung bình / số lớp có thống kê
+        /// </summary>
+        /// <param name="filter">Year, Month (Month có thể = 0 hoặc null nếu muốn thống kê cả năm)</param>
+        [HttpGet("overview")]
+        public async Task<ActionResult<TrainingRoleOverviewDto>> GetTrainingRoleOverview(
+            [FromQuery] TrainingOverviewByMonthFilterDto filter,
+            CancellationToken ct)
+        {
+            if (filter == null || filter.Year <= 0)
+            {
+                return BadRequest("Year is required.");
+            }
+
+            var result = await _classService.GetTrainingRoleOverviewAsync(filter, ct);
+
+            return Ok(result);
         }
     }
 }

@@ -138,4 +138,5 @@ namespace InternalTrainingSystem.Core.DTOs
         public int PassedStudents { get; set; }
         public double PassRate { get; set; }   
     }
+
 }

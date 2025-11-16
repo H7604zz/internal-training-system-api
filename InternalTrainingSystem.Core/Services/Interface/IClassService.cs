@@ -2,6 +2,7 @@ using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using Microsoft.AspNetCore.Mvc;
+using static InternalTrainingSystem.Core.DTOs.CourseStatisticsDto;
 
 namespace InternalTrainingSystem.Core.Services.Interface
 {
@@ -23,5 +24,8 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<bool> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
         Task<ClassScheduleResponse> GetClassScheduleAsync(int classId);
         Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string staffId);
+        Task<TrainingRoleOverviewDto> GetTrainingRoleOverviewAsync(
+    TrainingOverviewByMonthFilterDto filter,
+    CancellationToken ct = default);
     }
 }

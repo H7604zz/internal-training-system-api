@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Security.Claims;
+using static InternalTrainingSystem.Core.DTOs.CourseStatisticsDto;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -447,6 +448,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 dto.Modules.Add(moduleDto);
             }
             return dto;
+        }
+        public async Task<TrainingOverviewStatsDto> GetTrainingOverviewStatsByMonthOrYearAsync(TrainingOverviewByMonthFilterDto filter, CancellationToken ct = default)
+        {
+            return await _courseRepo.GetTrainingOverviewStatsByMonthOrYearAsync(filter, ct);
         }
     }
 }

@@ -225,10 +225,10 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 };
             }
 
-            // 2. Danh sách sinh viên của lớp (enroll theo lớp, không phải theo course)
-            var studentIds = await _classRepo.GetUserByClassAsync(classId);
+            // 2. Danh sách sinh viên của lớp 
+            var students = await _classRepo.GetUserByClassAsync(classId);
 
-            var totalStudents = studentIds.Count;
+            var totalStudents = students.Count;
             if (totalStudents == 0)
             {
                 return new ClassPassResultDto
@@ -243,17 +243,23 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             // 3. Đếm số buổi mỗi SV đã điểm danh (Present)
             int passedStudents = 0;
 
-            foreach (var student in studentIds)
+            foreach (var student in students)
             {
                 var attendedCount = await _context.Attendances
                     .Where(a => a.UserId == student.EmployeeId
                                 && classSchedules.Contains(a.ScheduleId)
-                                && a.Status == "Present")        // hoặc a.CheckOutTime != null
+                                && a.Status == "Present")
                     .CountAsync();
 
                 var attendanceRate = (double)attendedCount / totalSessions;
 
-                if (attendanceRate >= 0.8)   // ≥ 80%
+                if (attendanceRate < 0.8)
+                    continue;
+
+                var hasPassedQuiz = await _context.QuizAttempts
+                    .AnyAsync(a => a.UserId == student.EmployeeId && a.IsPassed);
+
+                if (hasPassedQuiz)
                 {
                     passedStudents++;
                 }

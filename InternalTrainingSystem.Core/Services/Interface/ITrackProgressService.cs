@@ -7,5 +7,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<decimal> UpdateModuleProgressAsync(string userId, int moduleId, CancellationToken ct = default);
         Task<decimal> UpdateCourseProgressAsync(string userId, int courseId, CancellationToken ct = default);
         Task<DepartmentDetailDto> TrackProgressDepartment(int departmentId);
+        Task<ClassPassResultDto> GetClassPassRateAsync(int classId);
     }
 }

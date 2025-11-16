@@ -17,5 +17,15 @@
             public int TotalEmployeesTrained { get; set; }
         }
 
+        public class TrainingOverviewClassStatsDto
+        {
+            public int Year { get; set; }
+            public int? Month { get; set; }
+
+            public int TotalClassOpened { get; set; }
+            public int TotalEmployeesTrained { get; set; }
+            public List<int> ClassIds { get; set; } = new();
+        }
+
     }
 }

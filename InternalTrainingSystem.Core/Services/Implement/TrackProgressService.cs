@@ -25,5 +25,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _trackProgressRepo.TrackProgressDepartment(departmentId);
         }
+        public async Task<ClassPassResultDto> GetClassPassRateAsync(int classId)
+        {
+            return await _trackProgressRepo.GetClassPassRateAsync(classId);
+        }
     }
 }

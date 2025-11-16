@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using Microsoft.AspNetCore.Mvc;
+using static InternalTrainingSystem.Core.DTOs.CourseStatisticsDto;
 
 namespace InternalTrainingSystem.Core.Repository.Interface
 {
@@ -20,5 +21,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize);
         Task<bool> RescheduleAsync(int scheduleId, RescheduleRequest request);
         Task<Schedule?> GetClassScheduleByIdAsync(int scheduleId);
+        Task<TrainingOverviewClassStatsDto> GetClassIdsByYearMonthAsync(TrainingOverviewByMonthFilterDto filter, CancellationToken ct = default);
     }
 }

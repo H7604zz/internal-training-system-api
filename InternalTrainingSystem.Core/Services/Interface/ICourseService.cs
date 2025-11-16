@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using InternalTrainingSystem.Core.Configuration;
+using static InternalTrainingSystem.Core.DTOs.CourseStatisticsDto;
 
 namespace InternalTrainingSystem.Core.Services.Interface
 {
@@ -28,6 +29,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task CompleteLessonAsync(int lessonId, string userId, CancellationToken ct = default);
         Task UndoCompleteLessonAsync(int lessonId, string userId, CancellationToken ct = default);
         Task<CourseLearningDto> GetCourseLearningAsync(int courseId,string userId,CancellationToken ct = default);
+        Task<TrainingOverviewStatsDto> GetTrainingOverviewStatsByMonthOrYearAsync(TrainingOverviewByMonthFilterDto filter, CancellationToken ct = default);
 
     }
 }
