@@ -113,18 +113,6 @@ namespace InternalTrainingSystem.Core.DTOs
 		public List<int>? CorrectAnswerIds { get; set; }
 	}
 
-	public class AttemptHistoryItem
-	{
-		public int AttemptId { get; set; }
-		public int AttemptNumber { get; set; }
-		public DateTime StartTimeUtc { get; set; }
-		public DateTime? EndTimeUtc { get; set; }
-		public string Status { get; set; } = "";
-		public int Score { get; set; }
-		public int MaxScore { get; set; }
-		public double Percentage { get; set; }
-		public bool IsPassed { get; set; }
-	}
 	public class UserQuizHistoryResponse
 	{
 		public int QuizId { get; set; }
