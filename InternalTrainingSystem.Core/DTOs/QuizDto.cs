@@ -71,7 +71,7 @@ namespace InternalTrainingSystem.Core.DTOs
 		public int AttemptNumber { get; set; }
 		public DateTime StartTimeUtc { get; set; }
 		public DateTime? EndTimeUtc { get; set; } // = Start + TimeLimit
-		public int TimeLimitMinutes { get; set; }
+		public int TimeLimit { get; set; }
         public bool IsResumed { get; set; }
     }
 
@@ -132,6 +132,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public int UserAttemptCount { get; set; }
         public int RemainingAttempts => Math.Max(0, MaxAttempts - UserAttemptCount);
         public bool IsLocked => RemainingAttempts <= 0;
-        public bool HasPassed { get; set; }
+        public bool IsActive { get; set; }
     }
 }

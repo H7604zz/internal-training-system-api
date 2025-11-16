@@ -100,7 +100,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         {
             return await _context.Quizzes
                 .AsNoTracking()
-                .FirstOrDefaultAsync(q => q.QuizId == quizId && q.IsActive, ct);
+                .FirstOrDefaultAsync(q => q.QuizId == quizId, ct);
         }
     }
 }

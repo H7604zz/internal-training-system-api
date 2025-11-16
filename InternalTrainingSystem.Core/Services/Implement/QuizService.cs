@@ -173,7 +173,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 AttemptNumber = nextAttemptNumber,
                 StartTimeUtc = attempt.StartTime,
                 EndTimeUtc = end,
-                TimeLimitMinutes = quiz.TimeLimit
+                TimeLimit = quiz.TimeLimit
             };
         }
 
@@ -420,7 +420,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         AttemptNumber = inProgressAttempt.AttemptNumber,
                         StartTimeUtc = inProgressAttempt.StartTime,
                         EndTimeUtc = inProgressAttempt.EndTime,
-                        TimeLimitMinutes = quiz.TimeLimit,
+                        TimeLimit = quiz.TimeLimit,
                         IsResumed = true
                     };
                 }
@@ -470,7 +470,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 AttemptNumber = nextAttemptNumber,
                 StartTimeUtc = now,
                 EndTimeUtc = end,
-                TimeLimitMinutes = quiz.TimeLimit,
+                TimeLimit = quiz.TimeLimit,
                 IsResumed = false
             };
         }
@@ -518,7 +518,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 MaxAttempts = quiz.MaxAttempts,
                 PassingScore = quiz.PassingScore,
                 UserAttemptCount = attempts.Count,
-                HasPassed = submittedAttempts.Any(a => a.IsPassed),
+                IsActive = quiz.IsActive,
             };
 
             return info;
