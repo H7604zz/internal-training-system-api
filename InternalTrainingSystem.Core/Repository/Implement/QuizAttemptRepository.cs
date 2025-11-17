@@ -36,5 +36,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .Where(a => a.QuizId == quizId && a.UserId == userId)
                 .ToListAsync(ct);
         }
+
+        public async Task UpdateStatusAsync(int attemptId, string status, CancellationToken ct = default)
+        {
+            await _db.QuizAttempts
+                .Where(a => a.AttemptId == attemptId)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.Status, status), ct);
+        }
     }
 }
