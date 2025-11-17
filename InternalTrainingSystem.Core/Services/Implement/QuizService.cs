@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
+using InternalTrainingSystem.Core.Utils;
 
 namespace InternalTrainingSystem.Core.Services.Implement
 {
@@ -38,21 +39,24 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _uow = uow;
         }
 
-        public async Task<QuizDetailDto?> GetQuizForAttemptAsync(int quizId, int attemptId, string userId, bool shuffleQuestions = false, bool shuffleAnswers = false, CancellationToken ct = default)
+        public async Task<QuizDetailDto?> GetQuizForAttemptAsync(int quizId,int attemptId,string userId,bool shuffleQuestions = false,bool shuffleAnswers = false,CancellationToken ct = default)
         {
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(quizId, ct);
             if (quiz == null) return null;
 
             var attempt = await _attemptRepo.GetAttemptAsync(attemptId, userId, ct)
                          ?? throw new InvalidOperationException("Lượt làm bài không hợp lệ.");
+
+            var now = DateTimeUtils.Now();
             if (attempt.Status == QuizConstants.Status.InProgress
                 && attempt.EndTime.HasValue
-                && DateTime.UtcNow >= attempt.EndTime.Value)
+                && now >= attempt.EndTime.Value)
             {
                 attempt.Status = QuizConstants.Status.TimedOut;
                 await _uow.SaveChangesAsync(ct);
                 throw new InvalidOperationException("Bài làm đã hết thời gian. Hãy submit các câu trả lời đang lưu ở FE.");
             }
+
             var baseQuestions = quiz.Questions.Where(q => q.IsActive).ToList();
 
             List<Question> finalQuestions;
@@ -68,10 +72,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     .ThenBy(q => q.QuestionId)
                     .ToList();
             }
+
             int? remainingSeconds = null;
             if (attempt.EndTime.HasValue)
             {
-                var diff = (int)(attempt.EndTime.Value - DateTime.UtcNow).TotalSeconds;
+                var diff = (int)(attempt.EndTime.Value - now).TotalSeconds;
                 remainingSeconds = diff > 0 ? diff : 0;
             }
 
@@ -124,10 +129,14 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
         }
 
-        public async Task<StartQuizResponse> StartAttemptAsync(int quizId, string userId, CancellationToken ct = default)
+        public async Task<StartQuizResponse> StartAttemptAsync(
+            int quizId,
+            string userId,
+            CancellationToken ct = default)
         {
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(quizId, ct);
-            if (quiz == null) throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc bài kiểm tra đã bị vô hiệu hóa.");
+            if (quiz == null)
+                throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc bài kiểm tra đã bị vô hiệu hóa.");
 
             var currentCount = await _attemptRepo.CountAttemptsAsync(quizId, userId, ct);
             var nextAttemptNumber = currentCount + 1;
@@ -137,7 +146,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             var maxScore = quiz.Questions.Where(x => x.IsActive).Sum(x => x.Points);
 
-            var now = DateTime.UtcNow;
+            var now = DateTimeUtils.Now(); // giờ Việt Nam
             var end = quiz.TimeLimit > 0 ? now.AddMinutes(quiz.TimeLimit) : (DateTime?)null;
 
             var attempt = new QuizAttempt
@@ -159,7 +168,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _historyRepo.AddHistoryAsync(new CourseHistory
             {
                 Action = CourseAction.QuizStarted,
-                ActionDate = DateTime.UtcNow,
+                ActionDate = DateTimeUtils.Now(), // giờ VN
                 UserId = userId,
                 QuizId = quiz.QuizId,
                 QuizAttemptId = attempt.AttemptId,
@@ -171,26 +180,33 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 AttemptId = attempt.AttemptId,
                 AttemptNumber = nextAttemptNumber,
-                StartTimeUtc = attempt.StartTime,
-                EndTimeUtc = end,
+                StartTimeUtc = attempt.StartTime, // giờ VN
+                EndTimeUtc = end,                 // giờ VN
                 TimeLimit = quiz.TimeLimit
             };
         }
 
-        public async Task<AttemptResultDto> SubmitAttemptAsync(int attemptId, string userId, SubmitAttemptRequest req, CancellationToken ct = default)
+        public async Task<AttemptResultDto> SubmitAttemptAsync(
+            int attemptId,
+            string userId,
+            SubmitAttemptRequest req,
+            CancellationToken ct = default)
         {
             var attempt = await _attemptRepo.GetAttemptAsync(attemptId, userId, ct)
                          ?? throw new InvalidOperationException("Không tìm thấy lượt làm bài.");
+
             if (attempt.Status != QuizConstants.Status.InProgress)
                 throw new InvalidOperationException("Lượt làm bài này đã được nộp hoặc đã kết thúc.");
 
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(attempt.QuizId, ct)
                        ?? throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc đã bị vô hiệu hóa.");
 
-            var now = DateTime.UtcNow;
+            var now = DateTimeUtils.Now(); // giờ VN
             var isTimedOut = attempt.EndTime.HasValue && now >= attempt.EndTime.Value;
 
-            var questions = quiz.Questions.Where(q => q.IsActive).OrderBy(q => q.OrderIndex).ToList();
+            var questions = quiz.Questions.Where(q => q.IsActive)
+                                          .OrderBy(q => q.OrderIndex)
+                                          .ToList();
             var qMap = questions.ToDictionary(q => q.QuestionId);
 
             int totalScore = 0;
@@ -223,7 +239,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         });
                     }
 
-                    var correctIds = q.Answers.Where(a => a.IsCorrect).Select(a => a.AnswerId).OrderBy(x => x).ToList();
+                    var correctIds = q.Answers.Where(a => a.IsCorrect)
+                                              .Select(a => a.AnswerId)
+                                              .OrderBy(x => x)
+                                              .ToList();
                     var selectedSorted = selected.OrderBy(x => x).ToList();
                     if (selectedSorted.SequenceEqual(correctIds))
                         totalScore += q.Points;
@@ -233,13 +252,14 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (toInsert.Count > 0)
                 await _userAnswerRepo.AddRangeAsync(toInsert, ct);
 
-            // Nếu quá giờ -> vẫn chấm điểm, nhưng Status = TimedOut.
             var status = isTimedOut ? QuizConstants.Status.TimedOut : QuizConstants.Status.Completed;
 
-            // EndTime: nếu đã có EndTime (deadline) thì giữ lại; nếu chưa có thì set now
+            // EndTime: nếu đã có EndTime (deadline) thì giữ lại; nếu chưa có thì set now (giờ VN)
             attempt.EndTime = attempt.EndTime ?? now;
             attempt.Score = totalScore;
-            attempt.Percentage = attempt.MaxScore > 0 ? (totalScore * 100.0 / attempt.MaxScore) : 0;
+            attempt.Percentage = attempt.MaxScore > 0
+                ? (totalScore * 100.0 / attempt.MaxScore)
+                : 0;
             attempt.IsPassed = attempt.Percentage >= quiz.PassingScore;
             attempt.Status = status;
 
@@ -248,7 +268,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _historyRepo.AddHistoryAsync(new CourseHistory
             {
                 Action = CourseAction.QuizCompleted,
-                ActionDate = DateTime.UtcNow,
+                ActionDate = DateTimeUtils.Now(), // giờ VN
                 UserId = userId,
                 CourseId = quiz.CourseId,
                 QuizId = quiz.QuizId,
@@ -261,16 +281,18 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _historyRepo.AddHistoryAsync(new CourseHistory
             {
                 Action = attempt.IsPassed ? CourseAction.QuizPassed : CourseAction.QuizFailed,
-                ActionDate = DateTime.UtcNow,
+                ActionDate = DateTimeUtils.Now(), // giờ VN
                 UserId = userId,
                 CourseId = quiz.CourseId,
                 QuizId = quiz.QuizId,
                 QuizAttemptId = attempt.AttemptId,
                 Description = attempt.IsPassed
-                    ? (isTimedOut ? $"(Timed out) Đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%."
-                                  : $"Đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%.")
-                    : (isTimedOut ? $"(Timed out) Không đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%."
-                                  : $"Không đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%.")
+                    ? (isTimedOut
+                        ? $"(Timed out) Đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%."
+                        : $"Đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%.")
+                    : (isTimedOut
+                        ? $"(Timed out) Không đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%."
+                        : $"Không đạt bài kiểm tra '{quiz.Title}' với {attempt.Percentage:F1}%.")
             }, ct);
 
             await _uow.SaveChangesAsync(ct);
@@ -293,8 +315,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 {
                     var selected = toInsert.Where(x => x.QuestionId == q.QuestionId && x.AnswerId.HasValue)
                                            .Select(x => x.AnswerId!.Value)
-                                           .Distinct().OrderBy(x => x).ToList();
-                    var correct = q.Answers.Where(a => a.IsCorrect).Select(a => a.AnswerId).OrderBy(x => x).ToList();
+                                           .Distinct()
+                                           .OrderBy(x => x)
+                                           .ToList();
+                    var correct = q.Answers.Where(a => a.IsCorrect)
+                                           .Select(a => a.AnswerId)
+                                           .OrderBy(x => x)
+                                           .ToList();
                     int earned = selected.SequenceEqual(correct) ? q.Points : 0;
 
                     return new QuestionResultDto
@@ -317,8 +344,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 MaxScore = attempt.MaxScore,
                 Percentage = attempt.Percentage,
                 IsPassed = attempt.IsPassed,
-                StartTimeUtc = attempt.StartTime,
-                EndTimeUtc = attempt.EndTime,
+                StartTimeUtc = attempt.StartTime, // giờ VN 
+                EndTimeUtc = attempt.EndTime,     // giờ VN
                 Questions = resultQuestions
             };
         }
@@ -352,10 +379,17 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     }
                     else
                     {
-                        var selected = userAnswers.Where(ua => ua.QuestionId == q.QuestionId && ua.AnswerId.HasValue)
-                                                  .Select(ua => ua.AnswerId!.Value)
-                                                  .Distinct().OrderBy(x => x).ToList();
-                        var correct = q.Answers.Where(a => a.IsCorrect).Select(a => a.AnswerId).OrderBy(x => x).ToList();
+                        var selected = userAnswers
+                            .Where(ua => ua.QuestionId == q.QuestionId && ua.AnswerId.HasValue)
+                            .Select(ua => ua.AnswerId!.Value)
+                            .Distinct()
+                            .OrderBy(x => x)
+                            .ToList();
+
+                        var correct = q.Answers.Where(a => a.IsCorrect)
+                                               .Select(a => a.AnswerId)
+                                               .OrderBy(x => x)
+                                               .ToList();
                         int earned = selected.SequenceEqual(correct) ? q.Points : 0;
 
                         return new QuestionResultDto
@@ -378,13 +412,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 MaxScore = attempt.MaxScore,
                 Percentage = attempt.Percentage,
                 IsPassed = attempt.IsPassed,
-                StartTimeUtc = attempt.StartTime,
-                EndTimeUtc = attempt.EndTime,
+                StartTimeUtc = attempt.StartTime, // giờ VN
+                EndTimeUtc = attempt.EndTime,     // giờ VN
                 Questions = qRes
             };
         }
 
-        public async Task<StartQuizResponse> StartAttemptByLessonAsync(int lessonId, string userId, CancellationToken ct = default)
+        public async Task<StartQuizResponse> StartAttemptByLessonAsync(
+            int lessonId,
+            string userId,
+            CancellationToken ct = default)
         {
             var lesson = await _lessonRepo.GetWithModuleAsync(lessonId, ct)
                          ?? throw new InvalidOperationException("Không tìm thấy bài học.");
@@ -396,7 +433,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(lesson.QuizId.Value, ct)
                        ?? throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc bài kiểm tra đã bị vô hiệu hóa.");
 
-            var now = DateTime.UtcNow;
+            var now = DateTimeUtils.Now(); // giờ VN
 
             var attempts = await _quizAttemptRepo.GetUserAttemptsAsync(quiz.QuizId, userId, ct);
 
@@ -418,16 +455,15 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     {
                         AttemptId = inProgressAttempt.AttemptId,
                         AttemptNumber = inProgressAttempt.AttemptNumber,
-                        StartTimeUtc = inProgressAttempt.StartTime,
-                        EndTimeUtc = inProgressAttempt.EndTime,
+                        StartTimeUtc = inProgressAttempt.StartTime, // giờ VN
+                        EndTimeUtc = inProgressAttempt.EndTime,     // giờ VN
                         TimeLimit = quiz.TimeLimit,
                         IsResumed = true
                     };
                 }
             }
 
-
-            var currentCount = attempts.Count; 
+            var currentCount = attempts.Count;
             var nextAttemptNumber = currentCount + 1;
             if (nextAttemptNumber > quiz.MaxAttempts)
                 throw new InvalidOperationException("Bạn đã vượt quá số lần làm bài tối đa.");
@@ -455,7 +491,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _historyRepo.AddHistoryAsync(new CourseHistory
             {
                 Action = CourseAction.QuizStarted,
-                ActionDate = DateTime.UtcNow,
+                ActionDate = DateTimeUtils.Now(), // giờ VN
                 UserId = userId,
                 CourseId = lesson.Module.CourseId,
                 QuizId = quiz.QuizId,
@@ -468,8 +504,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 AttemptId = attempt.AttemptId,
                 AttemptNumber = nextAttemptNumber,
-                StartTimeUtc = now,
-                EndTimeUtc = end,
+                StartTimeUtc = now, // giờ VN
+                EndTimeUtc = end,   // giờ VN
                 TimeLimit = quiz.TimeLimit,
                 IsResumed = false
             };
