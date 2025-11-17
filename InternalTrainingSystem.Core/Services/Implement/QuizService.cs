@@ -52,8 +52,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 && attempt.EndTime.HasValue
                 && now >= attempt.EndTime.Value)
             {
-                attempt.Status = QuizConstants.Status.TimedOut;
-                await _uow.SaveChangesAsync(ct);
+                //fe catch lỗi và submit
                 throw new InvalidOperationException("Bài làm đã hết thời gian. Hãy submit các câu trả lời đang lưu ở FE.");
             }
 
@@ -255,7 +254,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var status = isTimedOut ? QuizConstants.Status.TimedOut : QuizConstants.Status.Completed;
 
             // EndTime: nếu đã có EndTime (deadline) thì giữ lại; nếu chưa có thì set now (giờ VN)
-            attempt.EndTime = attempt.EndTime ?? now;
+            attempt.EndTime = now;
             attempt.Score = totalScore;
             attempt.Percentage = attempt.MaxScore > 0
                 ? (totalScore * 100.0 / attempt.MaxScore)
@@ -444,13 +443,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             if (inProgressAttempt != null)
             {
-                if (inProgressAttempt.EndTime.HasValue && inProgressAttempt.EndTime <= now)
-                {
-                    inProgressAttempt.Status = QuizConstants.Status.TimedOut;
-                    await _uow.SaveChangesAsync(ct);
-                }
-                else
-                {
                     return new StartQuizResponse
                     {
                         AttemptId = inProgressAttempt.AttemptId,
@@ -460,7 +452,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                         TimeLimit = quiz.TimeLimit,
                         IsResumed = true
                     };
-                }
             }
 
             var currentCount = attempts.Count;
