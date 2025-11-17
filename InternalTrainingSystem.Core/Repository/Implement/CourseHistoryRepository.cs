@@ -43,7 +43,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 {
                     QuizId = qa.QuizId,
                     Action = qa.IsPassed ? CourseAction.QuizPassed : CourseAction.QuizFailed,
-                    Score = qa.Score,
+                    Score = (double)Math.Round((decimal)qa.Percentage / 10m, 1),
                     StartTime = qa.StartTime,
                     SubmissionTime = qa.EndTime,
                     IsPassed = qa.IsPassed
