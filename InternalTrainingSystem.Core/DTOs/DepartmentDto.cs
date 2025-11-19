@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace InternalTrainingSystem.Core.DTOs
 {
@@ -10,15 +10,12 @@ namespace InternalTrainingSystem.Core.DTOs
 
 		public string? Description { get; set; }
 	}
-
 	public class DepartmentDetailDto
 	{
-		public int DepartmentId { get; set; }
-		public string? DepartmentName { get; set; }
+        public int DepartmentId { get; set; }
+        public string? DepartmentName { get; set; }
         public string? Description { get; set; }
-        public List<CourseDetailDto>? CourseDetail { get; set; }
-		public List<UserProfileDto>? userDetail { get; set; }
-        public List<TrackProgressUserDto>? userProgress { get; set; }
+        public List<UserProfileDto>? UserDetail { get; set; }
     }
 
 	public class DepartmentRequestDto

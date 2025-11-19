@@ -68,21 +68,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 				throw new KeyNotFoundException("Không tìm thấy phòng ban.");
 
 			var dto = new DepartmentDetailDto
-			{
+            {
 				DepartmentId = department.Id,
 				DepartmentName = department.Name,
 				Description = department.Description,
-				CourseDetail = department.Courses?.Select(c => new CourseDetailDto
-				{
-					CourseId = c.CourseId,
-					Code = c.Code,
-					CourseName = c.CourseName,
-					Description = c.Description,
-					IsOnline = c.IsOnline,
-					IsMandatory = c.IsMandatory,
-				}).ToList(),
 
-				userDetail = department.Users?.Select(u => new UserProfileDto
+				UserDetail = department.Users?.Select(u => new UserProfileDto
 				{
 					Id = u.Id,
 					EmployeeId = u.EmployeeId,
