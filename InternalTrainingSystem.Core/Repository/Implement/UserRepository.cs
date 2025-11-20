@@ -135,6 +135,14 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
         public async Task CreateUserAsync(CreateUserDto req)
         {
+            var existingEmail = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.Email == req.Email);
+
+            if (existingEmail != null)
+            {
+                throw new InvalidOperationException($"Email '{req.Email}' đã tồn tại trong hệ thống.");
+            }
+
             // Kiểm tra EmployeeId đã tồn tại chưa
             var existingUser = await _userManager.Users
                 .FirstOrDefaultAsync(u => u.EmployeeId == req.EmployeeId);
