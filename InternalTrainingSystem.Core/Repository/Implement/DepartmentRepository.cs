@@ -1,3 +1,5 @@
+using DocumentFormat.OpenXml.Spreadsheet;
+using InternalTrainingSystem.Core.Common;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Repository.Interface;
@@ -57,36 +59,55 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			return await _context.SaveChangesAsync() > 0;
 		}
 
-		public async Task<DepartmentDetailDto> GetDepartmentDetailAsync(int departmentId)
+		public async Task<DepartmentDetailDto> GetDepartmentDetailAsync(DepartmentDetailRequestDto request)
 		{
 			var department = await _context.Departments
 					.Include(d => d.Courses)
-					.Include(d => d.Users)
-					.FirstOrDefaultAsync(d => d.Id == departmentId);
+					.FirstOrDefaultAsync(d => d.Id == request.DepartmentId);
 
 			if (department == null)
 				throw new KeyNotFoundException("Không tìm thấy phòng ban.");
+
+			// Đếm tổng số user trong department
+			var totalUsers = await _context.Users
+					.Where(u => u.DepartmentId == request.DepartmentId)
+					.CountAsync();
+
+			// Lấy danh sách user có phân trang
+			var users = await _context.Users
+					.Where(u => u.DepartmentId == request.DepartmentId)
+					.Include(u => u.Department)
+					.OrderBy(u => u.Id)
+					.Skip((request.Page - 1) * request.PageSize)
+					.Take(request.PageSize)
+					.Select(u => new UserProfileDto
+					{
+						Id = u.Id,
+						EmployeeId = u.EmployeeId,
+						FullName = u.FullName,
+						Email = u.Email!,
+						Department = u.Department.Name,
+						Position = u.Position,
+						IsActive = u.IsActive,
+					})
+					.ToListAsync();
 
 			var dto = new DepartmentDetailDto
             {
 				DepartmentId = department.Id,
 				DepartmentName = department.Name,
 				Description = department.Description,
-
-				UserDetail = department.Users?.Select(u => new UserProfileDto
+				UserDetail = new PagedResult<UserProfileDto>
 				{
-					Id = u.Id,
-					EmployeeId = u.EmployeeId,
-					FullName = u.FullName,
-					Email = u.Email!,
-					Department = u.Department.Name,
-					Position = u.Position,
-					IsActive = u.IsActive,
-				}).ToList()
-			};
+					Items = users,
+					TotalCount = totalUsers,
+					Page = request.Page,
+					PageSize = request.PageSize
+				}
+            };
 
 			return dto;
-		}
+        }
 
 		public async Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto request)
 		{
