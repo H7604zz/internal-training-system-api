@@ -59,11 +59,26 @@ namespace InternalTrainingSystem.Core.Controllers
 		[HttpDelete("{departmentId}")]
 		public async Task<IActionResult> Delete(int departmentId)
 		{
-			var success = await _departmentService.DeleteDepartmentAsync(departmentId);
-			if (!success)
-				return NotFound();
+			try
+			{
+				var success = await _departmentService.DeleteDepartmentAsync(departmentId);
+				if (!success)
+					return BadRequest(new { message = "Không thể xóa phòng ban." });
 
-			return Ok();
+				return Ok(new { message = "Xóa phòng ban thành công." });
+			}
+			catch (KeyNotFoundException ex)
+			{
+				return NotFound(new { message = ex.Message });
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Có lỗi xảy ra khi xóa phòng ban.", error = ex.Message });
+			}
 		}
 
 		[HttpPost("transfer-employee")]

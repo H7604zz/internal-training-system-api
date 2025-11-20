@@ -53,7 +53,15 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 		{
 			var department = await _context.Departments.FindAsync(departmentId);
 			if (department is null)
-				return false;
+				throw new KeyNotFoundException("Không tìm thấy phòng ban.");
+
+			// Kiểm tra xem phòng ban có nhân viên không
+			var employeeCount = await _context.Users
+					.Where(u => u.DepartmentId == departmentId)
+					.CountAsync();
+
+			if (employeeCount > 0)
+				throw new InvalidOperationException($"Không thể xóa phòng ban này vì còn {employeeCount} nhân viên đang làm việc. Vui lòng chuyển hoặc xóa nhân viên trước.");
 
 			_context.Departments.Remove(department);
 			return await _context.SaveChangesAsync() > 0;
