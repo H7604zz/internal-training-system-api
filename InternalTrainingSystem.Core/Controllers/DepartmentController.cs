@@ -24,14 +24,8 @@ namespace InternalTrainingSystem.Core.Controllers
 		}
 
 		[HttpGet("{departmentId}")]
-		public async Task<IActionResult> GetDepartmentDetail([FromRoute] int departmentId, [FromQuery] int page = 1, [FromQuery] int pageSize = 30)
+		public async Task<IActionResult> GetDepartmentDetail([FromRoute] DepartmentDetailRequestDto request)
 		{
-			var request = new DepartmentDetailRequestDto
-			{
-				DepartmentId = departmentId,
-				Page = page,
-				PageSize = pageSize
-			};
 			var department = await _departmentService.GetDepartmentDetailAsync(request);
 			return Ok(department);
 		}

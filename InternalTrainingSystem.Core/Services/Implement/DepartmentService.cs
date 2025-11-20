@@ -38,7 +38,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
 		public async Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto department)
 		{
-
 			return await _departmentRepo.UpdateDepartmentAsync(id, department);
 		}
 

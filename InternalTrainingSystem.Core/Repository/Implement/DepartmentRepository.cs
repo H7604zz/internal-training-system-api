@@ -120,7 +120,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 				throw new KeyNotFoundException("Không tìm thấy phòng ban.");
 
 			bool nameExists = await _context.Departments
-					.AnyAsync(d => d.Id != id && d.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+					.AnyAsync(d => d.Id != id && d.Name.ToLower() == name.ToLower());
 
 			if (nameExists)
 				throw new InvalidOperationException("Tên phòng ban đã tồn tại.");
