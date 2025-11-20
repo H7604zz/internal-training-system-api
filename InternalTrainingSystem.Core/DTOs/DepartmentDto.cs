@@ -30,6 +30,15 @@ namespace InternalTrainingSystem.Core.DTOs
 	{
 		public int DepartmentId { get; set; }
 		public int Page { get; set; } = 1;
-		public int PageSize { get; set; } = 30;
+		public int PageSize { get; set; } = 10;
+	}
+
+	public class TransferEmployeeDto
+	{
+		[Required(ErrorMessage = "User ID là bắt buộc")]
+		public string UserId { get; set; } = string.Empty;
+
+		[Required(ErrorMessage = "Phòng ban đích là bắt buộc")]
+		public int TargetDepartmentId { get; set; }
 	}
 }

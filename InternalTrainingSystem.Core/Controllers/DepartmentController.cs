@@ -71,5 +71,33 @@ namespace InternalTrainingSystem.Core.Controllers
 
 			return Ok();
 		}
+
+		[HttpPost("transfer-employee")]
+		public async Task<IActionResult> TransferEmployee([FromBody] TransferEmployeeDto request)
+		{
+			if (!ModelState.IsValid)
+				return BadRequest(ModelState);
+
+			try
+			{
+				var success = await _departmentService.TransferEmployeeAsync(request);
+				if (!success)
+					return BadRequest(new { message = "Không thể chuyển nhân viên." });
+
+				return Ok(new { message = "Chuyển nhân viên thành công." });
+			}
+			catch (KeyNotFoundException ex)
+			{
+				return NotFound(new { message = ex.Message });
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Có lỗi xảy ra khi chuyển nhân viên.", error = ex.Message });
+			}
+		}
 	}
 }

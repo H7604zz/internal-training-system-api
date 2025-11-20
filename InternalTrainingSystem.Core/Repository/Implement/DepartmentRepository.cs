@@ -130,5 +130,27 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
 			return await _context.SaveChangesAsync() > 0;
 		}
+
+		public async Task<bool> TransferEmployeeAsync(TransferEmployeeDto request)
+		{
+			// Kiểm tra user có tồn tại không
+			var user = await _context.Users.FindAsync(request.UserId);
+			if (user == null)
+				throw new KeyNotFoundException("Không tìm thấy nhân viên.");
+
+			// Kiểm tra phòng ban đích có tồn tại không
+			var targetDepartment = await _context.Departments.FindAsync(request.TargetDepartmentId);
+			if (targetDepartment == null)
+				throw new KeyNotFoundException("Không tìm thấy phòng ban đích.");
+
+			// Kiểm tra xem nhân viên đã ở phòng ban đích chưa
+			if (user.DepartmentId == request.TargetDepartmentId)
+				throw new InvalidOperationException("Nhân viên đã thuộc phòng ban này.");
+
+			// Chuyển phòng ban
+			user.DepartmentId = request.TargetDepartmentId;
+
+			return await _context.SaveChangesAsync() > 0;
+		}
 	}
 }

@@ -10,5 +10,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto department);
         Task<bool> CreateDepartmentAsync(DepartmentRequestDto department);
         Task<bool> DeleteDepartmentAsync(int departmentId);
+        Task<bool> TransferEmployeeAsync(TransferEmployeeDto request);
     }
 }

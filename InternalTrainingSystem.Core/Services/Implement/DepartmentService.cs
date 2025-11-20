@@ -41,5 +41,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
 			return await _departmentRepo.UpdateDepartmentAsync(id, department);
 		}
+
+		public async Task<bool> TransferEmployeeAsync(TransferEmployeeDto request)
+		{
+			return await _departmentRepo.TransferEmployeeAsync(request);
+		}
 	}
 }
