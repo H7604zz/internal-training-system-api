@@ -178,19 +178,23 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto req)
         {
-            if (req == null)
-                return BadRequest("Dữ liệu đầu vào không hợp lệ.");
-
-            var success = await _userService.CreateUserAsync(req);
-
-            if (!success)
-                return BadRequest("Không thể tạo người dùng. Vui lòng kiểm tra lại dữ liệu hoặc email.");
-
-            return Ok(new
+            try
             {
-                Message = "Tạo người dùng thành công. Email kích hoạt đã được gửi.",
-                Email = req.Email
-            });
+                if (req == null)
+                    return BadRequest("Dữ liệu đầu vào không hợp lệ.");
+
+                await _userService.CreateUserAsync(req);
+
+                return Ok("Tạo người dùng thành công. Email kích hoạt đã được gửi.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Đã xảy ra lỗi khi tạo người dùng.");
+            }
         }
 
         [HttpGet("courses")]
