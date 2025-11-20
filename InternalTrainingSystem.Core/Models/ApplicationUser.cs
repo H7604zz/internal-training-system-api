@@ -30,11 +30,12 @@ namespace InternalTrainingSystem.Core.Models
 
         public DateTime? OtpExpiry { get; set; }
 
-        public int? DepartmentId { get; set; }
+        [Required]
+        public int DepartmentId { get; set; }
 
         [ForeignKey(nameof(DepartmentId))]
         // Navigation properties
-        public Department? Department { get; set; }
+        public Department Department { get; set; } = default!;
         public virtual ICollection<CourseEnrollment> CourseEnrollments { get; set; } = new List<CourseEnrollment>();
         public virtual ICollection<QuizAttempt> QuizAttempts { get; set; } = new List<QuizAttempt>();
         public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
