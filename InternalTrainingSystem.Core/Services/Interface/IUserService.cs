@@ -11,7 +11,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
     {
         public PagedResult<EligibleStaffResponse> GetEligibleStaff(int courseId, UserSearchDto searchDto);
         public PagedResult<StaffConfirmCourseResponse> GetStaffConfirmCourse(int courseId, int page, int pageSize);
-        public List<ApplicationUser> GetUsersByRole(string role);
+        Task<List<UserDetailResponse>> GetUsersByRoleAsync(string role);
         Task CreateUserAsync(CreateUserDto req);
         List<IdentityRole> GetRoles();
         Task<ApplicationUser?> GetUserProfileAsync(string userId);

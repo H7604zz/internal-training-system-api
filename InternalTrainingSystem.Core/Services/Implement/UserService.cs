@@ -36,9 +36,23 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return _userRepo.GetEligibleStaff(courseId, searchDto);
         }
 
-        public List<ApplicationUser> GetUsersByRole(string role)
+        public async Task<List<UserDetailResponse>> GetUsersByRoleAsync(string role)
         {
-           return _userRepo.GetUsersByRole(role);
+            // Call repository to get users by role
+            var users = await _userRepo.GetUsersByRoleAsync(role);
+
+            // Map to DTO (business logic layer)
+            var response = users.Select(user => new UserDetailResponse
+            {
+                Id = user.Id,
+                EmployeeId = user.EmployeeId,
+                FullName = user.FullName,
+                Email = user.Email!,
+                Department = user.Department?.Name,
+                Position = user.Position
+            }).ToList();
+
+            return response;
         }
 
         public async Task CreateUserAsync(CreateUserDto req)
