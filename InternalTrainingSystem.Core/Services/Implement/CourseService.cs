@@ -157,7 +157,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         private async Task NotifyTrainingDepartmentAsync(Course course)
         {
             // Lấy user thuộc phòng đào tạo
-            var trainingUsers = _userService.GetUsersByRole(UserRoles.TrainingDepartment);
+            var trainingUsers = await _userService.GetUsersByRoleAsync(UserRoles.TrainingDepartment);
             if (trainingUsers == null || !trainingUsers.Any())
                 return;
 

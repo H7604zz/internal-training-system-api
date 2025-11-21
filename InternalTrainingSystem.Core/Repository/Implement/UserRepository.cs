@@ -119,17 +119,19 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             };
         }
 
-        public List<ApplicationUser> GetUsersByRole(string role)
+        public async Task<List<ApplicationUser>> GetUsersByRoleAsync(string role)
         {
-            var mentors = _context.Users
+            var users = await _context.Users
+                .Include(u => u.Department)
                 .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
                 .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
                 .Where(x => x.r.Name == role && x.u.IsActive)
                 .Select(x => x.u)
                 .Distinct()
-                .ToList();
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
 
-            return mentors;
+            return users;
         }
 
 

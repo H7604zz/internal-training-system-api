@@ -23,8 +23,6 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly ICourseEnrollmentService _courseEnrollmentService;
         private readonly ICertificateService _certificateService;
 
-        private static readonly string[] AllowedRoles = { UserRoles.Staff, UserRoles.Mentor, UserRoles.HR };
-
         public UserController(IUserService userServices, UserManager<ApplicationUser> userManager, 
             ICourseEnrollmentService courseEnrollmentService, IClassService classService, ICertificateService certificateService)
         {
@@ -148,28 +146,27 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
 
+        /// <summary>
+        /// Lấy danh sách user theo role
+        /// </summary>
         [HttpGet("by-role")]
-        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
-        public IActionResult GetUsersByRole([FromQuery] string role)
+        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public async Task<IActionResult> GetUsersByRole([FromQuery] string role)
         {
-            if (!AllowedRoles.Any(r => r.Equals(role, StringComparison.OrdinalIgnoreCase)))
+            try
             {
-                throw new UnauthorizedAccessException("You are not allowed to query this role");
+                if (string.IsNullOrWhiteSpace(role))
+                {
+                    return BadRequest("Role không được để trống.");
+                }
+
+                var response = await _userService.GetUsersByRoleAsync(role);
+                return Ok(response);
             }
-
-            var users = _userService.GetUsersByRole(role);
-
-            var response = users.Select(m => new UserDetailResponse
+            catch (Exception ex)
             {
-                Id = m.Id,
-                EmployeeId = m.EmployeeId,
-                FullName = m.FullName,
-                Email = m.Email!,
-                Department = m.Department?.Name,
-                Position = m.Position
-            }).ToList();
-
-            return Ok(response);
+                return BadRequest($"Đã xảy ra lỗi khi lấy danh sách user: {ex.Message}");
+            }
         }
 
         /// <summary>
