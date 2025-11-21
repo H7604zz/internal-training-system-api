@@ -24,10 +24,10 @@ namespace InternalTrainingSystem.Core.Controllers
 
         private string GetUserId()
             => User.FindFirstValue(ClaimTypes.NameIdentifier)
-               ?? throw new InvalidOperationException("UserId not found in claims.");
+               ?? throw new InvalidOperationException("Người dùng chưa xác thực");
 
         /// <summary>
-        /// Mentor: xem toàn bộ bài nộp cho 1 assignment
+        /// Mentor: xem toàn bộ bài nộp chính cho 1 assignment
         /// </summary>
         [HttpGet]
         [Authorize(Roles = "Mentor")]
