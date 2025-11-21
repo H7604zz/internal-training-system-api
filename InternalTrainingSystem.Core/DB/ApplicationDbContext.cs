@@ -473,9 +473,9 @@ namespace InternalTrainingSystem.Core.DB
             {
                 entity.HasKey(a => a.AssignmentId);
 
-                entity.HasOne(a => a.Course)
+                entity.HasOne(a => a.Class)
                     .WithMany(a => a.Assignments)           
-                    .HasForeignKey(a => a.CourseId)
+                    .HasForeignKey(a => a.ClassId)
                     .OnDelete(DeleteBehavior.Cascade);      
 
                 entity.HasOne(a => a.Schedule)
@@ -483,7 +483,7 @@ namespace InternalTrainingSystem.Core.DB
                     .HasForeignKey(a => a.ScheduleId)
                     .OnDelete(DeleteBehavior.ClientSetNull);      
 
-                entity.HasIndex(a => new { a.CourseId, a.DueAt });
+                entity.HasIndex(a => new { a.ClassId, a.DueAt });
                 entity.HasIndex(a => a.ScheduleId);
 
             });
