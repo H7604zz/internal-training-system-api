@@ -297,8 +297,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 SubmittedAt = s.SubmittedAt,
                 IsLate = s.IsLate,
                 Status = s.Status,
-                Score = s.Score,
-                Grade = s.Grade
+                Score = s.Score
             }).ToList();
         }
 
@@ -317,55 +316,46 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 SubmittedAt = s.SubmittedAt,
                 IsLate = s.IsLate,
                 Status = s.Status,
-                Score = s.Score,
-                Grade = s.Grade
+                Score = s.Score
             }).ToList();
         }
 
         public async Task<AssignmentSubmissionDetailDto?> GetSubmissionDetailAsync(
-            int submissionId,
-            string requesterId,
-            bool isMentor,
-            CancellationToken ct)
+    int submissionId,
+    string requesterId,
+    bool isMentor,
+    CancellationToken ct)
         {
-            var sub = await _submissionRepo.GetByIdWithFilesAndUserAsync(submissionId, ct);
+            var sub = await _submissionRepo.GetByIdWithUserAsync(submissionId, ct);
             if (sub == null) return null;
 
             if (isMentor)
             {
                 var canTeach = await _classRepo.IsMentorOfClassAsync(sub.Assignment.ClassId, requesterId, ct);
                 if (!canTeach)
-                    throw new UnauthorizedAccessException("Bạn không có quyền xem bài nộp này.");
+                    throw new UnauthorizedAccessException("Không có quyền.");
             }
-            else
-            {
-                if (sub.UserId != requesterId)
-                    throw new UnauthorizedAccessException("Bạn chỉ được xem bài nộp của chính mình.");
-            }
+            else if (sub.UserId != requesterId)
+                throw new UnauthorizedAccessException("Không được xem bài nộp của người khác.");
 
             return new AssignmentSubmissionDetailDto
             {
                 SubmissionId = sub.SubmissionId,
                 AssignmentId = sub.AssignmentId,
                 UserId = sub.UserId,
-                UserFullName = sub.User?.FullName ?? string.Empty,
+                UserFullName = sub.User.FullName,
                 AttemptNumber = sub.AttemptNumber,
                 SubmittedAt = sub.SubmittedAt,
                 IsLate = sub.IsLate,
                 Status = sub.Status,
                 Score = sub.Score,
-                Grade = sub.Grade,
                 Feedback = sub.Feedback,
-                //Files = sub.Files.Select(f => new SubmissionFileDto
-                //{
-                //    FileId = f.FileId,
-                //    OriginalFileName = f.OriginalFileName,
-                //    FilePath = f.FilePath,
-                //    MimeType = f.MimeType,
-                //    SizeBytes = f.SizeBytes,
-                //    PublicUrl = f.PublicUrl,
-                //    IsMain = f.IsMain
-                //}).ToList()
+
+                OriginalFileName = sub.OriginalFileName,
+                FilePath = sub.FilePath,
+                MimeType = sub.MimeType,
+                SizeBytes = sub.SizeBytes,
+                PublicUrl = sub.PublicUrl
             };
         }
 
@@ -386,107 +376,90 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var now = DateTime.UtcNow;
 
             if (assignment.CloseAt.HasValue && now > assignment.CloseAt.Value)
-                throw new InvalidOperationException("Assignment đã đóng, không thể nộp bài.");
+                throw new InvalidOperationException("Assignment đã đóng.");
 
             if (!assignment.AllowLateSubmit && assignment.DueAt.HasValue && now > assignment.DueAt.Value)
-                throw new InvalidOperationException("Đã quá hạn nộp bài.");
+                throw new InvalidOperationException("Đã quá hạn nộp.");
 
             var maxAttempt = await _submissionRepo.GetMaxAttemptNumberAsync(assignmentId, userId, ct);
             if (maxAttempt >= assignment.MaxSubmissions)
-                throw new InvalidOperationException("Bạn đã vượt quá số lần nộp cho phép.");
+                throw new InvalidOperationException("Vượt quá số lần nộp.");
 
-            var isLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value;
+            // MARK OLD SUBMISSIONS AS NOT MAIN
+            await _submissionRepo.SetAllOldSubmissionsNotMain(assignmentId, userId, ct);
 
+            // NEW SUBMISSION
             var submission = new AssignmentSubmission
             {
                 AssignmentId = assignmentId,
                 UserId = userId,
                 AttemptNumber = maxAttempt + 1,
                 SubmittedAt = now,
-                IsLate = isLate,
+                IsLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value,
                 Status = AssignmentSubmissionConstants.Status.Submitted,
-                Feedback = request?.Note
+                Feedback = request?.Note,
+                IsMain = true
             };
 
+            // Set file info
+            if (file is not null)
+            {
+                var f = file.Value;
+                submission.OriginalFileName = f.fileName;
+                submission.FilePath = f.relativePath;
+                submission.PublicUrl = f.url;
+                submission.MimeType = f.mimeType;
+                submission.SizeBytes = f.sizeBytes;
+            }
+
             await _submissionRepo.AddAsync(submission, ct);
-            await _uow.SaveChangesAsync(ct); // có SubmissionId
+            await _uow.SaveChangesAsync(ct);
 
-            // CHỈ 1 FILE cho mỗi submission
-            //if (file is not null)
-            //{
-            //    var f = file.Value;
-            //    var fileEntity = new SubmissionFile
-            //    {
-            //        SubmissionId = submission.SubmissionId,
-            //        OriginalFileName = f.fileName,
-            //        FilePath = f.relativePath,
-            //        PublicUrl = f.url,
-            //        MimeType = f.mimeType,
-            //        SizeBytes = f.sizeBytes,
-            //        IsMain = true
-            //    };
-
-            //    await _fileRepo.AddRangeAsync(new[] { fileEntity }, ct);
-            //    await _uow.SaveChangesAsync(ct);
-            //}
-
-            var saved = await _submissionRepo.GetByIdWithFilesAndUserAsync(submission.SubmissionId, ct)
-                ?? submission;
+            var saved = await _submissionRepo.GetByIdWithUserAsync(submission.SubmissionId, ct);
 
             return new AssignmentSubmissionDetailDto
             {
-                SubmissionId = saved.SubmissionId,
+                SubmissionId = saved!.SubmissionId,
                 AssignmentId = saved.AssignmentId,
                 UserId = saved.UserId,
-                UserFullName = saved.User?.FullName ?? string.Empty,
+                UserFullName = saved.User.FullName,
                 AttemptNumber = saved.AttemptNumber,
                 SubmittedAt = saved.SubmittedAt,
                 IsLate = saved.IsLate,
                 Status = saved.Status,
                 Score = saved.Score,
-                Grade = saved.Grade,
                 Feedback = saved.Feedback,
-                //Files = saved.Files.Select(f => new SubmissionFileDto
-                //{
-                //    FileId = f.FileId,
-                //    OriginalFileName = f.OriginalFileName,
-                //    FilePath = f.FilePath,
-                //    MimeType = f.MimeType,
-                //    SizeBytes = f.SizeBytes,
-                //    PublicUrl = f.PublicUrl,
-                //    IsMain = f.IsMain
-                //}).ToList()
+
+                OriginalFileName = saved.OriginalFileName,
+                FilePath = saved.FilePath,
+                MimeType = saved.MimeType,
+                SizeBytes = saved.SizeBytes,
+                PublicUrl = saved.PublicUrl
             };
         }
 
 
         public async Task<AssignmentSubmissionDetailDto> GradeSubmissionAsync(
-            int submissionId,
-            string mentorId,
-            GradeSubmissionDto dto,
-            CancellationToken ct)
+    int submissionId,
+    string mentorId,
+    GradeSubmissionDto dto,
+    CancellationToken ct)
         {
-            var sub = await _submissionRepo.GetByIdWithFilesAndUserAsync(submissionId, ct)
+            var sub = await _submissionRepo.GetByIdWithUserAsync(submissionId, ct)
                 ?? throw new ArgumentException("Submission không tồn tại.");
 
-            var assignment = sub.Assignment ?? throw new InvalidOperationException("Assignment not loaded.");
+            var assignment = sub.Assignment;
             var canTeach = await _classRepo.IsMentorOfClassAsync(assignment.ClassId, mentorId, ct);
             if (!canTeach)
-                throw new UnauthorizedAccessException("Bạn không có quyền chấm bài này.");
+                throw new UnauthorizedAccessException("Bạn không có quyền chấm bài.");
 
             if (dto.Score.HasValue && assignment.MaxScore.HasValue &&
                 (dto.Score < 0 || dto.Score > assignment.MaxScore.Value))
-            {
                 throw new InvalidOperationException("Điểm không hợp lệ.");
-            }
 
             sub.Score = dto.Score;
-            sub.Grade = dto.Grade;
-            sub.Feedback = dto.Feedback ?? sub.Feedback;
-            if (!string.IsNullOrEmpty(dto.Status))
-                sub.Status = dto.Status;
-            else
-                sub.Status = AssignmentSubmissionConstants.Status.Graded;
+            sub.Feedback = dto.Feedback;
+            sub.Status = AssignmentSubmissionConstants.Status.Graded;
 
             _submissionRepo.Update(sub);
             await _uow.SaveChangesAsync(ct);
@@ -496,24 +469,18 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 SubmissionId = sub.SubmissionId,
                 AssignmentId = sub.AssignmentId,
                 UserId = sub.UserId,
-                UserFullName = sub.User?.FullName ?? string.Empty,
+                UserFullName = sub.User.FullName,
                 AttemptNumber = sub.AttemptNumber,
                 SubmittedAt = sub.SubmittedAt,
                 IsLate = sub.IsLate,
                 Status = sub.Status,
                 Score = sub.Score,
-                Grade = sub.Grade,
                 Feedback = sub.Feedback,
-            //    Files = sub.Files.Select(f => new SubmissionFileDto
-            //    {
-            //        FileId = f.FileId,
-            //        OriginalFileName = f.OriginalFileName,
-            //        FilePath = f.FilePath,
-            //        MimeType = f.MimeType,
-            //        SizeBytes = f.SizeBytes,
-            //        PublicUrl = f.PublicUrl,
-            //        IsMain = f.IsMain
-            //    }).ToList()
+                OriginalFileName = sub.OriginalFileName,
+                FilePath = sub.FilePath,
+                MimeType = sub.MimeType,
+                SizeBytes = sub.SizeBytes,
+                PublicUrl = sub.PublicUrl
             };
         }
 

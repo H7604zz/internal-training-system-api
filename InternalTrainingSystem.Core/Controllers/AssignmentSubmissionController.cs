@@ -43,16 +43,16 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <summary>
         /// Staff: xem các lần nộp của chính mình
         /// </summary>
-        [HttpGet("my")]
-        [Authorize(Roles = "Staff")]
-        public async Task<ActionResult<List<AssignmentSubmissionSummaryDto>>> GetMySubmissions(
-            int assignmentId,
-            CancellationToken ct)
-        {
-            var userId = GetUserId();
-            var list = await _assignmentService.GetMySubmissionsAsync(assignmentId, userId, ct);
-            return Ok(list);
-        }
+        //[HttpGet("my")]
+        //[Authorize(Roles = "Staff")]
+        //public async Task<ActionResult<List<AssignmentSubmissionSummaryDto>>> GetMySubmissions(
+        //    int assignmentId,
+        //    CancellationToken ct)
+        //{
+        //    var userId = GetUserId();
+        //    var list = await _assignmentService.GetMySubmissionsAsync(assignmentId, userId, ct);
+        //    return Ok(list);
+        //}
 
         /// <summary>
         /// Mentor + Staff: xem chi tiết một submission
@@ -93,16 +93,15 @@ namespace InternalTrainingSystem.Core.Controllers
             if (form.File == null || form.File.Length <= 0)
                 return BadRequest("Vui lòng chọn 1 file để nộp.");
 
-            // Meta cho S3: chuẩn hóa ContentType + ContentDisposition UTF-8
             var meta = StorageObjectMetadata.ForUpload(form.File.FileName, form.File.ContentType);
-
             var subFolder = $"assignments/{assignmentId}";
-            var (url, relativePath) = await _fileStorage.SaveAsync(form.File, subFolder, meta, ct);
+
+            var uploaded = await _fileStorage.SaveAsync(form.File, subFolder, meta, ct);
 
             var uploadedFile = (
                 fileName: form.File.FileName,
-                relativePath: relativePath,
-                url: url,
+                relativePath: uploaded.relativePath,
+                url: uploaded.url,
                 mimeType: form.File.ContentType,
                 sizeBytes: (long?)form.File.Length
             );
@@ -137,6 +136,7 @@ namespace InternalTrainingSystem.Core.Controllers
             CancellationToken ct)
         {
             var mentorId = GetUserId();
+
             var result = await _assignmentService.GradeSubmissionAsync(submissionId, mentorId, dto, ct);
 
             if (result.AssignmentId != assignmentId)

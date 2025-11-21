@@ -75,7 +75,6 @@ namespace InternalTrainingSystem.Core.DTOs
 
         public string Status { get; set; } = string.Empty;
         public int? Score { get; set; }
-        public string? Grade { get; set; }
     }
 
     public class AssignmentSubmissionDetailDto
@@ -91,10 +90,13 @@ namespace InternalTrainingSystem.Core.DTOs
 
         public string Status { get; set; } = string.Empty;
         public int? Score { get; set; }
-        public string? Grade { get; set; }
         public string? Feedback { get; set; }
 
-        public List<SubmissionFileDto> Files { get; set; } = new();
+        public string? OriginalFileName { get; set; }
+        public string? FilePath { get; set; }
+        public string? MimeType { get; set; }
+        public long? SizeBytes { get; set; }
+        public string? PublicUrl { get; set; }
     }
 
     public class CreateSubmissionRequest
@@ -105,9 +107,7 @@ namespace InternalTrainingSystem.Core.DTOs
     public class GradeSubmissionDto
     {
         public int? Score { get; set; }
-        public string? Grade { get; set; }
         public string? Feedback { get; set; }
-        public string? Status { get; set; } // e.g. "Graded", "Returned"
     }
     public class SubmitAssignmentForm
     {
