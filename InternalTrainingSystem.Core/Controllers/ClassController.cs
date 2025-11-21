@@ -99,7 +99,7 @@ namespace InternalTrainingSystem.Core.Controllers
             var result = await _classService.GetClassScheduleAsync(classId);
 
             if (result.Count == 0)
-                return NotFound();
+                return NoContent();
 
             return Ok(result);
         }
