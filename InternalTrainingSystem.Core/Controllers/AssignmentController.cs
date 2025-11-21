@@ -2,6 +2,7 @@
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using InternalTrainingSystem.Core.Common.Constants;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InternalTrainingSystem.Core.Controllers
@@ -24,7 +25,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Mentor tạo assignment cho CLASS offline
         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "Mentor")]
+        [Authorize(Roles = UserRoles.Mentor)]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<AssignmentDto>> CreateAssignment(int classId, [FromForm] CreateAssignmentForm form, CancellationToken ct)
         {
@@ -43,7 +44,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Mentor cập nhật assignment
         /// </summary>
         [HttpPut("{assignmentId:int}")]
-        [Authorize(Roles = "Mentor")]
+        [Authorize(Roles = UserRoles.Mentor)]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<AssignmentDto>> UpdateAssignment(int classId, int assignmentId, [FromForm] UpdateAssignmentForm form, CancellationToken ct)
         {
@@ -60,7 +61,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Mentor xoá assignment
         /// </summary>
         [HttpDelete("{assignmentId:int}")]
-        [Authorize(Roles = "Mentor")]
+        [Authorize(Roles = UserRoles.Mentor)]
         public async Task<IActionResult> DeleteAssignment(
             int classId,
             int assignmentId,
@@ -84,7 +85,7 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             var userId = GetUserId();
 
-            if (User.IsInRole("Mentor"))
+            if (User.IsInRole(UserRoles.Mentor))
             {
                 var list = await _assignmentService.GetAssignmentsForClassAsync(classId, ct);
                 return Ok(list);
@@ -109,7 +110,7 @@ namespace InternalTrainingSystem.Core.Controllers
             var userId = GetUserId();
             AssignmentDto? dto;
 
-            if (User.IsInRole("Mentor"))
+            if (User.IsInRole(UserRoles.Mentor))
             {
                 dto = await _assignmentService.GetAssignmentByIdAsync(assignmentId, ct);
             }
