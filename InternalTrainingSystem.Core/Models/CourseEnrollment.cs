@@ -40,6 +40,5 @@ namespace InternalTrainingSystem.Core.Models
         public virtual Course Course { get; set; } = null!;
 
         public virtual ICollection<CourseHistory> CourseHistories { get; set; } = new List<CourseHistory>();
-        public virtual ICollection<AssignmentSubmission> AssignmentSubmissions { get; set; } = new List<AssignmentSubmission>();
     }
 }

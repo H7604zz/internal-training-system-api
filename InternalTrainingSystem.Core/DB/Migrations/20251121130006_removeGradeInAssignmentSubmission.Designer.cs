@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InternalTrainingSystem.Core.DB.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251121130006_removeGradeInAssignmentSubmission")]
+    partial class removeGradeInAssignmentSubmission
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -266,6 +269,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Property<int>("AttemptNumber")
                         .HasColumnType("int");
 
+                    b.Property<int?>("CourseEnrollmentEnrollmentId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Feedback")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -308,6 +314,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("SubmissionId");
+
+                    b.HasIndex("CourseEnrollmentEnrollmentId");
 
                     b.HasIndex("SubmittedAt");
 
@@ -1482,6 +1490,10 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("InternalTrainingSystem.Core.Models.CourseEnrollment", null)
+                        .WithMany("AssignmentSubmissions")
+                        .HasForeignKey("CourseEnrollmentEnrollmentId");
+
                     b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
                         .WithMany("AssignmentSubmissions")
                         .HasForeignKey("UserId")
@@ -1987,6 +1999,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseEnrollment", b =>
                 {
+                    b.Navigation("AssignmentSubmissions");
+
                     b.Navigation("CourseHistories");
                 });
 
