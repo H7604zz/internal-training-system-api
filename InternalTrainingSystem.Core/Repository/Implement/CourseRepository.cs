@@ -494,6 +494,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 Status = course.Status,
                 IsOnline = course.IsOnline,
                 IsMandatory = course.IsMandatory,
+                PassScore = course.PassScore,
                 CreatedDate = course.CreatedDate,
                 UpdatedDate = course.UpdatedDate,
                 CreatedBy = course.CreatedBy.FullName,
