@@ -98,8 +98,8 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             var result = await _classService.GetClassScheduleAsync(classId);
 
-            if (!result.Any())
-                return BadRequest(result);
+            if (result.Count == 0)
+                return NotFound();
 
             return Ok(result);
         }
