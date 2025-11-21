@@ -108,5 +108,40 @@ namespace InternalTrainingSystem.Core.Controllers
 				return StatusCode(500, new { message = "Có lỗi xảy ra khi chuyển nhân viên.", error = ex.Message });
 			}
 		}
+
+		/// <summary>
+		/// Báo cáo tỉ lệ hoàn thành khóa học theo phòng ban
+		/// </summary>
+		[HttpGet("report/course-completion")]
+		public async Task<IActionResult> GetCourseCompletionReport([FromQuery] DepartmentReportRequestDto request)
+		{
+			try
+			{
+				var report = await _departmentService.GetDepartmentCourseCompletionAsync(request);
+				return Ok(report);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Có lỗi xảy ra khi tạo báo cáo.", error = ex.Message });
+			}
+		}
+
+		/// <summary>
+		/// Báo cáo top phòng ban học tập tích cực nhất
+		/// </summary>
+		[HttpGet("report/top-active")]
+		public async Task<IActionResult> GetTopActiveDepartments([FromQuery] int top = 10, [FromQuery] DepartmentReportRequestDto? request = null)
+		{
+			try
+			{
+				request ??= new DepartmentReportRequestDto();
+				var report = await _departmentService.GetTopActiveDepartmentsAsync(top, request);
+				return Ok(report);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Có lỗi xảy ra khi tạo báo cáo.", error = ex.Message });
+			}
+		}
 	}
 }

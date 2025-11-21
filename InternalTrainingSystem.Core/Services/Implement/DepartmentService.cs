@@ -45,5 +45,15 @@ namespace InternalTrainingSystem.Core.Services.Implement
 		{
 			return await _departmentRepo.TransferEmployeeAsync(request);
 		}
+
+		public async Task<List<DepartmentCourseCompletionDto>> GetDepartmentCourseCompletionAsync(DepartmentReportRequestDto request)
+		{
+			return await _departmentRepo.GetDepartmentCourseCompletionAsync(request);
+		}
+
+		public async Task<List<TopActiveDepartmentDto>> GetTopActiveDepartmentsAsync(int topCount, DepartmentReportRequestDto request)
+		{
+			return await _departmentRepo.GetTopActiveDepartmentsAsync(topCount, request);
+		}
 	}
 }

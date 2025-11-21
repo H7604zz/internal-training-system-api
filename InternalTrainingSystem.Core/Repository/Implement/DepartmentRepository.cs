@@ -1,5 +1,6 @@
 using DocumentFormat.OpenXml.Spreadsheet;
 using InternalTrainingSystem.Core.Common;
+using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Repository.Interface;
@@ -159,6 +160,89 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			user.DepartmentId = request.TargetDepartmentId;
 
 			return await _context.SaveChangesAsync() > 0;
+		}
+
+		public async Task<List<DepartmentCourseCompletionDto>> GetDepartmentCourseCompletionAsync(DepartmentReportRequestDto request)
+		{
+			var query = _context.Departments
+					.Select(d => new
+					{
+						Department = d,
+						TotalEmployees = d.Users.Count,
+						Enrollments = d.Users
+								.SelectMany(u => u.CourseEnrollments)
+								.Where(e => 
+										(!request.StartDate.HasValue || e.EnrollmentDate >= request.StartDate) &&
+										(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate) &&
+										(!request.CourseId.HasValue || e.CourseId == request.CourseId))
+					});
+
+			var result = await query
+					.Select(x => new DepartmentCourseCompletionDto
+					{
+						DepartmentId = x.Department.Id,
+						DepartmentName = x.Department.Name,
+						TotalEmployees = x.TotalEmployees,
+						TotalEnrollments = x.Enrollments.Count(),
+					CompletedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed),
+					InProgressCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.InProgress),
+					FailedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.NotPass),
+					CompletionRate = x.Enrollments.Any() 
+							? Math.Round((double)x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed) / x.Enrollments.Count() * 100, 2)
+							: 0
+				})
+					.OrderByDescending(x => x.CompletionRate)
+					.ToListAsync();
+
+			return result;
+		}
+
+		public async Task<List<TopActiveDepartmentDto>> GetTopActiveDepartmentsAsync(int topCount, DepartmentReportRequestDto request)
+		{
+			var query = _context.Departments
+					.Select(d => new
+					{
+						Department = d,
+						TotalEmployees = d.Users.Count,
+						Enrollments = d.Users
+								.SelectMany(u => u.CourseEnrollments)
+								.Where(e => 
+										(!request.StartDate.HasValue || e.EnrollmentDate >= request.StartDate) &&
+										(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate) &&
+										(!request.CourseId.HasValue || e.CourseId == request.CourseId)),
+						ActiveLearners = d.Users
+								.Count(u => u.CourseEnrollments
+										.Any(e => 
+												(!request.StartDate.HasValue || e.EnrollmentDate >= request.StartDate) &&
+												(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate) &&
+												(!request.CourseId.HasValue || e.CourseId == request.CourseId)))
+					});
+
+			var result = await query
+					.Select(x => new TopActiveDepartmentDto
+					{
+						DepartmentId = x.Department.Id,
+						DepartmentName = x.Department.Name,
+						TotalEmployees = x.TotalEmployees,
+						TotalEnrollments = x.Enrollments.Count(),
+						CompletedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed),
+					CompletionRate = x.Enrollments.Any() 
+							? Math.Round((double)x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed) / x.Enrollments.Count() * 100, 2)
+							: 0,
+					AverageScore = x.Enrollments.Any(e => e.Status == EnrollmentConstants.Status.Completed && e.Score.HasValue)
+							? Math.Round(x.Enrollments
+								.Where(e => e.Status == EnrollmentConstants.Status.Completed && e.Score.HasValue)
+								.Average(e => e.Score!.Value), 2)
+							: 0,
+					ActiveLearners = x.ActiveLearners
+					})
+					.OrderByDescending(x => x.TotalEnrollments)
+					.ThenByDescending(x => x.CompletionRate)
+					.ThenByDescending(x => x.AverageScore)
+					.Take(topCount)
+					.ToListAsync();
+
+			return result;
 		}
 	}
 }

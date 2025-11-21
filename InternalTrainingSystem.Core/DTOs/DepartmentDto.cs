@@ -41,4 +41,35 @@ namespace InternalTrainingSystem.Core.DTOs
 		[Required(ErrorMessage = "Phòng ban đích là bắt buộc")]
 		public int TargetDepartmentId { get; set; }
 	}
+
+	public class DepartmentCourseCompletionDto
+	{
+		public int DepartmentId { get; set; }
+		public string DepartmentName { get; set; } = string.Empty;
+		public int TotalEmployees { get; set; }
+		public int TotalEnrollments { get; set; }
+		public int CompletedCourses { get; set; }
+		public int InProgressCourses { get; set; }
+		public int FailedCourses { get; set; }
+		public double CompletionRate { get; set; }
+	}
+
+	public class TopActiveDepartmentDto
+	{
+		public int DepartmentId { get; set; }
+		public string DepartmentName { get; set; } = string.Empty;
+		public int TotalEmployees { get; set; }
+		public int TotalEnrollments { get; set; }
+		public int CompletedCourses { get; set; }
+		public double CompletionRate { get; set; }
+		public double AverageScore { get; set; }
+		public int ActiveLearners { get; set; }
+	}
+
+	public class DepartmentReportRequestDto
+	{
+		public DateTime? StartDate { get; set; }
+		public DateTime? EndDate { get; set; }
+		public int? CourseId { get; set; }
+	}
 }
