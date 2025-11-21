@@ -24,9 +24,9 @@ namespace InternalTrainingSystem.Core.Controllers
 		}
 
 		[HttpGet("{departmentId}")]
-		public async Task<IActionResult> GetDepartmentDetail(int departmentId)
+		public async Task<IActionResult> GetDepartmentDetail([FromRoute] DepartmentDetailRequestDto request)
 		{
-			var department = await _departmentService.GetDepartmentDetailAsync(departmentId);
+			var department = await _departmentService.GetDepartmentDetailAsync(request);
 			return Ok(department);
 		}
 
@@ -59,11 +59,89 @@ namespace InternalTrainingSystem.Core.Controllers
 		[HttpDelete("{departmentId}")]
 		public async Task<IActionResult> Delete(int departmentId)
 		{
-			var success = await _departmentService.DeleteDepartmentAsync(departmentId);
-			if (!success)
-				return NotFound();
+			try
+			{
+				var success = await _departmentService.DeleteDepartmentAsync(departmentId);
+				if (!success)
+					return BadRequest(new { message = "Không thể xóa phòng ban." });
 
-			return Ok();
+				return Ok(new { message = "Xóa phòng ban thành công." });
+			}
+			catch (KeyNotFoundException ex)
+			{
+				return NotFound(new { message = ex.Message });
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Có lỗi xảy ra khi xóa phòng ban.", error = ex.Message });
+			}
+		}
+
+		[HttpPost("transfer-employee")]
+		public async Task<IActionResult> TransferEmployee([FromBody] TransferEmployeeDto request)
+		{
+			if (!ModelState.IsValid)
+				return BadRequest(ModelState);
+
+			try
+			{
+				var success = await _departmentService.TransferEmployeeAsync(request);
+				if (!success)
+					return BadRequest(new { message = "Không thể chuyển nhân viên." });
+
+				return Ok(new { message = "Chuyển nhân viên thành công." });
+			}
+			catch (KeyNotFoundException ex)
+			{
+				return NotFound(new { message = ex.Message });
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Có lỗi xảy ra khi chuyển nhân viên.", error = ex.Message });
+			}
+		}
+
+		/// <summary>
+		/// Báo cáo tỉ lệ hoàn thành khóa học theo phòng ban
+		/// </summary>
+		[HttpGet("report/course-completion")]
+		public async Task<IActionResult> GetCourseCompletionReport([FromQuery] DepartmentReportRequestDto request)
+		{
+			try
+			{
+				var report = await _departmentService.GetDepartmentCourseCompletionAsync(request);
+				return Ok(report);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Có lỗi xảy ra khi tạo báo cáo.", error = ex.Message });
+			}
+		}
+
+		/// <summary>
+		/// Báo cáo top phòng ban học tập tích cực nhất
+		/// </summary>
+		[HttpGet("report/top-active")]
+		public async Task<IActionResult> GetTopActiveDepartments([FromQuery] int top = 10, [FromQuery] DepartmentReportRequestDto? request = null)
+		{
+			try
+			{
+				request ??= new DepartmentReportRequestDto();
+				var report = await _departmentService.GetTopActiveDepartmentsAsync(top, request);
+				return Ok(report);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Có lỗi xảy ra khi tạo báo cáo.", error = ex.Message });
+			}
 		}
 	}
 }

@@ -9,6 +9,9 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<bool> CreateDepartmentAsync(DepartmentRequestDto department);
         Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto department);
         Task<bool> DeleteDepartmentAsync(int departmentId);
-        Task<DepartmentDetailDto> GetDepartmentDetailAsync(int id);
+        Task<DepartmentDetailDto> GetDepartmentDetailAsync(DepartmentDetailRequestDto request);
+        Task<bool> TransferEmployeeAsync(TransferEmployeeDto request);
+        Task<List<DepartmentCourseCompletionDto>> GetDepartmentCourseCompletionAsync(DepartmentReportRequestDto request);
+        Task<List<TopActiveDepartmentDto>> GetTopActiveDepartmentsAsync(int topCount, DepartmentReportRequestDto request);
     }
 }

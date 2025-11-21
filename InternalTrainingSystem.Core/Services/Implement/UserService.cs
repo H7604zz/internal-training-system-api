@@ -41,9 +41,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
            return _userRepo.GetUsersByRole(role);
         }
 
-        public async Task<bool> CreateUserAsync(CreateUserDto req)
+        public async Task CreateUserAsync(CreateUserDto req)
         {
-            return await _userRepo.CreateUserAsync(req);
+            await _userRepo.CreateUserAsync(req);
         }
 
         public List<IdentityRole> GetRoles()

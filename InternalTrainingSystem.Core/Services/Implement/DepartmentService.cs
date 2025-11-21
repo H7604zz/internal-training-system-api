@@ -21,9 +21,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
 			return await _departmentRepo.GetDepartmentsAsync();
 		}
 
-		public async Task<DepartmentDetailDto?> GetDepartmentDetailAsync(int departmentId)
+		public async Task<DepartmentDetailDto?> GetDepartmentDetailAsync(DepartmentDetailRequestDto request)
 		{
-			return await _departmentRepo.GetDepartmentDetailAsync(departmentId);
+			return await _departmentRepo.GetDepartmentDetailAsync(request);
 		}
 
 		public async Task<bool> CreateDepartmentAsync(DepartmentRequestDto department)
@@ -38,8 +38,22 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
 		public async Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto department)
 		{
-
 			return await _departmentRepo.UpdateDepartmentAsync(id, department);
+		}
+
+		public async Task<bool> TransferEmployeeAsync(TransferEmployeeDto request)
+		{
+			return await _departmentRepo.TransferEmployeeAsync(request);
+		}
+
+		public async Task<List<DepartmentCourseCompletionDto>> GetDepartmentCourseCompletionAsync(DepartmentReportRequestDto request)
+		{
+			return await _departmentRepo.GetDepartmentCourseCompletionAsync(request);
+		}
+
+		public async Task<List<TopActiveDepartmentDto>> GetTopActiveDepartmentsAsync(int topCount, DepartmentReportRequestDto request)
+		{
+			return await _departmentRepo.GetTopActiveDepartmentsAsync(topCount, request);
 		}
 	}
 }

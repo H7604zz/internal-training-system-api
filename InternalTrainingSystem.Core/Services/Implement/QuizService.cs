@@ -443,17 +443,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             if (inProgressAttempt != null)
             {
-                    return new StartQuizResponse
-                    {
-                        AttemptId = inProgressAttempt.AttemptId,
-                        AttemptNumber = inProgressAttempt.AttemptNumber,
-                        StartTimeUtc = inProgressAttempt.StartTime, // giờ VN
-                        EndTimeUtc = inProgressAttempt.EndTime,     // giờ VN
-                        TimeLimit = quiz.TimeLimit,
-                        IsResumed = true
-                    };
+                // Check if the in-progress attempt has timed out
+                if (inProgressAttempt.EndTime.HasValue && now >= inProgressAttempt.EndTime.Value)
+                {
+                    // Auto-submit the timed-out attempt with zero score
+                    await _quizAttemptRepo.UpdateStatusAsync(inProgressAttempt.AttemptId, QuizConstants.Status.Completed, ct);
+                }
+  
             }
 
+            // Create new attempt
             var currentCount = attempts.Count;
             var nextAttemptNumber = currentCount + 1;
             if (nextAttemptNumber > quiz.MaxAttempts)

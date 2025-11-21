@@ -133,16 +133,23 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         }
 
 
-        public async Task<bool> CreateUserAsync(CreateUserDto req)
+        public async Task CreateUserAsync(CreateUserDto req)
         {
+            var existingEmail = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.Email == req.Email);
+
+            if (existingEmail != null)
+            {
+                throw new InvalidOperationException($"Email '{req.Email}' đã tồn tại trong hệ thống.");
+            }
+
             // Kiểm tra EmployeeId đã tồn tại chưa
             var existingUser = await _userManager.Users
                 .FirstOrDefaultAsync(u => u.EmployeeId == req.EmployeeId);
 
             if (existingUser != null)
             {
-                // Có thể throw exception hoặc return false tùy yêu cầu
-                throw new InvalidOperationException($"EmployeeId '{req.EmployeeId}' đã tồn tại trong hệ thống.");
+                throw new InvalidOperationException($"Mã Nhân viên '{req.EmployeeId}' đã tồn tại trong hệ thống.");
             }
 
             // Map sang ApplicationUser
@@ -163,14 +170,20 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             var tempPassword = PasswordUtils.Generate(_userManager.Options.Password);
             var createResult = await _userManager.CreateAsync(user, tempPassword);
             if (!createResult.Succeeded)
-                return false;
+            {
+                var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Không thể tạo người dùng: {errors}");
+            }
 
             user.EmailConfirmed = true;
             await _userManager.UpdateAsync(user);
 
             var addRoleResult = await _userManager.AddToRoleAsync(user, req.RoleName!);
             if (!addRoleResult.Succeeded)
-                return false;
+            {
+                var errors = string.Join(", ", addRoleResult.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Không thể gán vai trò cho người dùng: {errors}");
+            }
 
             // Gửi email HTML
             var subject = "Kích hoạt tài khoản hệ thống đào tạo";
@@ -198,8 +211,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     subject,
                     body
                 ));
-
-            return true;
         }
 
         public List<IdentityRole> GetRoles()

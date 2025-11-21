@@ -1,3 +1,6 @@
+using DocumentFormat.OpenXml.Spreadsheet;
+using InternalTrainingSystem.Core.Common;
+using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Repository.Interface;
@@ -51,51 +54,69 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 		{
 			var department = await _context.Departments.FindAsync(departmentId);
 			if (department is null)
-				return false;
+				throw new KeyNotFoundException("Không tìm thấy phòng ban.");
+
+			// Kiểm tra xem phòng ban có nhân viên không
+			var employeeCount = await _context.Users
+					.Where(u => u.DepartmentId == departmentId)
+					.CountAsync();
+
+			if (employeeCount > 0)
+				throw new InvalidOperationException($"Không thể xóa phòng ban này vì còn {employeeCount} nhân viên đang làm việc. Vui lòng chuyển hoặc xóa nhân viên trước.");
 
 			_context.Departments.Remove(department);
 			return await _context.SaveChangesAsync() > 0;
 		}
 
-		public async Task<DepartmentDetailDto> GetDepartmentDetailAsync(int departmentId)
+		public async Task<DepartmentDetailDto> GetDepartmentDetailAsync(DepartmentDetailRequestDto request)
 		{
 			var department = await _context.Departments
 					.Include(d => d.Courses)
-					.Include(d => d.Users)
-					.FirstOrDefaultAsync(d => d.Id == departmentId);
+					.FirstOrDefaultAsync(d => d.Id == request.DepartmentId);
 
 			if (department == null)
 				throw new KeyNotFoundException("Không tìm thấy phòng ban.");
 
+			// Đếm tổng số user trong department
+			var totalUsers = await _context.Users
+					.Where(u => u.DepartmentId == request.DepartmentId)
+					.CountAsync();
+
+			// Lấy danh sách user có phân trang
+			var users = await _context.Users
+					.Where(u => u.DepartmentId == request.DepartmentId)
+					.Include(u => u.Department)
+					.OrderBy(u => u.Id)
+					.Skip((request.Page - 1) * request.PageSize)
+					.Take(request.PageSize)
+					.Select(u => new UserProfileDto
+					{
+						Id = u.Id,
+						EmployeeId = u.EmployeeId,
+						FullName = u.FullName,
+						Email = u.Email!,
+						Department = u.Department.Name,
+						Position = u.Position,
+						IsActive = u.IsActive,
+					})
+					.ToListAsync();
+
 			var dto = new DepartmentDetailDto
-			{
+            {
 				DepartmentId = department.Id,
 				DepartmentName = department.Name,
 				Description = department.Description,
-				CourseDetail = department.Courses?.Select(c => new CourseDetailDto
+				UserDetail = new PagedResult<UserProfileDto>
 				{
-					CourseId = c.CourseId,
-					Code = c.Code,
-					CourseName = c.CourseName,
-					Description = c.Description,
-					IsOnline = c.IsOnline,
-					IsMandatory = c.IsMandatory,
-				}).ToList(),
-
-				userDetail = department.Users?.Select(u => new UserProfileDto
-				{
-					Id = u.Id,
-					EmployeeId = u.EmployeeId,
-					FullName = u.FullName,
-					Email = u.Email!,
-					Department = u.Department.Name,
-					Position = u.Position,
-					IsActive = u.IsActive,
-				}).ToList()
-			};
+					Items = users,
+					TotalCount = totalUsers,
+					Page = request.Page,
+					PageSize = request.PageSize
+				}
+            };
 
 			return dto;
-		}
+        }
 
 		public async Task<bool> UpdateDepartmentAsync(int id, DepartmentRequestDto request)
 		{
@@ -108,7 +129,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 				throw new KeyNotFoundException("Không tìm thấy phòng ban.");
 
 			bool nameExists = await _context.Departments
-					.AnyAsync(d => d.Id != id && d.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+					.AnyAsync(d => d.Id != id && d.Name.ToLower() == name.ToLower());
 
 			if (nameExists)
 				throw new InvalidOperationException("Tên phòng ban đã tồn tại.");
@@ -117,6 +138,111 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			existingDepartment.Description = request.Description;
 
 			return await _context.SaveChangesAsync() > 0;
+		}
+
+		public async Task<bool> TransferEmployeeAsync(TransferEmployeeDto request)
+		{
+			// Kiểm tra user có tồn tại không
+			var user = await _context.Users.FindAsync(request.UserId);
+			if (user == null)
+				throw new KeyNotFoundException("Không tìm thấy nhân viên.");
+
+			// Kiểm tra phòng ban đích có tồn tại không
+			var targetDepartment = await _context.Departments.FindAsync(request.TargetDepartmentId);
+			if (targetDepartment == null)
+				throw new KeyNotFoundException("Không tìm thấy phòng ban đích.");
+
+			// Kiểm tra xem nhân viên đã ở phòng ban đích chưa
+			if (user.DepartmentId == request.TargetDepartmentId)
+				throw new InvalidOperationException("Nhân viên đã thuộc phòng ban này.");
+
+			// Chuyển phòng ban
+			user.DepartmentId = request.TargetDepartmentId;
+
+			return await _context.SaveChangesAsync() > 0;
+		}
+
+		public async Task<List<DepartmentCourseCompletionDto>> GetDepartmentCourseCompletionAsync(DepartmentReportRequestDto request)
+		{
+			var query = _context.Departments
+					.Select(d => new
+					{
+						Department = d,
+						TotalEmployees = d.Users.Count,
+						Enrollments = d.Users
+								.SelectMany(u => u.CourseEnrollments)
+								.Where(e => 
+										(!request.StartDate.HasValue || e.EnrollmentDate >= request.StartDate) &&
+										(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate) &&
+										(!request.CourseId.HasValue || e.CourseId == request.CourseId))
+					});
+
+			var result = await query
+					.Select(x => new DepartmentCourseCompletionDto
+					{
+						DepartmentId = x.Department.Id,
+						DepartmentName = x.Department.Name,
+						TotalEmployees = x.TotalEmployees,
+						TotalEnrollments = x.Enrollments.Count(),
+					CompletedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed),
+					InProgressCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.InProgress),
+					FailedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.NotPass),
+					CompletionRate = x.Enrollments.Any() 
+							? Math.Round((double)x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed) / x.Enrollments.Count() * 100, 2)
+							: 0
+				})
+					.OrderByDescending(x => x.CompletionRate)
+					.ToListAsync();
+
+			return result;
+		}
+
+		public async Task<List<TopActiveDepartmentDto>> GetTopActiveDepartmentsAsync(int topCount, DepartmentReportRequestDto request)
+		{
+			var query = _context.Departments
+					.Select(d => new
+					{
+						Department = d,
+						TotalEmployees = d.Users.Count,
+						Enrollments = d.Users
+								.SelectMany(u => u.CourseEnrollments)
+								.Where(e => 
+										(!request.StartDate.HasValue || e.EnrollmentDate >= request.StartDate) &&
+										(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate) &&
+										(!request.CourseId.HasValue || e.CourseId == request.CourseId)),
+						ActiveLearners = d.Users
+								.Count(u => u.CourseEnrollments
+										.Any(e => 
+												(!request.StartDate.HasValue || e.EnrollmentDate >= request.StartDate) &&
+												(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate) &&
+												(!request.CourseId.HasValue || e.CourseId == request.CourseId)))
+					});
+
+			var result = await query
+					.Select(x => new TopActiveDepartmentDto
+					{
+						DepartmentId = x.Department.Id,
+						DepartmentName = x.Department.Name,
+						TotalEmployees = x.TotalEmployees,
+						TotalEnrollments = x.Enrollments.Count(),
+						CompletedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed),
+					CompletionRate = x.Enrollments.Any() 
+							? Math.Round((double)x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed) / x.Enrollments.Count() * 100, 2)
+							: 0,
+					AverageScore = x.Enrollments.Any(e => e.Status == EnrollmentConstants.Status.Completed && e.Score.HasValue)
+							? Math.Round(x.Enrollments
+								.Where(e => e.Status == EnrollmentConstants.Status.Completed && e.Score.HasValue)
+								.Average(e => e.Score!.Value), 2)
+							: 0,
+					ActiveLearners = x.ActiveLearners
+					})
+					.OrderByDescending(x => x.TotalEnrollments)
+					.ThenByDescending(x => x.CompletionRate)
+					.ThenByDescending(x => x.AverageScore)
+					.Take(topCount)
+					.ToListAsync();
+
+			return result;
 		}
 	}
 }
