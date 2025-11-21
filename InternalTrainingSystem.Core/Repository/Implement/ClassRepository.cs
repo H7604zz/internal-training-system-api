@@ -376,7 +376,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 ClassName = classEntity.ClassName,
                 CourseId = classEntity.CourseId,
                 CourseName = classEntity.Course?.CourseName,
-                MentorId = classEntity.MentorId!,
+                MentorId = classEntity.Mentor?.EmployeeId,
                 MentorName = classEntity.Mentor?.FullName,
                 MaxStudents = classEntity.Employees.Count,
                 Employees = classEntity.Employees.Select(e => new ClassEmployeeDto
