@@ -19,7 +19,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<bool> RescheduleAsync(int scheduleId, RescheduleRequest request);
         Task<Schedule?> GetClassScheduleByIdAsync(int scheduleId);
         Task<bool> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
-        Task<ClassScheduleResponse> GetClassScheduleAsync(int classId);
+        Task<List<ScheduleItemResponseDto>> GetClassScheduleAsync(int classId);
         Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string staffId);
 
         // Swap class

@@ -258,7 +258,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return true;
         }
 
-        public async Task<ClassScheduleResponse> GetClassScheduleAsync(int classId)
+        public async Task<List<ScheduleItemResponseDto>> GetClassScheduleAsync(int classId)
         {
             var schedule = await _context.Schedules
                 .Include(s => s.Course)
@@ -280,12 +280,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 })
                 .ToListAsync();
 
-            return new ClassScheduleResponse
-            {
-                Success = true,
-                Message = "Lấy lịch học thành công",
-                Schedules = schedule
-            };
+            return schedule;
         }
 
         public async Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string staffId)

@@ -33,7 +33,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.CreateWeeklySchedulesAsync(request);
         }
 
-        public Task<ClassScheduleResponse> GetClassScheduleAsync(int classId)
+        public Task<List<ScheduleItemResponseDto>> GetClassScheduleAsync(int classId)
         {
             return _classRepo.GetClassScheduleAsync(classId);
         }

@@ -4,11 +4,9 @@ using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Hubs;
 using InternalTrainingSystem.Core.Models;
-using InternalTrainingSystem.Core.Services.Implement;
 using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
@@ -100,7 +98,7 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             var result = await _classService.GetClassScheduleAsync(classId);
 
-            if (!result.Success)
+            if (!result.Any())
                 return BadRequest(result);
 
             return Ok(result);

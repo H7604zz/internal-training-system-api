@@ -98,13 +98,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Location { get; set; }
     }
 
-    public class ClassScheduleResponse
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public List<ScheduleItemResponseDto> Schedules { get; set; } = new();
-    }
-
     public class RescheduleRequest
     {
         [Required]
