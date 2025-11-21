@@ -17,7 +17,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
         public Task<AssignmentSubmission?> GetByIdWithFilesAndUserAsync(int submissionId, CancellationToken ct = default)
             => _db.AssignmentSubmissions
-                  .Include(s => s.Files)
+                  //.Include(s => s.Files)
                   .Include(s => s.User)
                   .Include(s => s.Assignment)
                   .FirstOrDefaultAsync(s => s.SubmissionId == submissionId, ct);
@@ -32,7 +32,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         public Task<List<AssignmentSubmission>> GetByAssignmentAndUserAsync(
             int assignmentId, string userId, CancellationToken ct = default)
             => _db.AssignmentSubmissions
-                  .Include(s => s.Files)
+                  //.Include(s => s.Files)
                   .Where(s => s.AssignmentId == assignmentId && s.UserId == userId)
                   .OrderByDescending(s => s.SubmittedAt)
                   .ToListAsync(ct);

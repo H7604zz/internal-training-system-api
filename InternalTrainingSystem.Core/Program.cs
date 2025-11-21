@@ -80,7 +80,6 @@ builder.Services.AddScoped<ICourseHistoryRepository, CourseHistoryRepository>();
 builder.Services.AddScoped<ICertificateRepository, CertificateRepository>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 builder.Services.AddScoped<IAssignmentSubmissionRepository, AssignmentSubmissionRepository>();
-builder.Services.AddScoped<ISubmissionFileRepository, SubmissionFileRepository>();
 
 
 // Register Services

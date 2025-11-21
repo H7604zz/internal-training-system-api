@@ -11,7 +11,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
     {
         private readonly IAssignmentRepository _assignmentRepo;
         private readonly IAssignmentSubmissionRepository _submissionRepo;
-        private readonly ISubmissionFileRepository _fileRepo;
         private readonly IClassRepository _classRepo;
         private readonly IFileStorage _fileStorage;
         private readonly IUnitOfWork _uow;
@@ -19,14 +18,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public AssignmentService(
             IAssignmentRepository assignmentRepo,
             IAssignmentSubmissionRepository submissionRepo,
-            ISubmissionFileRepository fileRepo,
             IClassRepository classRepo,
             IFileStorage fileStorage,
             IUnitOfWork uow)
         {
             _assignmentRepo = assignmentRepo;
             _submissionRepo = submissionRepo;
-            _fileRepo = fileRepo;
             _classRepo = classRepo;
             _fileStorage = fileStorage;
             _uow = uow;
@@ -55,7 +52,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 url = uploaded.url;
                 path = uploaded.relativePath;
                 mime = form.File.ContentType;
-                size = form.File.Length;  // ⭐ SIZE ĐÃ ĐÚNG LÀ long
+                size = form.File.Length;  
             }
 
             var entity = new Assignment
@@ -359,16 +356,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Score = sub.Score,
                 Grade = sub.Grade,
                 Feedback = sub.Feedback,
-                Files = sub.Files.Select(f => new SubmissionFileDto
-                {
-                    FileId = f.FileId,
-                    OriginalFileName = f.OriginalFileName,
-                    FilePath = f.FilePath,
-                    MimeType = f.MimeType,
-                    SizeBytes = f.SizeBytes,
-                    PublicUrl = f.PublicUrl,
-                    IsMain = f.IsMain
-                }).ToList()
+                //Files = sub.Files.Select(f => new SubmissionFileDto
+                //{
+                //    FileId = f.FileId,
+                //    OriginalFileName = f.OriginalFileName,
+                //    FilePath = f.FilePath,
+                //    MimeType = f.MimeType,
+                //    SizeBytes = f.SizeBytes,
+                //    PublicUrl = f.PublicUrl,
+                //    IsMain = f.IsMain
+                //}).ToList()
             };
         }
 
@@ -415,23 +412,23 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _uow.SaveChangesAsync(ct); // có SubmissionId
 
             // CHỈ 1 FILE cho mỗi submission
-            if (file is not null)
-            {
-                var f = file.Value;
-                var fileEntity = new SubmissionFile
-                {
-                    SubmissionId = submission.SubmissionId,
-                    OriginalFileName = f.fileName,
-                    FilePath = f.relativePath,
-                    PublicUrl = f.url,
-                    MimeType = f.mimeType,
-                    SizeBytes = f.sizeBytes,
-                    IsMain = true
-                };
+            //if (file is not null)
+            //{
+            //    var f = file.Value;
+            //    var fileEntity = new SubmissionFile
+            //    {
+            //        SubmissionId = submission.SubmissionId,
+            //        OriginalFileName = f.fileName,
+            //        FilePath = f.relativePath,
+            //        PublicUrl = f.url,
+            //        MimeType = f.mimeType,
+            //        SizeBytes = f.sizeBytes,
+            //        IsMain = true
+            //    };
 
-                await _fileRepo.AddRangeAsync(new[] { fileEntity }, ct);
-                await _uow.SaveChangesAsync(ct);
-            }
+            //    await _fileRepo.AddRangeAsync(new[] { fileEntity }, ct);
+            //    await _uow.SaveChangesAsync(ct);
+            //}
 
             var saved = await _submissionRepo.GetByIdWithFilesAndUserAsync(submission.SubmissionId, ct)
                 ?? submission;
@@ -449,16 +446,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Score = saved.Score,
                 Grade = saved.Grade,
                 Feedback = saved.Feedback,
-                Files = saved.Files.Select(f => new SubmissionFileDto
-                {
-                    FileId = f.FileId,
-                    OriginalFileName = f.OriginalFileName,
-                    FilePath = f.FilePath,
-                    MimeType = f.MimeType,
-                    SizeBytes = f.SizeBytes,
-                    PublicUrl = f.PublicUrl,
-                    IsMain = f.IsMain
-                }).ToList()
+                //Files = saved.Files.Select(f => new SubmissionFileDto
+                //{
+                //    FileId = f.FileId,
+                //    OriginalFileName = f.OriginalFileName,
+                //    FilePath = f.FilePath,
+                //    MimeType = f.MimeType,
+                //    SizeBytes = f.SizeBytes,
+                //    PublicUrl = f.PublicUrl,
+                //    IsMain = f.IsMain
+                //}).ToList()
             };
         }
 
@@ -507,16 +504,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Score = sub.Score,
                 Grade = sub.Grade,
                 Feedback = sub.Feedback,
-                Files = sub.Files.Select(f => new SubmissionFileDto
-                {
-                    FileId = f.FileId,
-                    OriginalFileName = f.OriginalFileName,
-                    FilePath = f.FilePath,
-                    MimeType = f.MimeType,
-                    SizeBytes = f.SizeBytes,
-                    PublicUrl = f.PublicUrl,
-                    IsMain = f.IsMain
-                }).ToList()
+            //    Files = sub.Files.Select(f => new SubmissionFileDto
+            //    {
+            //        FileId = f.FileId,
+            //        OriginalFileName = f.OriginalFileName,
+            //        FilePath = f.FilePath,
+            //        MimeType = f.MimeType,
+            //        SizeBytes = f.SizeBytes,
+            //        PublicUrl = f.PublicUrl,
+            //        IsMain = f.IsMain
+            //    }).ToList()
             };
         }
 
