@@ -96,6 +96,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
         public string? Location { get; set; }
+        public string? OnlineLink { get; set; }
     }
 
     public class RescheduleRequest

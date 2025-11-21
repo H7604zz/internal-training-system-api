@@ -276,7 +276,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     DayOfWeek = s.Date,
                     StartTime = s.StartTime,
                     EndTime = s.EndTime,
-                    Location = s.Location
+                    Location = s.Location,
+                    OnlineLink = s.OnlineLink
                 })
                 .ToListAsync();
 
