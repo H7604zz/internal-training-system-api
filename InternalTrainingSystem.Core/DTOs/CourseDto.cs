@@ -16,6 +16,8 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Status { get; set; } = string.Empty;
         public bool IsOnline { get; set; }
         public bool IsMandatory { get; set; }
+
+        public double? PassScore { get; set; }
         public DateTime? CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
