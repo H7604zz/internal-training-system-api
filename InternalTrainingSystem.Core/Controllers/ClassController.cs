@@ -153,7 +153,6 @@ namespace InternalTrainingSystem.Core.Controllers
 
             var schedule = await _classService.GetClassScheduleByIdAsync(scheduleId);
             var scheduleStart = schedule!.Date + schedule.StartTime;
-            var scheduleEnd = schedule.Date + schedule.EndTime;
             var now = DateTime.Now;
 
             if (now < scheduleStart)
@@ -162,27 +161,6 @@ namespace InternalTrainingSystem.Core.Controllers
             await _attendanceService.MarkAttendanceAsync(scheduleId, attendanceList);
 
             return Ok("Điểm danh thành công.");
-        }
-
-        /// <summary>
-        /// Sua diem danh trong ngay
-        /// </summary>
-        /// <param name="scheduleId"></param>
-        /// <param name="attendanceList"></param>
-        /// <returns></returns>
-        [HttpPut("{scheduleId}/attendance")]
-        [Authorize(Roles = UserRoles.Mentor)]
-        public async Task<IActionResult> UpdateAttendance(int scheduleId, [FromBody] List<AttendanceRequest> attendanceList)
-        {
-            if (attendanceList == null || !attendanceList.Any())
-                return BadRequest("Danh sách điểm danh trống.");
-
-            var result = await _attendanceService.UpdateAttendanceAsync(scheduleId, attendanceList);
-
-            if (!result)
-                return NotFound("Không tìm thấy dữ liệu điểm danh cần cập nhật.");
-
-            return Ok("Cập nhật điểm danh thành công.");
         }
 
         /// <summary>

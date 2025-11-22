@@ -22,10 +22,5 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             await _attendanceRepo.MarkAttendanceAsync(scheduleId, list);
         }
-
-        public async Task<bool> UpdateAttendanceAsync(int scheduleId, List<AttendanceRequest> list)
-        {
-            return await _attendanceRepo.UpdateAttendanceAsync(scheduleId, list);
-        }
     }
 }

@@ -26,50 +26,13 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 var existing = await _context.Attendances
                     .FirstOrDefaultAsync(a => a.ScheduleId == scheduleId && a.UserId == item.UserId);
 
-                if (existing == null)
-                {
-                    _context.Attendances.Add(new Attendance
-                    {
-                        ScheduleId = scheduleId,
-                        UserId = item.UserId,
-                        Status = item.Status!,
-                        CheckInTime = DateTime.Now,
-                    });
-                }
-                else
+                if (existing != null)
                 {
                     existing.Status = item.Status!;
                 }
             }
 
             await _context.SaveChangesAsync();
-        }
-
-        public async Task<bool> UpdateAttendanceAsync(int scheduleId, List<AttendanceRequest> list)
-        {
-            bool updated = false;
-            var today = DateTime.Now.Date;
-
-            foreach (var item in list)
-            {
-                var existingAttendance = await _context.Attendances
-                    .FirstOrDefaultAsync(a => a.ScheduleId == scheduleId && a.UserId == item.UserId);
-
-                if (existingAttendance != null)
-                {
-                    if (existingAttendance.CheckInTime.Date != today)
-                        continue;
-
-                    existingAttendance.Status = item.Status ?? existingAttendance.Status;
-                    existingAttendance.UpdatedDate = DateTime.Now;
-                    updated = true;
-                }
-            }
-
-            if (updated)
-                await _context.SaveChangesAsync();
-
-            return updated;
         }
 
         public async Task<List<AttendanceResponse>> GetAttendanceByScheduleAsync(int scheduleId)
