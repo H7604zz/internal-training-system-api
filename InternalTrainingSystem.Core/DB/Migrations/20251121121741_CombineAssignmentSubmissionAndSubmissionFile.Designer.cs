@@ -4,6 +4,7 @@ using InternalTrainingSystem.Core.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InternalTrainingSystem.Core.DB.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251121121741_CombineAssignmentSubmissionAndSubmissionFile")]
+    partial class CombineAssignmentSubmissionAndSubmissionFile
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -99,7 +102,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("DepartmentId")
+                    b.Property<int?>("DepartmentId")
                         .HasColumnType("int");
 
                     b.Property<string>("Email")
@@ -266,11 +269,17 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Property<int>("AttemptNumber")
                         .HasColumnType("int");
 
+                    b.Property<int?>("CourseEnrollmentEnrollmentId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Feedback")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("FilePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Grade")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsLate")
@@ -308,6 +317,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("SubmissionId");
+
+                    b.HasIndex("CourseEnrollmentEnrollmentId");
 
                     b.HasIndex("SubmittedAt");
 
@@ -1452,8 +1463,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.HasOne("InternalTrainingSystem.Core.Models.Department", "Department")
                         .WithMany("Users")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Department");
                 });
@@ -1482,6 +1492,10 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .HasForeignKey("AssignmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("InternalTrainingSystem.Core.Models.CourseEnrollment", null)
+                        .WithMany("AssignmentSubmissions")
+                        .HasForeignKey("CourseEnrollmentEnrollmentId");
 
                     b.HasOne("InternalTrainingSystem.Core.Models.ApplicationUser", "User")
                         .WithMany("AssignmentSubmissions")
@@ -1988,6 +2002,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             modelBuilder.Entity("InternalTrainingSystem.Core.Models.CourseEnrollment", b =>
                 {
+                    b.Navigation("AssignmentSubmissions");
+
                     b.Navigation("CourseHistories");
                 });
 

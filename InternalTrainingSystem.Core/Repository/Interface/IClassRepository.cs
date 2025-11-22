@@ -23,5 +23,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
 
         Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId, int classSwapId);
         Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request);
+        Task<bool> IsMentorOfClassAsync(int classId, string mentorId, CancellationToken ct = default);
+        Task<bool> IsInClassAsync(int classId, string userId, CancellationToken ct = default);
     }
 }

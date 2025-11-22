@@ -53,5 +53,7 @@ namespace InternalTrainingSystem.Core.Models
         public virtual ICollection<ApplicationUser> Employees { get; set; } = new List<ApplicationUser>();
         
         public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
+        public virtual ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
+
     }
 }

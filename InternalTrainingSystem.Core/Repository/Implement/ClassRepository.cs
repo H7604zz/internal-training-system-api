@@ -735,5 +735,20 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             await _context.SaveChangesAsync();
             return true;
         }
+        public Task<bool> IsMentorOfClassAsync(int classId, string mentorId, CancellationToken ct = default)
+        {
+            return _context.Classes.AnyAsync(
+                c => c.ClassId == classId
+                  && c.MentorId == mentorId
+                  && c.IsActive,         
+                ct);
+        }
+
+        public Task<bool> IsInClassAsync(int classId, string userId, CancellationToken ct = default)
+        {
+            return _context.Classes
+                .Where(c => c.ClassId == classId)
+                .AnyAsync(c => c.Employees.Any(e => e.Id == userId), ct);
+        }
     }
 }

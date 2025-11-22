@@ -66,7 +66,6 @@ namespace InternalTrainingSystem.Core.Models
         public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
         public ICollection<Department> Departments { get; set; } = new List<Department>();
         public virtual ICollection<CourseModule> Modules { get; set; } = new List<CourseModule>();
-        public virtual ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
 
     }
 }

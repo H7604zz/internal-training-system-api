@@ -845,6 +845,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             return quiz.QuizId;
         }
-
+       
     }
 }

@@ -37,8 +37,6 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<ClassSwap> ClassSwaps { get; set; }
         public DbSet<Assignment> Assignments { get; set; }
         public DbSet<AssignmentSubmission> AssignmentSubmissions { get; set; }
-        public DbSet<SubmissionFile> SubmissionFiles { get; set; }
-
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -473,9 +471,9 @@ namespace InternalTrainingSystem.Core.DB
             {
                 entity.HasKey(a => a.AssignmentId);
 
-                entity.HasOne(a => a.Course)
+                entity.HasOne(a => a.Class)
                     .WithMany(a => a.Assignments)           
-                    .HasForeignKey(a => a.CourseId)
+                    .HasForeignKey(a => a.ClassId)
                     .OnDelete(DeleteBehavior.Cascade);      
 
                 entity.HasOne(a => a.Schedule)
@@ -483,7 +481,7 @@ namespace InternalTrainingSystem.Core.DB
                     .HasForeignKey(a => a.ScheduleId)
                     .OnDelete(DeleteBehavior.ClientSetNull);      
 
-                entity.HasIndex(a => new { a.CourseId, a.DueAt });
+                entity.HasIndex(a => new { a.ClassId, a.DueAt });
                 entity.HasIndex(a => a.ScheduleId);
 
             });
@@ -500,32 +498,13 @@ namespace InternalTrainingSystem.Core.DB
                 entity.HasOne(x => x.User)
                     .WithMany(u => u.AssignmentSubmissions)
                     .HasForeignKey(x => x.UserId)
-                    .OnDelete(DeleteBehavior.Restrict); 
-
-                entity.HasOne(x => x.Enrollment)
-                    .WithMany(e => e.AssignmentSubmissions)
-                    .HasForeignKey(x => x.EnrollmentId)
-                    .OnDelete(DeleteBehavior.Restrict); 
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(x => new { x.AssignmentId, x.UserId, x.AttemptNumber }).IsUnique();
                 entity.HasIndex(x => x.SubmittedAt);
+
+
             });
-
-            // SubmissionFile
-            builder.Entity<SubmissionFile>(entity =>
-            {
-                entity.HasKey(f => f.FileId);
-
-                entity.HasOne(f => f.Submission)
-                    .WithMany(s => s.Files)
-                    .HasForeignKey(f => f.SubmissionId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.Property(f => f.OriginalFileName).HasMaxLength(255).IsRequired();
-                entity.Property(f => f.MimeType).HasMaxLength(255);
-                entity.HasIndex(f => new { f.SubmissionId, f.IsMain });
-            });
-
         }
     }
 }
