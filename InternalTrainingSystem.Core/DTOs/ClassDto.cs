@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using InternalTrainingSystem.Core.Common.Constants;
+using System.ComponentModel.DataAnnotations;
 
 namespace InternalTrainingSystem.Core.DTOs
 {
@@ -97,6 +98,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public TimeSpan EndTime { get; set; }
         public string? Location { get; set; }
         public string? OnlineLink { get; set; }
+        public string AttendanceStatus { get; set; } = AttendanceConstants.Status.NotYet;
     }
 
     public class RescheduleRequest

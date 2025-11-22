@@ -213,18 +213,24 @@ namespace InternalTrainingSystem.Core.Controllers
 
         }
 
+        /// <summary>
+        /// Lấy thời khóa biểu của nhân viên
+        /// </summary>
+        /// <returns>Danh sách lịch học</returns>
         [HttpGet("schedule")]
-        public async Task<IActionResult> GetStudentSchedule()
+        [Authorize(Roles = UserRoles.Staff)]
+        public async Task<IActionResult> GetStaffSchedule()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized();
             }
+
             var result = await _classService.GetUserScheduleAsync(userId);
 
             if (!result.Any())
-                return NotFound();
+                return Ok(new List<ScheduleItemResponseDto>());
 
             return Ok(result);
         }

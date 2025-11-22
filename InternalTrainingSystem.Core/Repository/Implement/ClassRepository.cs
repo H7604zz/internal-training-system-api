@@ -297,30 +297,42 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 return new List<ScheduleItemResponseDto>();
             }
 
-            var schedules = await _context.Schedules
+            var query = _context.Schedules
                 .Include(s => s.Course)
                 .Include(s => s.Class)
                 .Include(s => s.Instructor)
                 .Where(s => s.ClassId != null && staffClasses.Contains(s.ClassId.Value))
                 .OrderBy(s => s.Date)
-                .ThenBy(s => s.StartTime)
-                .Select(s => new ScheduleItemResponseDto
-                {
-                    ScheduleId = s.ScheduleId,
-                    ClassId = s.ClassId,
-                    ClassName = s.Class!.ClassName,
-                    MentorId = s.InstructorId,
-                    Mentor = s.Instructor.FullName,
-                    CourseCode = s.Course.Code!,
-                    CourseName = s.Course.CourseName!,
-                    DayOfWeek = s.Date,
-                    StartTime = s.StartTime,
-                    EndTime = s.EndTime,
-                    Location = s.Location
-                })
-                .ToListAsync();
+                .ThenBy(s => s.StartTime);
 
-            return schedules;
+            var schedules = await query.ToListAsync();
+
+            // Get attendance status for this specific user
+            var scheduleIds = schedules.Select(s => s.ScheduleId).ToList();
+            var attendances = await _context.Attendances
+                .Where(a => a.UserId == staffId && scheduleIds.Contains(a.ScheduleId))
+                .ToDictionaryAsync(a => a.ScheduleId, a => a.Status);
+
+            var result = schedules.Select(s => new ScheduleItemResponseDto
+            {
+                ScheduleId = s.ScheduleId,
+                ClassId = s.ClassId,
+                ClassName = s.Class!.ClassName,
+                MentorId = s.InstructorId,
+                Mentor = s.Instructor.FullName,
+                CourseCode = s.Course.Code!,
+                CourseName = s.Course.CourseName!,
+                DayOfWeek = s.Date,
+                StartTime = s.StartTime,
+                EndTime = s.EndTime,
+                Location = s.Location,
+                OnlineLink = s.OnlineLink,
+                AttendanceStatus = attendances.ContainsKey(s.ScheduleId) 
+                    ? attendances[s.ScheduleId] 
+                    : AttendanceConstants.Status.NotYet
+            }).ToList();
+
+            return result;
         }
 
         public async Task<List<ClassEmployeeRecordDto>> GetUserByClassAsync(int classId)
