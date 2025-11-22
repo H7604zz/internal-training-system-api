@@ -17,6 +17,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         private readonly ICourseHistoryRepository _historyRepo;
         private readonly ILessonProgressRepository _lessonProgressRepo;
         private readonly IQuizAttemptRepository _quizAttemptRepo;
+        private readonly ICourseHistoryRepository _courseHistoryRepository;
         private readonly IUnitOfWork _uow;
 
         public QuizService(
@@ -27,6 +28,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             ILessonProgressRepository lessonProgressRepo,
             ICourseHistoryRepository historyRepo,
             IQuizAttemptRepository quizAttemptRepo,
+            ICourseHistoryRepository courseHistoryRepository,
             IUnitOfWork uow)
         {
             _quizRepo = quizRepo;
@@ -36,6 +38,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _lessonProgressRepo = lessonProgressRepo;
             _historyRepo = historyRepo;
             _quizAttemptRepo = quizAttemptRepo;
+            _courseHistoryRepository = courseHistoryRepository;
             _uow = uow;
         }
 
@@ -548,6 +551,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
 
             return info;
+        }
+        
+        public Task<IEnumerable<UserQuizHistoryResponse>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId)
+        {
+            return _courseHistoryRepository.GetUserQuizHistoryAsync(userId, courseId, quizId);
         }
     }
 }

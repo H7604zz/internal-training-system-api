@@ -21,7 +21,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
 		Task<Course> GetCourseByCourseCodeAsync(string courseCode);
 		Task<Course> CreateCourseAsync(CreateCourseMetadataDto meta, IList<IFormFile> lessonFiles,
 																				string createdByUserId, CancellationToken ct = default);
-		Task<IEnumerable<UserQuizHistoryResponse>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId);
 		//Staff học course online
         Task<CourseOutlineDto> GetOutlineAsync(int courseId, string userId, CancellationToken ct = default);
         Task<CourseProgressDto> GetCourseProgressAsync(int courseId, string userId, CancellationToken ct = default);

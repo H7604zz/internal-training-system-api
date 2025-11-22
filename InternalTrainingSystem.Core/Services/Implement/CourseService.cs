@@ -208,13 +208,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<Course> UpdateAndResubmitToPendingAsync(int courseId, UpdateCourseMetadataDto meta, IList<IFormFile> lessonFiles, string updatedByUserId,
                                                                                                                             string? resubmitNote = null, CancellationToken ct = default)
         {
-            return await _courseRepo.UpdateAndResubmitToPendingAsync(courseId, meta, lessonFiles, updatedByUserId,
-                                                                                                                            resubmitNote = null, ct = default);
-        }
-
-        public Task<IEnumerable<UserQuizHistoryResponse>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId)
-        {
-            return _courseHistoryRepository.GetUserQuizHistoryAsync(userId, courseId, quizId);
+            return await _courseRepo.UpdateAndResubmitToPendingAsync(courseId, meta, lessonFiles, updatedByUserId, resubmitNote = null, ct = default);
         }
 
         // Staff học course online

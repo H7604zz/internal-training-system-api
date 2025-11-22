@@ -96,7 +96,7 @@ namespace InternalTrainingSystem.Core.Controllers
 			if (string.IsNullOrEmpty(userId))
 				return Unauthorized();
 
-			var result = await _courseService.GetUserQuizHistoryAsync(userId, courseId, quizId);
+			var result = await _quizService.GetUserQuizHistoryAsync(userId, courseId, quizId);
 			return Ok(result);
 		}
 
