@@ -105,23 +105,6 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>
-        /// lay ra danh sach user trong 1 lop 
-        /// </summary>
-        /// <param name="classId"></param>
-        /// <returns></returns>
-        [HttpGet("{classId}/user")]
-        //[Authorize]
-        public async Task<IActionResult> GetStudentsInClass(int classId)
-        {
-            var students = await _classService.GetUserInClassAsync(classId);
-
-            if (students.Count == 0)
-                return NotFound("Không tìm thấy người học hoặc lớp học.");
-
-            return Ok(students);
-        }
-
-        /// <summary>
         /// lay ra chi tiet 1 lop 
         /// </summary>
         /// <param name="classId"></param>
