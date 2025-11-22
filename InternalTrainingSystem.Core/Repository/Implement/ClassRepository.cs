@@ -235,7 +235,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             await _context.SaveChangesAsync();
 
             var scheduleParticipants = new List<ScheduleParticipant>();
-
+            
             foreach (var schedule in allSchedules)
             {
                 foreach (var student in classEntity.Employees)
@@ -248,12 +248,32 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     });
                 }
             }
-
+            
             if (scheduleParticipants.Count > 0)
             {
                 _context.ScheduleParticipants.AddRange(scheduleParticipants);
                 await _context.SaveChangesAsync();
             }
+            
+            var attendances = new List<Attendance>();
+
+            foreach (var schedule in allSchedules)
+            {
+                foreach (var student in classEntity.Employees)
+                {
+                    attendances.Add(new Attendance
+                    {
+                        UserId = student.Id,
+                        ScheduleId = schedule.ScheduleId,
+                        Status = AttendanceConstants.Status.NotYet,
+                        CheckInTime = DateTime.MinValue,
+                        CreatedDate = DateTime.UtcNow
+                    });
+                }
+            }
+
+            _context.Attendances.AddRange(attendances);
+            await _context.SaveChangesAsync();
 
             return true;
         }
