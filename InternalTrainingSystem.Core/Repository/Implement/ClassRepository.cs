@@ -8,6 +8,7 @@ using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Implement;
+using InternalTrainingSystem.Core.Utils;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -259,15 +260,15 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             foreach (var schedule in allSchedules)
             {
-                foreach (var student in classEntity.Employees)
+                foreach (var staff in classEntity.Employees)
                 {
                     attendances.Add(new Attendance
                     {
-                        UserId = student.Id,
+                        UserId = staff.Id,
                         ScheduleId = schedule.ScheduleId,
                         Status = AttendanceConstants.Status.NotYet,
-                        CheckInTime = DateTime.MinValue,
-                        CreatedDate = DateTime.UtcNow
+                        CheckInTime = DateTimeUtils.Now(),
+                        CreatedDate = DateTimeUtils.Now()
                     });
                 }
             }
