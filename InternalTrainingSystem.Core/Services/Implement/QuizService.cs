@@ -16,8 +16,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
         private readonly ICourseMaterialRepository _lessonRepo;
         private readonly ICourseHistoryRepository _historyRepo;
         private readonly ILessonProgressRepository _lessonProgressRepo;
-        private readonly IQuizAttemptRepository _quizAttemptRepo;
-        private readonly ICourseHistoryRepository _courseHistoryRepository;
         private readonly IUnitOfWork _uow;
 
         public QuizService(
@@ -27,8 +25,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             ICourseMaterialRepository lessonRepo,
             ILessonProgressRepository lessonProgressRepo,
             ICourseHistoryRepository historyRepo,
-            IQuizAttemptRepository quizAttemptRepo,
-            ICourseHistoryRepository courseHistoryRepository,
             IUnitOfWork uow)
         {
             _quizRepo = quizRepo;
@@ -37,8 +33,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             _lessonRepo = lessonRepo;
             _lessonProgressRepo = lessonProgressRepo;
             _historyRepo = historyRepo;
-            _quizAttemptRepo = quizAttemptRepo;
-            _courseHistoryRepository = courseHistoryRepository;
             _uow = uow;
         }
 
@@ -437,7 +431,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             var now = DateTimeUtils.Now(); // giờ VN
 
-            var attempts = await _quizAttemptRepo.GetUserAttemptsAsync(quiz.QuizId, userId, ct);
+            var attempts = await _attemptRepo.GetUserAttemptsAsync(quiz.QuizId, userId, ct);
 
             var inProgressAttempt = attempts
                 .Where(a => a.Status == QuizConstants.Status.InProgress)
@@ -450,7 +444,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 if (inProgressAttempt.EndTime.HasValue && now >= inProgressAttempt.EndTime.Value)
                 {
                     // Auto-submit the timed-out attempt with zero score
-                    await _quizAttemptRepo.UpdateStatusAsync(inProgressAttempt.AttemptId, QuizConstants.Status.Completed, ct);
+                    await _attemptRepo.UpdateStatusAsync(inProgressAttempt.AttemptId, QuizConstants.Status.Completed, ct);
                 }
   
             }
@@ -535,7 +529,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var quiz = await _quizRepo.GetActiveQuizAsync(quizId, ct);
             if (quiz == null) return null;
 
-            var attempts = await _quizAttemptRepo.GetUserAttemptsAsync(quiz.QuizId, userId, ct);
+            var attempts = await _attemptRepo.GetUserAttemptsAsync(quiz.QuizId, userId, ct);
 
             var submittedAttempts = attempts.Where(a => a.Status == QuizConstants.Status.Completed);
 
@@ -555,7 +549,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
         
         public Task<IEnumerable<UserQuizHistoryResponse>> GetUserQuizHistoryAsync(string userId, int courseId, int quizId)
         {
-            return _courseHistoryRepository.GetUserQuizHistoryAsync(userId, courseId, quizId);
+            return _historyRepo.GetUserQuizHistoryAsync(userId, courseId, quizId);
         }
     }
 }
