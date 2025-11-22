@@ -360,15 +360,17 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return result;
         }
 
-        public async Task<List<ClassEmployeeRecordDto>> GetUserByClassAsync(int classId)
+        public async Task<ClassDto?> GetClassDetailAsync(int classId)
         {
             var classEntity = await _context.Classes
+                .Include(c => c.Course)
+                .Include(c => c.Mentor)
                 .Include(c => c.Employees)
                 .Include(c => c.Schedules)
                 .FirstOrDefaultAsync(c => c.ClassId == classId);
 
             if (classEntity == null)
-                return new List<ClassEmployeeRecordDto>();
+                return null;
 
             var scheduleIds = classEntity.Schedules.Select(s => s.ScheduleId).ToList();
 
@@ -377,36 +379,8 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 .ToListAsync();
 
             var enrollments = await _context.CourseEnrollments
-               .Where(e => e.CourseId == classEntity.CourseId)
-               .ToListAsync();
-
-            var result = classEntity.Employees.Select(e =>
-            {
-                var enrollment = enrollments.FirstOrDefault(x => x.UserId == e.Id);
-
-                return new ClassEmployeeRecordDto
-                {
-                    EmployeeId = e.EmployeeId ?? "",
-                    FullName = e.FullName,
-                    Email = e.Email,
-                    AbsentNumberDay = attendances.Count(a => a.UserId == e.Id && a.Status == AttendanceConstants.Status.Absent),
-                    ScoreFinal = enrollment?.Score
-                };
-            }).ToList();
-
-            return result;
-        }
-
-        public async Task<ClassDto?> GetClassDetailAsync(int classId)
-        {
-            var classEntity = await _context.Classes
-                .Include(c => c.Course)
-                .Include(c => c.Mentor)
-                .Include(c => c.Employees)
-                .FirstOrDefaultAsync(c => c.ClassId == classId);
-
-            if (classEntity == null)
-                return null;
+                .Where(e => e.CourseId == classEntity.CourseId)
+                .ToListAsync();
 
             return new ClassDto
             {
@@ -417,12 +391,25 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 MentorId = classEntity.Mentor?.EmployeeId,
                 MentorName = classEntity.Mentor?.FullName,
                 MaxStudents = classEntity.Employees.Count,
-                Employees = classEntity.Employees.Select(e => new ClassEmployeeDto
+
+                Employees = classEntity.Employees.Select(e =>
                 {
-                    EmployeeId = e.EmployeeId ?? "",
-                    FullName = e.FullName,
-                    Email = e.Email
+                    var enrollment = enrollments.FirstOrDefault(x => x.UserId == e.Id);
+
+                    return new ClassEmployeeDto
+                    {
+                        EmployeeId = e.EmployeeId ?? "",
+                        FullName = e.FullName,
+                        Email = e.Email,
+
+                        AbsentNumberDay = attendances.Count(a =>
+                            a.UserId == e.Id &&
+                            a.Status == AttendanceConstants.Status.Absent),
+
+                        ScoreFinal = enrollment?.Score
+                    };
                 }).ToList(),
+
                 IsActive = classEntity.IsActive,
                 Status = classEntity.Status,
                 CreatedDate = classEntity.CreatedDate,

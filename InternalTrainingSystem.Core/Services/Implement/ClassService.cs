@@ -43,11 +43,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.GetUserScheduleAsync(userId);
         }
 
-        public async Task<List<ClassEmployeeRecordDto>> GetUserInClassAsync(int classId)
-        {
-            return await _classRepo.GetUserByClassAsync(classId);
-        }
-
         public async Task<ClassDto?> GetClassDetailAsync(int classId)
         {
             return await _classRepo.GetClassDetailAsync(classId);

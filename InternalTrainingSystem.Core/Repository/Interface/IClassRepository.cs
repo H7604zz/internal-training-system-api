@@ -12,7 +12,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<bool> CreateWeeklySchedulesAsync(CreateWeeklyScheduleRequest request);
         Task<List<ScheduleItemResponseDto>> GetClassScheduleAsync(int classId);
         Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string userId);
-        Task<List<ClassEmployeeRecordDto>> GetUserByClassAsync(int classId);
         Task<ClassDto?> GetClassDetailAsync(int classId);
         Task<List<ClassListDto>> GetClassesByCourseAsync(int courseId);
         Task<bool> CreateClassSwapRequestAsync(SwapClassRequest request);

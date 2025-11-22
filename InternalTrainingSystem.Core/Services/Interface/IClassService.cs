@@ -10,7 +10,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         // class service
         Task<bool> CreateClassesAsync(CreateClassRequestDto request,
              List<StaffConfirmCourseResponse> confirmedUsers, string createdById);
-        Task<List<ClassEmployeeRecordDto>> GetUserInClassAsync(int classId);
         Task<ClassDto?> GetClassDetailAsync(int classId);
         Task<List<ClassListDto>> GetClassesByCourseAsync(int courseId);
         Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize);
