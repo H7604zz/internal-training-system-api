@@ -305,24 +305,22 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             return schedule;
         }
 
-        public async Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string staffId)
+        public async Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string userId)
         {
             var staffClasses = await _context.Classes
                 .Include(c => c.Employees)
-                .Where(c => c.Employees.Any(e => e.Id == staffId))
+                .Where(c => c.Employees.Any(e => e.Id == userId))
                 .Select(c => c.ClassId)
                 .ToListAsync();
-
-            if (staffClasses == null || staffClasses.Count == 0)
-            {
-                return new List<ScheduleItemResponseDto>();
-            }
 
             var query = _context.Schedules
                 .Include(s => s.Course)
                 .Include(s => s.Class)
                 .Include(s => s.Instructor)
-                .Where(s => s.ClassId != null && staffClasses.Contains(s.ClassId.Value))
+                .Where(s =>
+                        (s.ClassId != null && staffClasses.Contains(s.ClassId.Value)) 
+                        || s.InstructorId == userId
+                )
                 .OrderBy(s => s.Date)
                 .ThenBy(s => s.StartTime);
 
@@ -331,7 +329,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             // Get attendance status for this specific user
             var scheduleIds = schedules.Select(s => s.ScheduleId).ToList();
             var attendances = await _context.Attendances
-                .Where(a => a.UserId == staffId && scheduleIds.Contains(a.ScheduleId))
+                .Where(a => a.UserId == userId && scheduleIds.Contains(a.ScheduleId))
                 .ToDictionaryAsync(a => a.ScheduleId, a => a.Status);
 
             var result = schedules.Select(s => new ScheduleItemResponseDto

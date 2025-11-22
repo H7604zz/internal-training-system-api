@@ -218,7 +218,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// </summary>
         /// <returns>Danh sách lịch học</returns>
         [HttpGet("schedule")]
-        [Authorize(Roles = UserRoles.Staff)]
+        [Authorize(Roles = UserRoles.Staff + "," + UserRoles.Mentor)]
         public async Task<IActionResult> GetStaffSchedule()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
