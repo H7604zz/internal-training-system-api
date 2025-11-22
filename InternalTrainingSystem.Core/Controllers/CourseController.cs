@@ -659,17 +659,17 @@ namespace InternalTrainingSystem.Core.Controllers
         public async Task<IActionResult> GetStatisticsCourse(int courseId)
         {
             var classList = await _classService.GetClassesByCourseAsync(courseId);
-            var countStudent = 0;
+            var staffCount = 0;
             foreach (var c in classList)
             {
-                var students = await _classService.GetUserInClassAsync(c.ClassId);
-                countStudent += students.Count;
+                var classResponse = await _classService.GetClassDetailAsync(c.ClassId);
+                staffCount += classResponse!.Employees.Count;
             }
             var countClass = classList?.Count() ?? 0;
             var result = new StatisticsCourseDto
             {
                 ClassCount = countClass,
-                StudentCount = countStudent
+                StaffCount = staffCount
             };
 
             return Ok(result);
