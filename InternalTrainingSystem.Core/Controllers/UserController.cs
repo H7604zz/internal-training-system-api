@@ -214,7 +214,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>
-        /// Lấy thời khóa biểu của nhân viên
+        /// Lấy thời khóa biểu của nhân viên hoặc mentor
         /// </summary>
         /// <returns>Danh sách lịch học</returns>
         [HttpGet("schedule")]

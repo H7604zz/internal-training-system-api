@@ -307,12 +307,14 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
         public async Task<List<ScheduleItemResponseDto>> GetUserScheduleAsync(string userId)
         {
+            // Lấy các lớp mà user là học viên
             var staffClasses = await _context.Classes
                 .Include(c => c.Employees)
                 .Where(c => c.Employees.Any(e => e.Id == userId))
                 .Select(c => c.ClassId)
                 .ToListAsync();
 
+            // Lấy tất cả schedules mà user tham gia (là học viên hoặc là mentor)
             var query = _context.Schedules
                 .Include(s => s.Course)
                 .Include(s => s.Class)
@@ -326,7 +328,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
             var schedules = await query.ToListAsync();
 
-            // Get attendance status for this specific user
+            // Lấy attendance status chỉ cho các schedule mà user là học viên (không phải mentor)
             var scheduleIds = schedules.Select(s => s.ScheduleId).ToList();
             var attendances = await _context.Attendances
                 .Where(a => a.UserId == userId && scheduleIds.Contains(a.ScheduleId))
@@ -346,9 +348,13 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 EndTime = s.EndTime,
                 Location = s.Location,
                 OnlineLink = s.OnlineLink,
-                AttendanceStatus = attendances.ContainsKey(s.ScheduleId) 
-                    ? attendances[s.ScheduleId] 
-                    : AttendanceConstants.Status.NotYet
+                // Nếu user là mentor của schedule này, không hiển thị attendance status
+                // Chỉ hiển thị attendance status nếu user là học viên
+                AttendanceStatus = s.InstructorId == userId 
+                    ? null 
+                    : (attendances.ContainsKey(s.ScheduleId) 
+                        ? attendances[s.ScheduleId] 
+                        : AttendanceConstants.Status.NotYet)
             }).ToList();
 
             return result;
