@@ -72,6 +72,9 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             try
             {
+                if (!User.IsInRole(UserRoles.TrainingDepartment))
+                    return Unauthorized("Bạn không có quyền thực hiện hành động này.");
+                
                 if (!ModelState.IsValid)
                     return BadRequest("Dữ liệu không hợp lệ.");
 
