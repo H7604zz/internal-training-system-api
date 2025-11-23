@@ -48,7 +48,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     return BadRequest(new LoginResponseDto
                     {
                         Success = false,
-                        Message = "Invalid input data"
+                        Message = "Dữ liệu đầu vào không hợp lệ"
                     });
                 }
 
@@ -58,7 +58,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     return BadRequest(new LoginResponseDto
                     {
                         Success = false,
-                        Message = "Invalid email or password"
+                        Message = "Sai tài khoản hoặc mật khẩu"
                     });
                 }
 
@@ -86,7 +86,7 @@ namespace InternalTrainingSystem.Core.Controllers
                         var response = new LoginResponseDto
                         {
                             Success = true,
-                            Message = "Login successful",
+                            Message = "Đăng nhập thành công",
                             User = new UserProfileDto
                             {
                                 Id = user.Id,
@@ -111,7 +111,7 @@ namespace InternalTrainingSystem.Core.Controllers
                         return StatusCode(500, new LoginResponseDto
                         {
                             Success = false,
-                            Message = $"Login successful but token generation failed: {tokenEx.Message}"
+                            Message = $"Đăng nhập thành công nhưng tạo token thất bại: {tokenEx.Message}"
                         });
                     }
                 }
@@ -121,7 +121,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     return BadRequest(new LoginResponseDto
                     {
                         Success = false,
-                        Message = "Account is locked due to multiple failed login attempts"
+                        Message = "Tài khoản đã bị khóa do nhiều lần đăng nhập thất bại"
                     });
                 }
 
@@ -130,14 +130,14 @@ namespace InternalTrainingSystem.Core.Controllers
                     return BadRequest(new LoginResponseDto
                     {
                         Success = false,
-                        Message = "Account is not allowed to sign in"
+                        Message = "Tài khoản không được phép đăng nhập"
                     });
                 }
 
                 return BadRequest(new LoginResponseDto
                 {
                     Success = false,
-                    Message = "Invalid email or password"
+                    Message = "Sai tài khoản hoặc mật khẩu"
                 });
             }
             catch (Exception ex)
@@ -145,7 +145,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 return StatusCode(500, new LoginResponseDto
                 {
                     Success = false,
-                    Message = $"An error occurred during login: {ex.Message}"
+                    Message = $"Có lỗi xảy ra khi đăng nhập: {ex.Message}"
                 });
             }
         }
@@ -223,7 +223,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 // Check if token is already blacklisted
                 if (!string.IsNullOrEmpty(jwtId) && await _authService.IsTokenBlacklistedAsync(jwtId))
                 {
-                    return BadRequest(ApiResponseDto.ErrorResult("User already logged out"));
+                    return BadRequest(ApiResponseDto.ErrorResult("Người dùng đã đăng xuất"));
                 }
 
 
@@ -236,11 +236,11 @@ namespace InternalTrainingSystem.Core.Controllers
 
                 await _signInManager.SignOutAsync();
 
-                return Ok(ApiResponseDto.SuccessResult(null, "Logout successful"));
+                return Ok(ApiResponseDto.SuccessResult(null, "Đăng xuất thành công"));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponseDto.ErrorResult($"Error during logout: {ex.Message}"));
+                return StatusCode(500, ApiResponseDto.ErrorResult($"Có lỗi xảy ra khi đăng xuất: {ex.Message}"));
             }
         }
 
@@ -258,7 +258,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     return BadRequest(new LoginResponseDto
                     {
                         Success = false,
-                        Message = "Invalid refresh token"
+                        Message = "Refresh token không hợp lệ"
                     });
                 }
 
@@ -270,7 +270,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     return Unauthorized(new LoginResponseDto
                     {
                         Success = false,
-                        Message = tokenResponse?.Message ?? "Invalid or expired refresh token"
+                        Message = tokenResponse?.Message ?? "Refresh token không hợp lệ hoặc đã hết hạn"
                     });
                 }
 
@@ -281,7 +281,7 @@ namespace InternalTrainingSystem.Core.Controllers
                     return Unauthorized(new LoginResponseDto
                     {
                         Success = false,
-                        Message = "User not found or inactive"
+                        Message = "Không tìm thấy người dùng hoặc tài khoản không hoạt động"
                     });
                 }
 
@@ -290,7 +290,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 var response = new LoginResponseDto
                 {
                     Success = true,
-                    Message = "Token refreshed successfully",
+                    Message = "Làm mới token thành công",
                     User = new UserProfileDto
                     {
                         Id = user.Id,
@@ -315,7 +315,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 return StatusCode(500, new LoginResponseDto
                 {
                     Success = false,
-                    Message = $"Error refreshing token: {ex.Message}"
+                    Message = $"Có lỗi xảy ra khi làm mới token: {ex.Message}"
                 });
             }
         }
