@@ -23,8 +23,8 @@ namespace InternalTrainingSystem.Core.Controllers
 			return Ok(departments);
 		}
 
-		[HttpGet("{departmentId}")]
-		public async Task<IActionResult> GetDepartmentDetail([FromRoute] DepartmentDetailRequestDto request)
+		[HttpGet("detail")]
+		public async Task<IActionResult> GetDepartmentDetail([FromQuery] DepartmentDetailRequestDto request)
 		{
 			var department = await _departmentService.GetDepartmentDetailAsync(request);
 			return Ok(department);
