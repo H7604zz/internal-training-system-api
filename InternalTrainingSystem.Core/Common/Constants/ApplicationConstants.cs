@@ -105,7 +105,6 @@
         public const string Mentor = "Mentor"; // Người hướng dẫn/giảng viên
         public const string TrainingDepartment = "TrainingDepartment"; // Phòng đào tạo
         public const string HR = "HR"; // Phòng nhân sự
-        public const string System = "System"; // Hệ thống/AI chatbot
 
         // ✅ Thêm mảng chứa tất cả role
         public static readonly string[] All =
@@ -116,8 +115,7 @@
         Administrator,
         Mentor,
         TrainingDepartment,
-        HR,
-        System
+        HR
     };
     }
 
