@@ -211,6 +211,26 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
+        //========================================Đổi lớp học của staff==============================================
+
+        /// <summary>
+        /// lay ra danh sach yeu cau doi lop
+        /// </summary>
+        /// <param name="classSwapId"></param>
+        /// <returns></returns>
+        [HttpGet("swap-request/{classSwapId}")]
+        [Authorize(Roles = UserRoles.Staff)]
+        public async Task<IActionResult> GetSwapClassRequest(int classSwapId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var result = await _classService.GetSwapClassRequestAsync(userId, classSwapId);
+            if (result.Count == 0) return NotFound("Không có yêu cầu đổi lớp nào đang diễn ra!.");
+            return Ok(result);
+        }
+
         /// <summary>
         /// phan hoi yeu cau chuyen lop giua 2 user
         /// </summary>
@@ -238,6 +258,8 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
+        //===================================================================================================
+
         /// <summary>
         /// lay ra tat ca lop hoc 
         /// </summary>
@@ -262,7 +284,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPut("reschedule/{scheduleId}")]
-        //[Authorize(Roles = UserRoles.Mentor)]
+        [Authorize(Roles = UserRoles.Mentor)]
         public async Task<IActionResult> Reschedule(int scheduleId, [FromBody] RescheduleRequest request)
         {
             try
@@ -289,24 +311,6 @@ namespace InternalTrainingSystem.Core.Controllers
         {
             var classList = await _classService.GetClassesByCourseAsync(courseId);
             return Ok(classList);
-        }
-
-        /// <summary>
-        /// lay ra danh sach yeu cau doi lop
-        /// </summary>
-        /// <param name="classSwapId"></param>
-        /// <returns></returns>
-        [HttpGet("swap-request/{classSwapId}")]
-        [Authorize(Roles = UserRoles.Staff)]
-        public async Task<IActionResult> GetSwapClassRequest(int classSwapId)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-            var result = await _classService.GetSwapClassRequestAsync(userId, classSwapId);
-            if (result.Count == 0) return NotFound("Không có yêu cầu đổi lớp nào đang diễn ra!.");
-            return Ok(result);
         }
 
         /// <summary>
