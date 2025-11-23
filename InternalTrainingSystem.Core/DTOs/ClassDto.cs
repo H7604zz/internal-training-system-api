@@ -86,7 +86,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Mentor { get; set; } = string.Empty;
         public string CourseCode { get; set; } = string.Empty;
         public string CourseName { get; set; } = string.Empty;
-        public DateTime DayOfWeek { get; set; }
+        public DateTime Day { get; set; }
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
         public string? Location { get; set; }
@@ -97,13 +97,16 @@ namespace InternalTrainingSystem.Core.DTOs
     public class RescheduleRequest
     {
         [Required]
-        public string? NewDayOfWeek { get; set; }
+        public string NewDayOfWeek { get; set; } = string.Empty;
         [Required]
         public DateTime NewDate { get; set; }
         [Required]
         public TimeSpan NewStartTime { get; set; }
         [Required]
         public TimeSpan NewEndTime { get; set; }
+        
+        [Required] 
+        public string NewLocation { get; set; } = string.Empty;
     }
 
     //class swap dto
