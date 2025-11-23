@@ -267,7 +267,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        //[Authorize]
+        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.DirectManager)]
         public async Task<ActionResult<PagedResult<ClassDto>>> GetClasses([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (page <= 0) page = 1;
@@ -332,7 +332,7 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok();
         }
         /// <summary>
-        /// lay class cua toi ( mentor + staff)
+        /// Lấy danh sách lớp học của người dùng hiện tại (mentor + staff)
         /// </summary>
         /// <returns></returns>
         [HttpGet("my")]
@@ -342,10 +342,7 @@ namespace InternalTrainingSystem.Core.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
                          ?? throw new InvalidOperationException("Không tìm thấy user.");
 
-            var role = User.FindFirstValue(ClaimTypes.Role)
-                       ?? throw new InvalidOperationException("Không lấy được role.");
-
-            var classes = await _classService.GetClassesOfUserAsync(userId, role, ct);
+            var classes = await _classService.GetClassesOfUserAsync(userId, ct);
 
             return Ok(classes);
         }

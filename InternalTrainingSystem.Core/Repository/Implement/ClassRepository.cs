@@ -769,4 +769,23 @@ public class ClassRepository : IClassRepository
             .Where(c => c.Employees.Any(e => e.Id == userId))
             .ToListAsync(ct);
     }
+
+    public async Task<List<MyClassDto>> GetClassesOfUserAsync(string userId, CancellationToken ct)
+    {
+        var classes = await _context.Classes
+            .Include(c => c.Course)
+            .Include(c => c.Mentor)
+            .Where(c => c.MentorId == userId || c.Employees.Any(e => e.Id == userId))
+            .ToListAsync(ct);
+
+        return classes.Select(c => new MyClassDto
+        {
+            ClassId = c.ClassId,
+            ClassName = c.ClassName,
+            CourseId = c.CourseId,
+            CourseName = c.Course.CourseName,
+            Mentor = c.Mentor != null ? c.Mentor.FullName : null,
+            Status = c.Status ?? string.Empty
+        }).ToList();
+    }
 }
