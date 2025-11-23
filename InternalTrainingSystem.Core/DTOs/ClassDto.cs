@@ -97,14 +97,11 @@ namespace InternalTrainingSystem.Core.DTOs
     public class RescheduleRequest
     {
         [Required]
-        public string NewDayOfWeek { get; set; } = string.Empty;
-        [Required]
         public DateTime NewDate { get; set; }
         [Required]
         public TimeSpan NewStartTime { get; set; }
         [Required]
         public TimeSpan NewEndTime { get; set; }
-        
         [Required] 
         public string NewLocation { get; set; } = string.Empty;
     }

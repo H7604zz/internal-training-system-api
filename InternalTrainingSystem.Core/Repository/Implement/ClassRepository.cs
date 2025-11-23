@@ -645,7 +645,7 @@ public class ClassRepository : IClassRepository
                 throw new ArgumentException("Một hoặc nhiều học viên đã có lịch học khác trong khoảng thời gian này.");
         }
 
-        schedule.DayOfWeek = request.NewDayOfWeek;
+        schedule.DayOfWeek = request.NewDate.DayOfWeek.ToString();
         schedule.Date = request.NewDate;
         schedule.StartTime = request.NewStartTime;
         schedule.EndTime = request.NewEndTime;
