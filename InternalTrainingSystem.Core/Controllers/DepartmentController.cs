@@ -1,5 +1,7 @@
+using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InternalTrainingSystem.Core.Controllers
@@ -16,6 +18,8 @@ namespace InternalTrainingSystem.Core.Controllers
 		}
 
 		[HttpGet]
+		[Authorize(Roles = UserRoles.Administrator + "," + UserRoles.TrainingDepartment 
+				+ "," + UserRoles.DirectManager + "," + UserRoles.BoardOfDirectors)]
 		public async Task<IActionResult> GetDepartments()
 		{
 			var departments = await _departmentService.GetDepartmentsAsync();
@@ -23,15 +27,22 @@ namespace InternalTrainingSystem.Core.Controllers
 			return Ok(departments);
 		}
 
-		[HttpGet("detail")]
-		public async Task<IActionResult> GetDepartmentDetail([FromQuery] DepartmentDetailRequestDto request)
+	/// <summary>
+	/// chi tiết phòng ban
+	/// </summary>
+	/// <param name="request"></param>
+	/// <returns></returns>
+	[HttpGet("detail")]
+	[Authorize(Roles = UserRoles.Administrator + "," + UserRoles.TrainingDepartment)]
+	public async Task<IActionResult> GetDepartmentDetail([FromQuery] DepartmentDetailRequestDto request)
 		{
 			var department = await _departmentService.GetDepartmentDetailAsync(request);
 			return Ok(department);
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> CreateDepartment([FromBody] DepartmentRequestDto request)
+        [Authorize(Roles = UserRoles.Administrator)]
+        public async Task<IActionResult> CreateDepartment([FromBody] DepartmentRequestDto request)
 		{
 			if (!ModelState.IsValid)
 				return BadRequest(ModelState);
@@ -44,7 +55,8 @@ namespace InternalTrainingSystem.Core.Controllers
 		}
 
 		[HttpPut("{departmentId}")]
-		public async Task<IActionResult> Update(int departmentId, [FromBody] DepartmentRequestDto request)
+        [Authorize(Roles = UserRoles.Administrator)]
+        public async Task<IActionResult> Update(int departmentId, [FromBody] DepartmentRequestDto request)
 		{
 			if (!ModelState.IsValid)
 				return BadRequest(ModelState);
@@ -57,7 +69,8 @@ namespace InternalTrainingSystem.Core.Controllers
 		}
 
 		[HttpDelete("{departmentId}")]
-		public async Task<IActionResult> Delete(int departmentId)
+        [Authorize(Roles = UserRoles.Administrator)]
+        public async Task<IActionResult> Delete(int departmentId)
 		{
 			try
 			{
@@ -82,7 +95,8 @@ namespace InternalTrainingSystem.Core.Controllers
 		}
 
 		[HttpPost("transfer-employee")]
-		public async Task<IActionResult> TransferEmployee([FromBody] TransferEmployeeDto request)
+        [Authorize(Roles = UserRoles.Administrator)]
+        public async Task<IActionResult> TransferEmployee([FromBody] TransferEmployeeDto request)
 		{
 			if (!ModelState.IsValid)
 				return BadRequest(ModelState);
@@ -109,11 +123,12 @@ namespace InternalTrainingSystem.Core.Controllers
 			}
 		}
 
-		/// <summary>
-		/// Báo cáo tỉ lệ hoàn thành khóa học theo phòng ban
-		/// </summary>
-		[HttpGet("report/course-completion")]
-		public async Task<IActionResult> GetCourseCompletionReport([FromQuery] DepartmentReportRequestDto request)
+	/// <summary>
+	/// Báo cáo tỉ lệ hoàn thành khóa học theo phòng ban
+	/// </summary>
+	[HttpGet("report/course-completion")]
+	[Authorize(Roles = UserRoles.Administrator + "," + UserRoles.TrainingDepartment)]
+	public async Task<IActionResult> GetCourseCompletionReport([FromQuery] DepartmentReportRequestDto request)
 		{
 			try
 			{
@@ -126,11 +141,12 @@ namespace InternalTrainingSystem.Core.Controllers
 			}
 		}
 
-		/// <summary>
-		/// Báo cáo top phòng ban học tập tích cực nhất
-		/// </summary>
-		[HttpGet("report/top-active")]
-		public async Task<IActionResult> GetTopActiveDepartments([FromQuery] int top = 10, [FromQuery] DepartmentReportRequestDto? request = null)
+	/// <summary>
+	/// Báo cáo top phòng ban học tập tích cực nhất
+	/// </summary>
+	[HttpGet("report/top-active")]
+	[Authorize(Roles = UserRoles.Administrator + "," + UserRoles.TrainingDepartment)]
+	public async Task<IActionResult> GetTopActiveDepartments([FromQuery] int top = 10, [FromQuery] DepartmentReportRequestDto? request = null)
 		{
 			try
 			{
