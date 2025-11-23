@@ -150,7 +150,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Lấy danh sách user theo role
         /// </summary>
         [HttpGet("by-role")]
-        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public async Task<IActionResult> GetUsersByRole([FromQuery] string role)
         {
             try
@@ -173,6 +173,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// API tạo mới người dùng và gửi email kích hoạt.
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = UserRoles.Administrator + "," + UserRoles.HR)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto req)
         {
             try
@@ -258,7 +259,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet("certificates")]
-
+        [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> GetCertificatesByUser()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
