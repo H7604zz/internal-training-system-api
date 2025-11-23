@@ -166,13 +166,15 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(attendances);
         }
 
+        //========================================Đổi lớp học của staff==============================================
+
         /// <summary>
         /// tao yeu cau chuyen lop giua 2 user 
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("request-swap")]
-        //[Authorize(Roles = UserRoles.Staff)]
+        [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> RequestClassSwap([FromBody] SwapClassRequest request)
         {
             try
@@ -211,8 +213,6 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
-        //========================================Đổi lớp học của staff==============================================
-
         /// <summary>
         /// lay ra danh sach yeu cau doi lop
         /// </summary>
@@ -237,7 +237,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("respond-swap-request")]
-        //[Authorize(Roles = UserRoles.Staff)]
+        [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> RespondToSwapRequest([FromBody] RespondSwapRequest request)
         {
             try
