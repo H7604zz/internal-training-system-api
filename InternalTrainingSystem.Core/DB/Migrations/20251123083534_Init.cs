@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InternalTrainingSystem.Core.DB.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -62,12 +62,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Type = table.Column<int>(type: "int", nullable: false),
                     Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CourseId = table.Column<int>(type: "int", nullable: true),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     ClassId = table.Column<int>(type: "int", nullable: true),
-                    IsRead = table.Column<bool>(type: "bit", nullable: false),
                     EntityType = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EntityId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -109,7 +106,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastLoginDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DepartmentId = table.Column<int>(type: "int", nullable: true),
+                    OtpCode = table.Column<string>(type: "nvarchar(6)", maxLength: 6, nullable: true),
+                    OtpExpiry = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DepartmentId = table.Column<int>(type: "int", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -134,6 +133,29 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         principalTable: "Departments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NotificationRecipients",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    NotificationId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RoleName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false),
+                    ReadAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationRecipients", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NotificationRecipients_Notifications_NotificationId",
+                        column: x => x.NotificationId,
+                        principalTable: "Notifications",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -238,6 +260,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsOnline = table.Column<bool>(type: "bit", nullable: false),
                     IsMandatory = table.Column<bool>(type: "bit", nullable: false),
+                    PassScore = table.Column<double>(type: "float", nullable: true),
                     RejectionReason = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     ApproveById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: false)
@@ -334,7 +357,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     ClassName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CourseId = table.Column<int>(type: "int", nullable: false),
-                    MentorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    MentorId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Capacity = table.Column<int>(type: "int", nullable: false),
@@ -376,8 +399,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CompletionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    Score = table.Column<int>(type: "int", nullable: true),
-                    Grade = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    Score = table.Column<double>(type: "float", nullable: true),
                     Progress = table.Column<int>(type: "int", nullable: false),
                     LastAccessedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RejectionReason = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
@@ -499,15 +521,63 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ClassSwaps",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RequesterId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TargetId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    FromClassId = table.Column<int>(type: "int", nullable: false),
+                    ToClassId = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RespondedById = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClassSwaps", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ClassSwaps_AspNetUsers_RequesterId",
+                        column: x => x.RequesterId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ClassSwaps_AspNetUsers_RespondedById",
+                        column: x => x.RespondedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ClassSwaps_AspNetUsers_TargetId",
+                        column: x => x.TargetId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ClassSwaps_Classes_FromClassId",
+                        column: x => x.FromClassId,
+                        principalTable: "Classes",
+                        principalColumn: "ClassId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ClassSwaps_Classes_ToClassId",
+                        column: x => x.ToClassId,
+                        principalTable: "Classes",
+                        principalColumn: "ClassId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Schedules",
                 columns: table => new
                 {
                     ScheduleId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DayOfWeek = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     Location = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     MaxParticipants = table.Column<int>(type: "int", nullable: false),
@@ -549,13 +619,14 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ModuleId = table.Column<int>(type: "int", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Type = table.Column<int>(type: "int", nullable: false),
                     OrderIndex = table.Column<int>(type: "int", nullable: false),
                     ContentUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ContentHtml = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     FilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     MimeType = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     SizeBytes = table.Column<long>(type: "bigint", nullable: true),
+                    AttachmentUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     QuizId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -626,6 +697,43 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         principalTable: "Quizzes",
                         principalColumn: "QuizId",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Assignments",
+                columns: table => new
+                {
+                    AssignmentId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ClassId = table.Column<int>(type: "int", nullable: false),
+                    ScheduleId = table.Column<int>(type: "int", nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    StartAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DueAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CloseAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AllowLateSubmit = table.Column<bool>(type: "bit", nullable: false),
+                    MaxSubmissions = table.Column<int>(type: "int", nullable: false),
+                    MaxScore = table.Column<int>(type: "int", nullable: true),
+                    AttachmentUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AttachmentFilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AttachmentMimeType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AttachmentSizeBytes = table.Column<long>(type: "bigint", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Assignments", x => x.AssignmentId);
+                    table.ForeignKey(
+                        name: "FK_Assignments_Classes_ClassId",
+                        column: x => x.ClassId,
+                        principalTable: "Classes",
+                        principalColumn: "ClassId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Assignments_Schedules_ScheduleId",
+                        column: x => x.ScheduleId,
+                        principalTable: "Schedules",
+                        principalColumn: "ScheduleId");
                 });
 
             migrationBuilder.CreateTable(
@@ -746,12 +854,13 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 {
                     HistoryId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Action = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Action = table.Column<int>(type: "int", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ActionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CourseId = table.Column<int>(type: "int", nullable: false),
                     EnrollmentId = table.Column<int>(type: "int", nullable: true),
+                    QuizId = table.Column<int>(type: "int", nullable: true),
                     QuizAttemptId = table.Column<int>(type: "int", nullable: true),
                     ScheduleId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -783,11 +892,55 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         principalColumn: "AttemptId",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
+                        name: "FK_CourseHistories_Quizzes_QuizId",
+                        column: x => x.QuizId,
+                        principalTable: "Quizzes",
+                        principalColumn: "QuizId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_CourseHistories_Schedules_ScheduleId",
                         column: x => x.ScheduleId,
                         principalTable: "Schedules",
                         principalColumn: "ScheduleId",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AssignmentSubmissions",
+                columns: table => new
+                {
+                    SubmissionId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AssignmentId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    AttemptNumber = table.Column<int>(type: "int", nullable: false),
+                    SubmittedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Score = table.Column<int>(type: "int", nullable: true),
+                    Feedback = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    IsLate = table.Column<bool>(type: "bit", nullable: false),
+                    OriginalFileName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    MimeType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SizeBytes = table.Column<long>(type: "bigint", nullable: true),
+                    PublicUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsMain = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AssignmentSubmissions", x => x.SubmissionId);
+                    table.ForeignKey(
+                        name: "FK_AssignmentSubmissions_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AssignmentSubmissions_Assignments_AssignmentId",
+                        column: x => x.AssignmentId,
+                        principalTable: "Assignments",
+                        principalColumn: "AssignmentId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -870,11 +1023,44 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 column: "DepartmentId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_EmployeeId",
+                table: "AspNetUsers",
+                column: "EmployeeId",
+                unique: true,
+                filter: "[EmployeeId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assignments_ClassId_DueAt",
+                table: "Assignments",
+                columns: new[] { "ClassId", "DueAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assignments_ScheduleId",
+                table: "Assignments",
+                column: "ScheduleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssignmentSubmissions_AssignmentId_UserId_AttemptNumber",
+                table: "AssignmentSubmissions",
+                columns: new[] { "AssignmentId", "UserId", "AttemptNumber" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssignmentSubmissions_SubmittedAt",
+                table: "AssignmentSubmissions",
+                column: "SubmittedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssignmentSubmissions_UserId",
+                table: "AssignmentSubmissions",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Attendances_CheckInTime",
@@ -938,6 +1124,31 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 column: "Status");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ClassSwaps_FromClassId",
+                table: "ClassSwaps",
+                column: "FromClassId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClassSwaps_RequesterId",
+                table: "ClassSwaps",
+                column: "RequesterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClassSwaps_RespondedById",
+                table: "ClassSwaps",
+                column: "RespondedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClassSwaps_TargetId",
+                table: "ClassSwaps",
+                column: "TargetId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClassSwaps_ToClassId",
+                table: "ClassSwaps",
+                column: "ToClassId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CourseCategories_CategoryName",
                 table: "CourseCategories",
                 column: "CategoryName",
@@ -978,6 +1189,11 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 name: "IX_CourseHistories_QuizAttemptId",
                 table: "CourseHistories",
                 column: "QuizAttemptId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CourseHistories_QuizId",
+                table: "CourseHistories",
+                column: "QuizId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CourseHistories_ScheduleId",
@@ -1047,9 +1263,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 column: "Type");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Notifications_Type_CourseId_UserId_ClassId",
-                table: "Notifications",
-                columns: new[] { "Type", "CourseId", "UserId", "ClassId" });
+                name: "IX_NotificationRecipients_NotificationId",
+                table: "NotificationRecipients",
+                column: "NotificationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Questions_QuizId",
@@ -1064,7 +1280,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_QuizAttempts_UserId_QuizId_AttemptNumber",
                 table: "QuizAttempts",
-                columns: new[] { "UserId", "QuizId", "AttemptNumber" });
+                columns: new[] { "UserId", "QuizId", "AttemptNumber" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Quizzes_CourseId",
@@ -1163,6 +1380,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "AssignmentSubmissions");
+
+            migrationBuilder.DropTable(
                 name: "Attendances");
 
             migrationBuilder.DropTable(
@@ -1170,6 +1390,9 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             migrationBuilder.DropTable(
                 name: "ClassEmployees");
+
+            migrationBuilder.DropTable(
+                name: "ClassSwaps");
 
             migrationBuilder.DropTable(
                 name: "CourseHistories");
@@ -1181,7 +1404,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 name: "LessonProgresses");
 
             migrationBuilder.DropTable(
-                name: "Notifications");
+                name: "NotificationRecipients");
 
             migrationBuilder.DropTable(
                 name: "ScheduleParticipants");
@@ -1196,13 +1419,16 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
+                name: "Assignments");
+
+            migrationBuilder.DropTable(
                 name: "CourseEnrollments");
 
             migrationBuilder.DropTable(
                 name: "Lessons");
 
             migrationBuilder.DropTable(
-                name: "Schedules");
+                name: "Notifications");
 
             migrationBuilder.DropTable(
                 name: "Answers");
@@ -1211,13 +1437,16 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 name: "QuizAttempts");
 
             migrationBuilder.DropTable(
+                name: "Schedules");
+
+            migrationBuilder.DropTable(
                 name: "CourseModules");
 
             migrationBuilder.DropTable(
-                name: "Classes");
+                name: "Questions");
 
             migrationBuilder.DropTable(
-                name: "Questions");
+                name: "Classes");
 
             migrationBuilder.DropTable(
                 name: "Quizzes");
