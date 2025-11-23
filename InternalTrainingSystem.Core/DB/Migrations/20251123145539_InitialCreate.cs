@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InternalTrainingSystem.Core.DB.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -132,7 +132,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         column: x => x.DepartmentId,
                         principalTable: "Departments",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -711,10 +711,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     StartAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DueAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CloseAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    AllowLateSubmit = table.Column<bool>(type: "bit", nullable: false),
-                    MaxSubmissions = table.Column<int>(type: "int", nullable: false),
-                    MaxScore = table.Column<int>(type: "int", nullable: true),
                     AttachmentUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AttachmentFilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AttachmentMimeType = table.Column<string>(type: "nvarchar(max)", nullable: true),

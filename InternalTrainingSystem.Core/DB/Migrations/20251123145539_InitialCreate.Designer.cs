@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InternalTrainingSystem.Core.DB.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251123083534_Init")]
-    partial class Init
+    [Migration("20251123145539_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -201,9 +201,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AssignmentId"));
 
-                    b.Property<bool>("AllowLateSubmit")
-                        .HasColumnType("bit");
-
                     b.Property<string>("AttachmentFilePath")
                         .HasColumnType("nvarchar(max)");
 
@@ -219,21 +216,12 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Property<int>("ClassId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("CloseAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime?>("DueAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("MaxScore")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MaxSubmissions")
-                        .HasColumnType("int");
 
                     b.Property<int?>("ScheduleId")
                         .HasColumnType("int");
@@ -1455,7 +1443,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.HasOne("InternalTrainingSystem.Core.Models.Department", "Department")
                         .WithMany("Users")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Department");

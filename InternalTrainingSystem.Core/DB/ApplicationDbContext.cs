@@ -400,7 +400,7 @@ namespace InternalTrainingSystem.Core.DB
                 e.HasMany(d => d.Users)
                  .WithOne(u => u.Department)
                  .HasForeignKey(u => u.DepartmentId)
-                 .OnDelete(DeleteBehavior.SetNull);
+                 .OnDelete(DeleteBehavior.Restrict);
             });
             
             builder.Entity<Department>()

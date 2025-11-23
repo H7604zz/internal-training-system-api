@@ -11,10 +11,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Description { get; set; }
         public DateTime? StartAt { get; set; }
         public DateTime? DueAt { get; set; }
-        public DateTime? CloseAt { get; set; }
-        public bool AllowLateSubmit { get; set; }
-        public int MaxSubmissions { get; set; }
-        public int? MaxScore { get; set; }
         public string? AttachmentUrl { get; set; }
     }
 
@@ -22,45 +18,20 @@ namespace InternalTrainingSystem.Core.DTOs
     {
         public int ClassId { get; set; }
         public int? ScheduleId { get; set; }
-
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
-
         public DateTime? StartAt { get; set; }
         public DateTime? DueAt { get; set; }
-        public DateTime? CloseAt { get; set; }
-
-        public bool AllowLateSubmit { get; set; }
-        public int MaxSubmissions { get; set; } = 1;
-        public int? MaxScore { get; set; } = 10;
-
         public IFormFile? File { get; set; }
     }
     public class UpdateAssignmentForm
     {
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
-
         public DateTime? StartAt { get; set; }
         public DateTime? DueAt { get; set; }
-        public DateTime? CloseAt { get; set; }
-
-        public bool AllowLateSubmit { get; set; }
-        public int MaxSubmissions { get; set; }
-        public int? MaxScore { get; set; }
-
         // optional: nộp file mới để replace file cũ
         public IFormFile? File { get; set; }
-    }
-    public class SubmissionFileDto
-    {
-        public int FileId { get; set; }
-        public string OriginalFileName { get; set; } = string.Empty;
-        public string FilePath { get; set; } = string.Empty;
-        public string? MimeType { get; set; }
-        public long? SizeBytes { get; set; }
-        public string? PublicUrl { get; set; }
-        public bool IsMain { get; set; }
     }
 
     public class AssignmentSubmissionSummaryDto

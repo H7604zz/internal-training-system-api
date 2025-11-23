@@ -52,7 +52,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 url = uploaded.url;
                 path = uploaded.relativePath;
                 mime = form.File.ContentType;
-                size = form.File.Length;  
+                size = form.File.Length;
             }
 
             var entity = new Assignment
@@ -63,10 +63,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Description = form.Description,
                 StartAt = form.StartAt,
                 DueAt = form.DueAt,
-                CloseAt = form.CloseAt,
-                AllowLateSubmit = form.AllowLateSubmit,
-                MaxSubmissions = form.MaxSubmissions,
-                MaxScore = form.MaxScore,
 
                 AttachmentUrl = url,
                 AttachmentFilePath = path,
@@ -86,10 +82,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Description = entity.Description,
                 StartAt = entity.StartAt,
                 DueAt = entity.DueAt,
-                CloseAt = entity.CloseAt,
-                AllowLateSubmit = entity.AllowLateSubmit,
-                MaxSubmissions = entity.MaxSubmissions,
-                MaxScore = entity.MaxScore,
                 AttachmentUrl = entity.AttachmentUrl
             };
         }
@@ -111,10 +103,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             assignment.Description = form.Description;
             assignment.StartAt = form.StartAt;
             assignment.DueAt = form.DueAt;
-            assignment.CloseAt = form.CloseAt;
-            assignment.AllowLateSubmit = form.AllowLateSubmit;
-            assignment.MaxSubmissions = form.MaxSubmissions;
-            assignment.MaxScore = form.MaxScore;
 
             if (form.File != null)
             {
@@ -146,10 +134,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Description = assignment.Description,
                 StartAt = assignment.StartAt,
                 DueAt = assignment.DueAt,
-                CloseAt = assignment.CloseAt,
-                AllowLateSubmit = assignment.AllowLateSubmit,
-                MaxSubmissions = assignment.MaxSubmissions,
-                MaxScore = assignment.MaxScore,
                 AttachmentUrl = assignment.AttachmentUrl
             };
         }
@@ -186,10 +170,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Description = a.Description,
                 StartAt = a.StartAt,
                 DueAt = a.DueAt,
-                CloseAt = a.CloseAt,
-                AllowLateSubmit = a.AllowLateSubmit,
-                MaxSubmissions = a.MaxSubmissions,
-                MaxScore = a.MaxScore,
                 AttachmentUrl = a.AttachmentUrl
             }).ToList();
         }
@@ -214,10 +194,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Description = a.Description,
                 StartAt = a.StartAt,
                 DueAt = a.DueAt,
-                CloseAt = a.CloseAt,
-                AllowLateSubmit = a.AllowLateSubmit,
-                MaxSubmissions = a.MaxSubmissions,
-                MaxScore = a.MaxScore,
                 AttachmentUrl = a.AttachmentUrl
             }).ToList();
         }
@@ -238,10 +214,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Description = a.Description,
                 StartAt = a.StartAt,
                 DueAt = a.DueAt,
-                CloseAt = a.CloseAt,
-                AllowLateSubmit = a.AllowLateSubmit,
-                MaxSubmissions = a.MaxSubmissions,
-                MaxScore = a.MaxScore,
                 AttachmentUrl = a.AttachmentUrl
             };
         }
@@ -267,10 +239,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Description = a.Description,
                 StartAt = a.StartAt,
                 DueAt = a.DueAt,
-                CloseAt = a.CloseAt,
-                AllowLateSubmit = a.AllowLateSubmit,
-                MaxSubmissions = a.MaxSubmissions,
-                MaxScore = a.MaxScore,
                 AttachmentUrl = a.AttachmentUrl
             };
         }
@@ -375,16 +343,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             var now = DateTime.UtcNow;
 
-            if (assignment.CloseAt.HasValue && now > assignment.CloseAt.Value)
-                throw new InvalidOperationException("Assignment đã đóng.");
-
-            if (!assignment.AllowLateSubmit && assignment.DueAt.HasValue && now > assignment.DueAt.Value)
-                throw new InvalidOperationException("Đã quá hạn nộp.");
-
-            var maxAttempt = await _submissionRepo.GetMaxAttemptNumberAsync(assignmentId, userId, ct);
-            if (maxAttempt >= assignment.MaxSubmissions)
-                throw new InvalidOperationException("Vượt quá số lần nộp.");
-
             // MARK OLD SUBMISSIONS AS NOT MAIN
             await _submissionRepo.SetAllOldSubmissionsNotMain(assignmentId, userId, ct);
 
@@ -393,7 +351,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 AssignmentId = assignmentId,
                 UserId = userId,
-                AttemptNumber = maxAttempt + 1,
                 SubmittedAt = now,
                 IsLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value,
                 Status = AssignmentSubmissionConstants.Status.Submitted,
@@ -452,10 +409,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var canTeach = await _classRepo.IsMentorOfClassAsync(assignment.ClassId, mentorId, ct);
             if (!canTeach)
                 throw new UnauthorizedAccessException("Bạn không có quyền chấm bài.");
-
-            if (dto.Score.HasValue && assignment.MaxScore.HasValue &&
-                (dto.Score < 0 || dto.Score > assignment.MaxScore.Value))
-                throw new InvalidOperationException("Điểm không hợp lệ.");
 
             sub.Score = dto.Score;
             sub.Feedback = dto.Feedback;
