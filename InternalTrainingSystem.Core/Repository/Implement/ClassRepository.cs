@@ -756,4 +756,17 @@ public class ClassRepository : IClassRepository
             .Where(c => c.ClassId == classId)
             .AnyAsync(c => c.Employees.Any(e => e.Id == userId), ct);
     }
+    public async Task<List<Class>> GetClassesForMentorAsync(string userId, CancellationToken ct)
+    {
+        return await _context.Classes
+            .Where(c => c.MentorId == userId)
+            .ToListAsync(ct);
+    }
+
+    public async Task<List<Class>> GetClassesForStaffAsync(string userId, CancellationToken ct)
+    {
+        return await _context.Classes
+            .Where(c => c.Employees.Any(e => e.Id == userId))
+            .ToListAsync(ct);
+    }
 }

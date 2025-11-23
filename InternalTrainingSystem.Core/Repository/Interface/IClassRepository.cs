@@ -24,5 +24,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request);
         Task<bool> IsMentorOfClassAsync(int classId, string mentorId, CancellationToken ct = default);
         Task<bool> IsInClassAsync(int classId, string userId, CancellationToken ct = default);
+        Task<List<Class>> GetClassesForMentorAsync(string userId, CancellationToken ct);
+        Task<List<Class>> GetClassesForStaffAsync(string userId, CancellationToken ct);
     }
 }

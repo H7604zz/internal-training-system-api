@@ -131,4 +131,15 @@ namespace InternalTrainingSystem.Core.DTOs
         public string ToClassName { get; set; } = string.Empty;
         public DateTime RequestedAt { get; set; }
     }
+    public class MyClassDto
+    {
+        public int ClassId { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int CourseId { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public bool IsMentor { get; set; } // true = mentor, false = staff
+    }
 }

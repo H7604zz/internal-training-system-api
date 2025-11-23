@@ -331,5 +331,23 @@ namespace InternalTrainingSystem.Core.Controllers
 
             return Ok();
         }
+        /// <summary>
+        /// lay class cua toi ( mentor + staff)
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("my")]
+        [Authorize(Roles = UserRoles.Mentor + "," + UserRoles.Staff)]
+        public async Task<ActionResult<List<MyClassDto>>> GetMyClasses(CancellationToken ct)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                         ?? throw new InvalidOperationException("Không tìm thấy user.");
+
+            var role = User.FindFirstValue(ClaimTypes.Role)
+                       ?? throw new InvalidOperationException("Không lấy được role.");
+
+            var classes = await _classService.GetClassesOfUserAsync(userId, role, ct);
+
+            return Ok(classes);
+        }
     }
 }

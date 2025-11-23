@@ -1,6 +1,7 @@
-using Azure.Core;
+﻿using Azure.Core;
 using DocumentFormat.OpenXml.InkML;
 using InternalTrainingSystem.Core.Common;
+using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
@@ -86,6 +87,26 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request)
         {
            return await _classRepo.UpdateScoresAsync(mentorId, request);
+        }
+        public async Task<List<MyClassDto>> GetClassesOfUserAsync(string userId, string role, CancellationToken ct)
+        {
+            List<Class> classes = role switch
+            {
+                UserRoles.Mentor => await _classRepo.GetClassesForMentorAsync(userId, ct),
+                UserRoles.Staff => await _classRepo.GetClassesForStaffAsync(userId, ct),
+            };
+
+            return classes.Select(c => new MyClassDto
+            {
+                ClassId = c.ClassId,
+                ClassName = c.ClassName,
+                Description = c.Description,
+                CourseId = c.CourseId,
+                StartDate = c.StartDate,
+                EndDate = c.EndDate,
+                Status = c.Status,
+                IsMentor = (role == UserRoles.Mentor)
+            }).ToList();
         }
     }
 }

@@ -28,5 +28,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
 
         // score-final
         Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request);
+        Task<List<MyClassDto>> GetClassesOfUserAsync(string userId,string role,CancellationToken ct);
     }
 }
