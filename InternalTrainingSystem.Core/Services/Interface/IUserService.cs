@@ -17,5 +17,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<ApplicationUser?> GetUserProfileAsync(string userId);
 
         Task<List<UserCourseSummaryDto>> GetUserCourseSummaryAsync(string userId);
+        Task<PagedResult<UserListDto>> GetAllUsersAsync(GetUsersRequestDto request);
     }
 }

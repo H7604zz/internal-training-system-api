@@ -276,6 +276,24 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(certificates);
         }
 
+        /// <summary>
+        /// Lấy danh sách tất cả người dùng
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = UserRoles.Administrator)]
+        public async Task<IActionResult> GetAllUsers([FromQuery] GetUsersRequestDto request)
+        {
+            try
+            {
+                var result = await _userService.GetAllUsersAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Đã xảy ra lỗi khi lấy danh sách người dùng: {ex.Message}");
+            }
+        }
+
     }
 }
                                                             

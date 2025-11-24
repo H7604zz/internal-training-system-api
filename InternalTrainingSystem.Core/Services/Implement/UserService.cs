@@ -74,5 +74,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
         {
             return await _userRepo.GetUserCouresSummaryAsync(userId);
         }
+
+        public async Task<PagedResult<UserListDto>> GetAllUsersAsync(GetUsersRequestDto request)
+        {
+            return await _userRepo.GetAllUsersAsync(request);
+        }
     }
 }

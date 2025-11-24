@@ -1,4 +1,4 @@
-using InternalTrainingSystem.Core.Common;
+﻿using InternalTrainingSystem.Core.Common;
 using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
@@ -273,6 +273,74 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
 
             return result;
+        }
+
+        public async Task<PagedResult<UserListDto>> GetAllUsersAsync(GetUsersRequestDto request)
+        {
+            // Get Administrator role users to exclude
+            var adminRoleId = await _context.Roles
+                .Where(r => r.Name == UserRoles.Administrator)
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            var adminUserIds = await _context.UserRoles
+                .Where(ur => ur.RoleId == adminRoleId)
+                .Select(ur => ur.UserId)
+                .ToListAsync();
+
+            var query = _context.Users
+                .Include(u => u.Department)
+                .Where(u => !adminUserIds.Contains(u.Id)) // Exclude Administrator users
+                .AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                var searchTerm = request.Search.ToLower().Trim();
+                query = query.Where(u =>
+                    u.FullName.ToLower().Contains(searchTerm) ||
+                    (u.EmployeeId != null && u.EmployeeId.ToLower().Contains(searchTerm)) ||
+                    (u.Email != null && u.Email.ToLower().Contains(searchTerm))
+                );
+            }
+
+            // Get total count
+            var totalCount = await query.CountAsync();
+
+            // Get users with pagination
+            var users = await query
+                .OrderBy(u => u.FullName)
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            // Map to DTO and get roles
+            var userListDtos = new List<UserListDto>();
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                userListDtos.Add(new UserListDto
+                {
+                    Id = user.Id,
+                    EmployeeId = user.EmployeeId,
+                    FullName = user.FullName,
+                    Email = user.Email!,
+                    PhoneNumber = user.PhoneNumber,
+                    Department = user.Department?.Name,
+                    Position = user.Position,
+                    Role = roles.FirstOrDefault(),
+                    IsActive = user.IsActive,
+                    LastLoginDate = user.LastLoginDate
+                });
+            }
+
+            return new PagedResult<UserListDto>
+            {
+                Items = userListDtos,
+                TotalCount = totalCount,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
         }
     }
 }
