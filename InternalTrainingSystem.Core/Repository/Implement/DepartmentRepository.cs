@@ -173,8 +173,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 								.SelectMany(u => u.CourseEnrollments)
 								.Where(e => 
 										(!request.StartDate.HasValue || e.EnrollmentDate >= request.StartDate) &&
-										(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate) &&
-										(!request.CourseId.HasValue || e.CourseId == request.CourseId))
+										(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate))
 					});
 
 			var result = await query
@@ -184,13 +183,13 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 						DepartmentName = x.Department.Name,
 						TotalEmployees = x.TotalEmployees,
 						TotalEnrollments = x.Enrollments.Count(),
-					CompletedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed),
-					InProgressCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.InProgress),
-					FailedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.NotPass),
-					CompletionRate = x.Enrollments.Any() 
+						CompletedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed),
+						InProgressCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.InProgress),
+						FailedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.NotPass),
+						CompletionRate = x.Enrollments.Any() 
 							? Math.Round((double)x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed) / x.Enrollments.Count() * 100, 2)
 							: 0
-				})
+					})
 					.OrderByDescending(x => x.CompletionRate)
 					.ToListAsync();
 
@@ -208,14 +207,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 								.SelectMany(u => u.CourseEnrollments)
 								.Where(e => 
 										(!request.StartDate.HasValue || e.EnrollmentDate >= request.StartDate) &&
-										(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate) &&
-										(!request.CourseId.HasValue || e.CourseId == request.CourseId)),
+										(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate)), 
 						ActiveLearners = d.Users
 								.Count(u => u.CourseEnrollments
 										.Any(e => 
 												(!request.StartDate.HasValue || e.EnrollmentDate >= request.StartDate) &&
-												(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate) &&
-												(!request.CourseId.HasValue || e.CourseId == request.CourseId)))
+												(!request.EndDate.HasValue || e.EnrollmentDate <= request.EndDate)))
 					});
 
 			var result = await query
@@ -226,19 +223,13 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 						TotalEmployees = x.TotalEmployees,
 						TotalEnrollments = x.Enrollments.Count(),
 						CompletedCourses = x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed),
-					CompletionRate = x.Enrollments.Any() 
+						CompletionRate = x.Enrollments.Any() 
 							? Math.Round((double)x.Enrollments.Count(e => e.Status == EnrollmentConstants.Status.Completed) / x.Enrollments.Count() * 100, 2)
 							: 0,
-					AverageScore = x.Enrollments.Any(e => e.Status == EnrollmentConstants.Status.Completed && e.Score.HasValue)
-							? Math.Round(x.Enrollments
-								.Where(e => e.Status == EnrollmentConstants.Status.Completed && e.Score.HasValue)
-								.Average(e => e.Score!.Value), 2)
-							: 0,
-					ActiveLearners = x.ActiveLearners
+						ActiveLearners = x.ActiveLearners
 					})
 					.OrderByDescending(x => x.TotalEnrollments)
 					.ThenByDescending(x => x.CompletionRate)
-					.ThenByDescending(x => x.AverageScore)
 					.Take(topCount)
 					.ToListAsync();
 

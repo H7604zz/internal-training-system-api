@@ -62,7 +62,6 @@ namespace InternalTrainingSystem.Core.DTOs
 		public int TotalEnrollments { get; set; }
 		public int CompletedCourses { get; set; }
 		public double CompletionRate { get; set; }
-		public double AverageScore { get; set; }
 		public int ActiveLearners { get; set; }
 	}
 
@@ -70,6 +69,5 @@ namespace InternalTrainingSystem.Core.DTOs
 	{
 		public DateTime? StartDate { get; set; }
 		public DateTime? EndDate { get; set; }
-		public int? CourseId { get; set; }
 	}
 }
