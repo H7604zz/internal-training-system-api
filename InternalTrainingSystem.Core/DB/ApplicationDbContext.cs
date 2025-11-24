@@ -24,11 +24,9 @@ namespace InternalTrainingSystem.Core.DB
         public DbSet<ScheduleParticipant> ScheduleParticipants { get; set; }
         public DbSet<CourseHistory> CourseHistories { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
-        public DbSet<UserRoleHistory> UserRoleHistories { get; set; }
         public DbSet<Certificate> Certificates { get; set; }
         public DbSet<Class> Classes { get; set; }
         public DbSet<Notification> Notifications { get; set; }
-
         public DbSet<CourseModule> CourseModules { get; set; }
         public DbSet<Lesson> Lessons { get; set; }
         public DbSet<Department> Departments { get; set; }
@@ -299,37 +297,6 @@ namespace InternalTrainingSystem.Core.DB
             builder.Entity<QuizAttempt>()
                 .Property(qa => qa.Percentage)
                 .HasPrecision(5, 2);
-
-            // UserRoleHistory unique constraint for business logic
-            builder.Entity<UserRoleHistory>()
-                .HasIndex(urh => new { urh.UserId, urh.RoleId, urh.ActionDate })
-                .IsUnique();
-
-            // UserRoleHistory relationships
-            builder.Entity<UserRoleHistory>()
-                .HasOne(urh => urh.User)
-                .WithMany()
-                .HasForeignKey(urh => urh.UserId)
-                .OnDelete(DeleteBehavior.Restrict); // Thay đổi từ Cascade thành Restrict
-
-            builder.Entity<UserRoleHistory>()
-                .HasOne(urh => urh.ActionByUser)
-                .WithMany()
-                .HasForeignKey(urh => urh.ActionBy)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // Indexes for UserRoleHistory
-            builder.Entity<UserRoleHistory>()
-                .HasIndex(urh => new { urh.UserId, urh.ActionDate });
-
-            builder.Entity<UserRoleHistory>()
-                .HasIndex(urh => urh.Action);
-
-            builder.Entity<UserRoleHistory>()
-                .HasIndex(urh => urh.ActionDate);
-
-            builder.Entity<UserRoleHistory>()
-                .HasIndex(urh => urh.RoleId);
 
             // Indexes for CourseCategory
             builder.Entity<Certificate>()
