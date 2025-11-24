@@ -1,4 +1,4 @@
-﻿using InternalTrainingSystem.Core.Common;
+using InternalTrainingSystem.Core.Common;
 using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.DTOs;
@@ -217,7 +217,9 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
         public List<IdentityRole> GetRoles()
         {
-            return _context.Roles.ToList();
+            return _context.Roles
+                .Where(r => r.Name != UserRoles.Administrator)
+                .ToList();
         }
 
         public async Task<ApplicationUser?> GetUserProfileAsync(string userId)
