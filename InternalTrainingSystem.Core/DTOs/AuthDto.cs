@@ -104,6 +104,15 @@ namespace InternalTrainingSystem.Core.DTOs
         public string TokenType { get; set; } = "Bearer";
     }
 
+    public class ChangeUserRoleDto
+    {
+        [Required]
+        public string UserId { get; set; } = string.Empty;
+
+        [Required]
+        public string NewRole { get; set; } = string.Empty;
+    }
+
     public class ApiResponseDto
     {
         public bool Success { get; set; }

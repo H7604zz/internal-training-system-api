@@ -587,5 +587,63 @@ namespace InternalTrainingSystem.Core.Controllers
             }
         }
 
+        /// <summary>
+        /// Đổi role của user (chỉ Admin)
+        /// </summary>
+        [HttpPost("change-role")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> ChangeUserRole([FromBody] ChangeUserRoleDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponseDto.ErrorResult("Dữ liệu không hợp lệ"));
+                }
+
+                // Tìm user
+                var user = await _userManager.FindByIdAsync(request.UserId);
+                if (user == null)
+                {
+                    return NotFound(ApiResponseDto.ErrorResult("Không tìm thấy người dùng"));
+                }
+
+                // Kiểm tra role mới có tồn tại không
+                var roles = _userService.GetRoles();
+                if (!roles.Any(r => r.Name == request.NewRole))
+                {
+                    return BadRequest(ApiResponseDto.ErrorResult("Role không hợp lệ"));
+                }
+
+                // Lấy role hiện tại
+                var currentRoles = await _userManager.GetRolesAsync(user);
+
+                // Xóa tất cả role hiện tại
+                if (currentRoles.Any())
+                {
+                    var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                    if (!removeResult.Succeeded)
+                    {
+                        var errors = removeResult.Errors.Select(e => e.Description).ToList();
+                        return BadRequest(ApiResponseDto.ErrorResult("Không thể xóa role cũ", errors));
+                    }
+                }
+
+                // Thêm role mới
+                var addResult = await _userManager.AddToRoleAsync(user, request.NewRole);
+                if (!addResult.Succeeded)
+                {
+                    var errors = addResult.Errors.Select(e => e.Description).ToList();
+                    return BadRequest(ApiResponseDto.ErrorResult("Không thể thêm role mới", errors));
+                }
+
+                return Ok(ApiResponseDto.SuccessResult(null, $"Đã đổi quyền của {user.FullName} thành {request.NewRole}"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponseDto.ErrorResult($"Có lỗi xảy ra: {ex.Message}"));
+            }
+        }
+
     }
 }
