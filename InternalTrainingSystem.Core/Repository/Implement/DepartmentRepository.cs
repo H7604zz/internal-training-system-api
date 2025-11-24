@@ -86,7 +86,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 			var users = await _context.Users
 					.Where(u => u.DepartmentId == request.DepartmentId)
 					.Include(u => u.Department)
-					.OrderBy(u => u.Id)
+					.OrderBy(u => u.EmployeeId)
 					.Skip((request.Page - 1) * request.PageSize)
 					.Take(request.PageSize)
 					.Select(u => new UserProfileDto
