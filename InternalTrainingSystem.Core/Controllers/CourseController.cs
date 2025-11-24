@@ -354,7 +354,7 @@ namespace InternalTrainingSystem.Core.Controllers
         // POST: /api/courses
         [HttpPost]
         [RequestSizeLimit(600 * 1024 * 1024)]
-        //[Authorize(Roles = UserRoles.TrainingDepartment)]
+        [Authorize(Roles = UserRoles.TrainingDepartment)]
         public async Task<IActionResult> CreateCourse([FromForm] CreateCourseFormDto form, CancellationToken ct)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
