@@ -58,7 +58,8 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     options.Password.RequiredLength = 6;
 })
 .AddRoles<IdentityRole>()
-.AddEntityFrameworkStores<ApplicationDbContext>();
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddErrorDescriber<VietnameseIdentityErrorDescriber>();
 
 // Register Repository
 builder.Services.AddScoped<IUserRepository, UserRepository>();
