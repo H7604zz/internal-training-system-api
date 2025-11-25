@@ -612,8 +612,8 @@ namespace InternalTrainingSystem.Core.Controllers
                 return NoContent();
             }
             catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
-            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
-            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); } // 409 khi chưa pass quiz
+            catch (ArgumentException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return Conflict(ex.Message); } // 409 khi chưa pass quiz
         }
         // hủy đánh dấu hoàn thành lesson
         [HttpDelete("lessons/{lessonId:int}/complete")]
