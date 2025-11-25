@@ -248,7 +248,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <returns></returns>
         [HttpPost("{courseId}/enrollments/confirm")]
         [Authorize(Roles = UserRoles.DirectManager)]
-        public async Task<IActionResult> ConfirmEnrollment(int courseId, [FromQuery] bool isConfirmed)
+        public async Task<IActionResult> ConfirmEnrollment(int courseId, [FromBody] ConfirmReasonRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
@@ -256,13 +256,13 @@ namespace InternalTrainingSystem.Core.Controllers
                 return Unauthorized();
             } 
 
-            var enrollment = await _courseEnrollmentService.GetCourseEnrollment(courseId, userId);
+            var enrollment = await _courseEnrollmentService.GetCourseEnrollment(courseId, request.UserId);
 
             if (enrollment == null)
             {
                 return NotFound();
             }
-            if (isConfirmed)
+            if (request.IsConfirmed)
             {
                 var deleted = await _courseEnrollmentService.DeleteCourseEnrollment(courseId, userId);
                 if (!deleted)
