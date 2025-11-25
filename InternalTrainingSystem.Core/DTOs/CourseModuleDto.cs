@@ -65,6 +65,9 @@ namespace InternalTrainingSystem.Core.DTOs
         public int? QuizId { get; set; }
 
         public string? ContentUrl { get; set; }
+        public int? QuizTimeLimit { get; set; }
+        public int? QuizMaxAttempts { get; set; }
+        public int? QuizPassingScore { get; set; }
     }
     public class CreateQuizLessonRequest
     {

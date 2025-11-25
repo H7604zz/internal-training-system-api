@@ -10,7 +10,8 @@ namespace InternalTrainingSystem.Core.DTOs
         public string Code { get; set; } = string.Empty;
         public string CourseName { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public string? CategoryName { get; set; }
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
         public int Duration { get; set; }
         public string Level { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;

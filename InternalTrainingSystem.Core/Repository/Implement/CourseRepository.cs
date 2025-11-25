@@ -207,16 +207,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             await _context.SaveChangesAsync(ct);
                         }
 
-                        // Upload file mới (nếu có)
-                        if (lessonSpec.MainFileIndex is not null)
-                        {
-                            var idx = lessonSpec.MainFileIndex.Value;
-                            if (idx < 0 || idx >= lessonFiles.Count)
-                                throw new ArgumentException($"MainFileIndex {idx} out of range for lesson '{lessonSpec.Title}'.");
-
-                            await _courseMaterialRepo.UploadLessonBinaryAsync(lesson.Id, lessonFiles[idx],ct);
-                        }
-
                         // Quiz (Excel)
                         if (lessonSpec.Type == LessonType.Quiz && lessonSpec.IsQuizExcel)
                         {
@@ -226,7 +216,11 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             if (lessonSpec.MainFileIndex is null)
                                 throw new ArgumentException($"Lesson '{lessonSpec.Title}' requires Excel file.");
 
-                            var excelFile = lessonFiles[lessonSpec.MainFileIndex.Value];
+                            var idx = lessonSpec.MainFileIndex.Value;
+                            if (idx < 0 || idx >= lessonFiles.Count)
+                                throw new ArgumentException($"MainFileIndex {idx} out of range for lesson '{lessonSpec.Title}'.");
+
+                            var excelFile = lessonFiles[idx];
                             var quizId = await ImportQuizFromExcelInternal(
                                 course.CourseId,
                                 lessonSpec.QuizTitle ?? lessonSpec.Title,
@@ -237,13 +231,65 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                             lesson.QuizId = quizId;
                             await _context.SaveChangesAsync(ct);
                         }
+                        else if (lessonSpec.Type == LessonType.Quiz && !lessonSpec.IsQuizExcel && lesson.QuizId.HasValue)
+                        {
+                            var quizEntity = await _context.Quizzes.FirstOrDefaultAsync(q => q.QuizId == lesson.QuizId.Value, ct);
+                            if (quizEntity != null)
+                            {
+                                if (!string.IsNullOrWhiteSpace(lessonSpec.QuizTitle))
+                                {
+                                    quizEntity.Title = lessonSpec.QuizTitle.Trim();
+                                }
+
+                                if (lessonSpec.QuizTimeLimit.HasValue)
+                                {
+                                    quizEntity.TimeLimit = lessonSpec.QuizTimeLimit.Value;
+                                }
+
+                                if (lessonSpec.QuizMaxAttempts.HasValue)
+                                {
+                                    quizEntity.MaxAttempts = lessonSpec.QuizMaxAttempts.Value;
+                                }
+
+                                if (lessonSpec.QuizPassingScore.HasValue)
+                                {
+                                    quizEntity.PassingScore = lessonSpec.QuizPassingScore.Value;
+                                }
+
+                                quizEntity.UpdatedDate = DateTime.UtcNow;
+                                await _context.SaveChangesAsync(ct);
+                            }
+                        }
+                        else if (lessonSpec.Type == LessonType.Reading && lessonSpec.MainFileIndex is not null)
+                        {
+                            // Upload file mới (nếu có) cho bài học tài liệu
+                            var idx = lessonSpec.MainFileIndex.Value;
+                            if (idx < 0 || idx >= lessonFiles.Count)
+                                throw new ArgumentException($"MainFileIndex {idx} out of range for lesson '{lessonSpec.Title}'.");
+
+                            await _courseMaterialRepo.UploadLessonBinaryAsync(lesson.Id, lessonFiles[idx], ct);
+                        }
+                        else if (lessonSpec.MainFileIndex is not null)
+                        {
+                            // Không hỗ trợ upload file nhị phân cho các loại bài học khác, bỏ qua chỉ số file
+                            lessonSpec.MainFileIndex = null;
+                        }
 
                         // Video (URL) – đảm bảo ContentUrl có giá trị
                         if (lessonSpec.Type == LessonType.Video)
                         {
-                            if (string.IsNullOrWhiteSpace(lessonSpec.ContentUrl))
+                            // Nếu có ContentUrl mới từ metadata, sử dụng nó
+                            if (!string.IsNullOrWhiteSpace(lessonSpec.ContentUrl))
+                            {
+                                lesson.ContentUrl = lessonSpec.ContentUrl;
+                            }
+                            // Nếu không có ContentUrl mới và lesson.ContentUrl cũng null/empty => lỗi
+                            else if (string.IsNullOrWhiteSpace(lesson.ContentUrl))
+                            {
                                 throw new ArgumentException($"Lesson '{lessonSpec.Title}' is Video but ContentUrl is empty.");
-                            lesson.ContentUrl = lessonSpec.ContentUrl;
+                            }
+                            // Nếu không có ContentUrl mới nhưng lesson đã có URL => giữ nguyên, không cần gán lại
+                            
                             await _context.SaveChangesAsync(ct);
                         }
                     }
@@ -488,6 +534,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 Code = course.Code ?? "",
                 CourseName = course.CourseName,
                 Description = course.Description,
+                CategoryId = course.CourseCategoryId,
                 CategoryName = course.CourseCategory.CategoryName,
                 Duration = course.Duration,
                 Level = course.Level,
@@ -523,7 +570,16 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                                 Type = l.Type,
                                 OrderIndex = l.OrderIndex,
                                 ContentUrl = l.ContentUrl,
-                                QuizId = l.QuizId
+                                QuizId = l.QuizId,
+                                QuizTimeLimit = l.Type == LessonType.Quiz && l.QuizId.HasValue 
+                                    ? _context.Quizzes.Where(q => q.QuizId == l.QuizId).Select(q => q.TimeLimit).FirstOrDefault()
+                                    : null,
+                                QuizMaxAttempts = l.Type == LessonType.Quiz && l.QuizId.HasValue 
+                                    ? _context.Quizzes.Where(q => q.QuizId == l.QuizId).Select(q => q.MaxAttempts).FirstOrDefault()
+                                    : null,
+                                QuizPassingScore = l.Type == LessonType.Quiz && l.QuizId.HasValue 
+                                    ? _context.Quizzes.Where(q => q.QuizId == l.QuizId).Select(q => q.PassingScore).FirstOrDefault()
+                                    : null
                             }).ToList()
                     }).ToList()
             };
