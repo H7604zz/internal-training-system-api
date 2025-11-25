@@ -23,7 +23,7 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly ICourseService _couseService;
         private readonly INotificationService _notificationService;
         private readonly ICourseEnrollmentService _courseEnrollmentService;
-        private readonly string _baseUrl;
+        private readonly string _webURL;
 
         public NotificationController(IUserService userServices, IEmailSender mailService,
             ICourseService couseService, INotificationService notificationService,
@@ -33,7 +33,7 @@ namespace InternalTrainingSystem.Core.Controllers
             _couseService = couseService;
             _notificationService = notificationService;
             _courseEnrollmentService = courseEnrollmentService;
-            _baseUrl = config["ApplicationSettings:ApiBaseUrl"] ?? "http://localhost:7001";
+            _webURL = config["ApplicationSettings:WebAppBaseUrl"];
         }
 
         [HttpPost("{courseId}/notify-eligible-users")]
@@ -54,11 +54,10 @@ namespace InternalTrainingSystem.Core.Controllers
                 return NotFound("Không tìm thấy khóa học tương ứng.");
 
             var now = DateTime.Now;
-            var sevenDaysAgo = now.AddDays(-7);
 
             if (await _notificationService.HasRecentNotification(NotificationType.Start, courseId))
             {
-                return BadRequest("Thông báo mở lớp đã được gửi trong vòng 7 ngày qua. Vui lòng thử lại sau.");
+                return BadRequest("Thông báo mở lớp đã được gửi. Vui lòng thử lại sau.");
             }
 
             if (!course.IsOnline)
@@ -71,7 +70,7 @@ namespace InternalTrainingSystem.Core.Controllers
             var EligibleStaff = eligiblePaged.Items;
             foreach (var user in EligibleStaff)
             {
-                string confirmPageUrl = $"{_baseUrl}/courses/confirm?courseId={courseId}&userId={user.EmployeeId}";
+                string confirmPageUrl = $"{_webURL}/khoa-hoc/danh-sach-khoa-hoc-cua-toi";
 
                 string emailContent = $@"
                     Xin chào {user.FullName},<br/><br/>
@@ -80,7 +79,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
                 if (course.IsMandatory || course.IsOnline)
                 {
-                    emailContent += "<span style='color:red;font-weight:bold'> Đây là khóa học BẮT BUỘC, dự kiến bắt đầu trong 3 ngày nữa. Vui lòng xác nhận và tham gia đúng hạn.</span><br/><br/>";
+                    emailContent += "<span style='color:red;font-weight:bold'> Đây là khóa học BẮT BUỘC. Vui lòng xác nhận tham gia.</span><br/><br/>";
                 }
                 else
                 {
