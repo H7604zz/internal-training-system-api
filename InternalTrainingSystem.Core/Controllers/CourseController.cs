@@ -203,10 +203,11 @@ namespace InternalTrainingSystem.Core.Controllers
             try
             {
                 var result = await _courseService.UpdatePendingCourseStatusAsync(userId, courseId, request.NewStatus, request.RejectReason);
-
                 if (!result)
                     return BadRequest("Không thể cập nhật trạng thái. Có thể khóa học không tồn tại hoặc không ở trạng thái Pending.");
-
+                
+                await _notificationService.NotifyTrainingDepartmentAsync(courseId);
+                
                 return Ok(new
                 {
                     message = $"Cập nhật trạng thái khóa học {courseId} thành công: {request.NewStatus}",
@@ -248,7 +249,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <returns></returns>
         [HttpPost("{courseId}/enrollments/confirm")]
         [Authorize(Roles = UserRoles.DirectManager)]
-        public async Task<IActionResult> ConfirmEnrollment(int courseId, [FromQuery] bool isConfirmed)
+        public async Task<IActionResult> ConfirmEnrollment(int courseId, [FromBody] ConfirmReasonRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
@@ -256,13 +257,13 @@ namespace InternalTrainingSystem.Core.Controllers
                 return Unauthorized();
             } 
 
-            var enrollment = await _courseEnrollmentService.GetCourseEnrollment(courseId, userId);
+            var enrollment = await _courseEnrollmentService.GetCourseEnrollment(courseId, request.UserId);
 
             if (enrollment == null)
             {
                 return NotFound();
             }
-            if (isConfirmed)
+            if (request.IsConfirmed)
             {
                 var deleted = await _courseEnrollmentService.DeleteCourseEnrollment(courseId, userId);
                 if (!deleted)

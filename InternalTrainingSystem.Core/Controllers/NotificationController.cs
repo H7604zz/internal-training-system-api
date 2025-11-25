@@ -101,13 +101,17 @@ namespace InternalTrainingSystem.Core.Controllers
 
             var newEnrollments = new List<CourseEnrollment>();
 
+            bool autoEnroll = course.IsOnline || course.IsMandatory;
+
             foreach (var staff in eligiblePaged.Items)
             {
                 newEnrollments.Add(new CourseEnrollment
                 {
                     CourseId = course.CourseId,
                     UserId = staff.Id!,
-                    Status = EnrollmentConstants.Status.NotEnrolled,
+                    Status = autoEnroll 
+                        ? EnrollmentConstants.Status.Enrolled
+                        : EnrollmentConstants.Status.NotEnrolled,
                     EnrollmentDate = DateTime.Now,
                     LastAccessedDate = DateTime.Now
                 });
