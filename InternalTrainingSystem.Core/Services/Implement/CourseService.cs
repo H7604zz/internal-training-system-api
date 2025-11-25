@@ -113,6 +113,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (newStatus.Equals(CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase))
             {
                 course.Status = CourseConstants.Status.Approve;
+                course.ApproveById = userId;
                 course.RejectionReason = null;
             }
             else if (newStatus.Equals(CourseConstants.Status.Reject, StringComparison.OrdinalIgnoreCase))
