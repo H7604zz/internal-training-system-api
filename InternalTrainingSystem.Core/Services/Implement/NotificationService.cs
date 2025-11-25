@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Configuration;
+﻿using InternalTrainingSystem.Core.Common.Constants;
+using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
@@ -12,10 +13,15 @@ namespace InternalTrainingSystem.Core.Services.Implement
     {
 
         private readonly INotificationRepository _notificationRepo;
+        private readonly IUserRepository _userRepository;
+        private readonly ICourseRepository _courseRepository;
 
-        public NotificationService(INotificationRepository notificationRepo)
+        public NotificationService(INotificationRepository notificationRepo, IUserRepository userRepository,
+            ICourseRepository courseRepository)
         {
             _notificationRepo = notificationRepo;
+            _userRepository = userRepository;
+            _courseRepository = courseRepository;
         }
 
         public async Task SaveNotificationAsync(Notification notification, List<string>? userIds = null, List<string>? roleNames = null)
@@ -48,5 +54,31 @@ namespace InternalTrainingSystem.Core.Services.Implement
            return await _notificationRepo.GetNotificationsAsync(userId, roleName);
         }
 
+        public async Task NotifyTrainingDepartmentAsync(int courseId)
+        {
+            var trainingUsers = await _userRepository.GetUsersByRoleAsync(UserRoles.TrainingDepartment);
+            if (trainingUsers.Count == 0)
+                return;
+            var course = await _courseRepository.GetCourseByCourseIdAsync(courseId);
+            bool isApproved = course.Status.Equals(
+                CourseConstants.Status.Approve, StringComparison.OrdinalIgnoreCase);
+
+            var notification = new Notification
+            {
+                CourseId = course.CourseId,
+                Type = isApproved
+                    ? NotificationType.CourseApproved
+                    : NotificationType.CourseRejected,
+                Message = isApproved
+                    ? $"Khóa học \"{course.CourseName}\" đã được giám đốc phê duyệt."
+                    : $"Khóa học \"{course.CourseName}\" đã bị từ chối. Lý do: {course.RejectionReason}",
+                SentAt = DateTime.Now,
+                EntityType = "Course",
+                EntityId = course.CourseId
+            };
+
+            await _notificationRepo.SaveNotificationAsync(notification, trainingUsers.Select(u => u.Id).ToList()
+            );
+        }
     }
 }

@@ -203,10 +203,11 @@ namespace InternalTrainingSystem.Core.Controllers
             try
             {
                 var result = await _courseService.UpdatePendingCourseStatusAsync(userId, courseId, request.NewStatus, request.RejectReason);
-
                 if (!result)
                     return BadRequest("Không thể cập nhật trạng thái. Có thể khóa học không tồn tại hoặc không ở trạng thái Pending.");
-
+                
+                await _notificationService.NotifyTrainingDepartmentAsync(courseId);
+                
                 return Ok(new
                 {
                     message = $"Cập nhật trạng thái khóa học {courseId} thành công: {request.NewStatus}",
