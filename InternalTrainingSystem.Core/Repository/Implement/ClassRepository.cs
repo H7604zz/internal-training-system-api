@@ -441,6 +441,11 @@ public class ClassRepository : IClassRepository
 
         if (class1 == null || class2 == null)
             return false;
+        
+        if (class1.StartDate <= DateTime.Now || class2.StartDate <= DateTime.Now)
+        {
+            throw new ArgumentException("Không thể đổi lớp vì một trong hai lớp đã bắt đầu. Yêu cầu đã bị hủy.");
+        }
 
         if (class1.CourseId != class2.CourseId)
             throw new ArgumentException(
