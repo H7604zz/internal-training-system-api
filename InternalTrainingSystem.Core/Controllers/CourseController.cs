@@ -265,7 +265,7 @@ namespace InternalTrainingSystem.Core.Controllers
             }
             if (request.IsConfirmed)
             {
-                var deleted = await _courseEnrollmentService.DeleteCourseEnrollment(courseId, userId);
+                var deleted = await _courseEnrollmentService.DeleteCourseEnrollment(courseId, request.UserId);
                 if (!deleted)
                     return BadRequest();
 
