@@ -370,7 +370,7 @@ namespace InternalTrainingSystem.Core.Controllers
                             <div style='background-color: white; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;'>
                                 <h2 style='color: #007bff; margin: 0;'>Mã OTP của bạn:</h2>
                                 <h1 style='color: #dc3545; letter-spacing: 3px; margin: 10px 0;'>{otpCode}</h1>
-                                <p style='color: #dc3545; margin: 0;'><strong>Mã này sẽ hết hạn sau 5 phút</strong></p>
+                                <p style='color: #dc3545; margin: 0;'><strong>Mã này sẽ hết hạn lúc {otpExpiry:dd/MM/yyyy HH:mm} (sau 5 phút)</strong></p>
                             </div>
                             <p><strong>Lưu ý:</strong></p>
                             <ul>

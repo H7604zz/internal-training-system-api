@@ -56,6 +56,9 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = true;
     options.Password.RequiredLength = 6;
+    
+    // Allow Vietnamese characters and spaces in username
+    options.User.AllowedUserNameCharacters = null; // Allow all Unicode characters
 })
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>()
