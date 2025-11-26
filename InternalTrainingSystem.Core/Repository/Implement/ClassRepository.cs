@@ -688,8 +688,10 @@ public class ClassRepository : IClassRepository
                 TargetName = cs.Target.FullName,
                 FromClassName = cs.FromClass.ClassName,
                 ToClassName = cs.ToClass.ClassName,
-                RequestedAt = cs.RequestedAt
+                RequestedAt = cs.RequestedAt,
+                Status = cs.Status
             })
+            .OrderByDescending(cs => cs.RequestedAt)
             .ToListAsync();
     }
 

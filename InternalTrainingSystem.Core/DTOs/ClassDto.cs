@@ -131,6 +131,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string FromClassName { get; set; } = string.Empty;
         public string ToClassName { get; set; } = string.Empty;
         public DateTime RequestedAt { get; set; }
+        public string Status { get; set; } = ClassSwapConstants.Pending;
     }
     public class MyClassDto
     {
