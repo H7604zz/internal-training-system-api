@@ -174,7 +174,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        [HttpPost("request-swap")]
+        [HttpPost("swap-request")]
         [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> RequestClassSwap([FromBody] SwapClassRequest request)
         {

@@ -125,6 +125,7 @@ namespace InternalTrainingSystem.Core.DTOs
 
     public class ClassSwapDto
     {
+        public int SwapClassId { get; set; }
         public string RequesterName { get; set; } = string.Empty;
         public string TargetName { get; set; } = string.Empty;
         public string FromClassName { get; set; } = string.Empty;

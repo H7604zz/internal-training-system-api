@@ -552,9 +552,9 @@ public class ClassRepository : IClassRepository
             if (request.Accepted)
             {
                 var userFrom = await _context.Users.Include(u => u.EnrolledClasses)
-                    .FirstOrDefaultAsync(u => u.EmployeeId == swapRequest.RequesterId);
+                    .FirstOrDefaultAsync(u => u.Id == swapRequest.RequesterId);
                 var userTo = await _context.Users.Include(u => u.EnrolledClasses)
-                    .FirstOrDefaultAsync(u => u.EmployeeId == swapRequest.TargetId);
+                    .FirstOrDefaultAsync(u => u.Id == swapRequest.TargetId);
 
                 if (userFrom == null || userTo == null)
                     return false;
@@ -683,8 +683,9 @@ public class ClassRepository : IClassRepository
             .Where(cs => cs.TargetId == userId)
             .Select(cs => new ClassSwapDto
             {
+                SwapClassId = cs.Id,
                 RequesterName = cs.Requester.FullName,
-                TargetName = cs.Target.UserName!,
+                TargetName = cs.Target.FullName,
                 FromClassName = cs.FromClass.ClassName,
                 ToClassName = cs.ToClass.ClassName,
                 RequestedAt = cs.RequestedAt
