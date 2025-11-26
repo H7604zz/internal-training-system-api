@@ -24,7 +24,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         // Swap class
         Task<bool> CreateClassSwapRequestAsync(SwapClassRequest request);
         Task<bool> RespondToClassSwapAsync(RespondSwapRequest request, string responderId);
-        Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId, int classSwapId);
+        Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId);
 
         // score-final
         Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request);

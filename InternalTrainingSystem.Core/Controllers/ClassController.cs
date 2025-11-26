@@ -217,17 +217,16 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <summary>
         /// lay ra danh sach yeu cau doi lop
         /// </summary>
-        /// <param name="classSwapId"></param>
         /// <returns></returns>
-        [HttpGet("swap-request/{classSwapId}")]
+        [HttpGet("swap-request")]
         [Authorize(Roles = UserRoles.Staff)]
-        public async Task<IActionResult> GetSwapClassRequest(int classSwapId)
+        public async Task<IActionResult> GetSwapClassRequest()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
-            var result = await _classService.GetSwapClassRequestAsync(userId, classSwapId);
+            var result = await _classService.GetSwapClassRequestAsync(userId);
             if (result.Count == 0) return NotFound("Không có yêu cầu đổi lớp nào đang diễn ra!.");
             return Ok(result);
         }

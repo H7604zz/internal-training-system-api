@@ -79,9 +79,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.GetClassScheduleByIdAsync(scheduleId);
         }
 
-        public async Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId, int classSwapId)
+        public async Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId)
         {
-            return await _classRepo.GetSwapClassRequestAsync(userId, classSwapId);
+            return await _classRepo.GetSwapClassRequestAsync(userId);
         }
 
         public async Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request)

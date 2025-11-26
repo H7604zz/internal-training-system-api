@@ -672,7 +672,7 @@ public class ClassRepository : IClassRepository
             .FirstOrDefaultAsync(sc => sc.ScheduleId == scheduleId);
     }
 
-    public async Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId, int classSwapId)
+    public async Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId)
     {
         return await _context.ClassSwaps
             .Include(cs => cs.Requester)
@@ -680,7 +680,7 @@ public class ClassRepository : IClassRepository
             .Include(cs => cs.FromClass)
             .Include(cs => cs.ToClass)
             .Include(cs => cs.RespondedBy)
-            .Where(cs => cs.TargetId == userId && cs.Id == classSwapId)
+            .Where(cs => cs.TargetId == userId)
             .Select(cs => new ClassSwapDto
             {
                 RequesterName = cs.Requester.FullName,
