@@ -453,16 +453,16 @@ public class ClassRepository : IClassRepository
             throw new ArgumentException($"{userTo.FullName} không thuộc lớp {class2.ClassName}.");
 
         var existingRequest = await _context.ClassSwaps.FirstOrDefaultAsync(x =>
-            (x.RequesterId == request.EmployeeIdFrom && x.TargetId == request.EmployeeIdTo) ||
-            (x.RequesterId == request.EmployeeIdTo && x.TargetId == request.EmployeeIdFrom));
+            (x.RequesterId == userFrom.Id && x.TargetId == userTo.Id) ||
+            (x.RequesterId == userTo.Id && x.TargetId == userFrom.Id));
 
         if (existingRequest != null && existingRequest.Status == ClassSwapConstants.Pending)
             throw new ArgumentException("Đã có yêu cầu đổi lớp đang chờ xử lý giữa hai học viên.");
 
         var swapRequest = new ClassSwap
         {
-            RequesterId = request.EmployeeIdFrom,
-            TargetId = request.EmployeeIdTo,
+            RequesterId = userFrom.Id,
+            TargetId = userTo.Id,
 
             FromClassId = request.ClassIdFrom,
             ToClassId = request.ClassIdTo,
@@ -772,6 +772,10 @@ public class ClassRepository : IClassRepository
 
     public async Task<List<MyClassDto>> GetClassesOfUserAsync(string userId, CancellationToken ct)
     {
+        // Get user's EmployeeId
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+        var employeeId = user?.EmployeeId ?? string.Empty;
+
         var classes = await _context.Classes
             .Include(c => c.Course)
             .Include(c => c.Mentor)
@@ -785,7 +789,9 @@ public class ClassRepository : IClassRepository
             CourseId = c.CourseId,
             CourseName = c.Course.CourseName,
             Mentor = c.Mentor != null ? c.Mentor.FullName : null,
-            Status = c.Status ?? string.Empty
+            Status = c.Status ?? string.Empty,
+            StartDate = c.StartDate,
+            EmployeeId = employeeId
         }).ToList();
     }
 }
