@@ -272,7 +272,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 await _hub.Clients.Group($"course-{courseId}")
                     .SendAsync("StaffListUpdated");
 
-                return Ok(new { message = "Xác nhận xóa thành công! Đã xóa học viên." });
+                return Ok("Xác nhận xóa thành công! Đã xóa học viên.");
             }
             else
             {
@@ -285,7 +285,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 await _hub.Clients.Group($"course-{courseId}")
                     .SendAsync("StaffListUpdated");
 
-                return Ok(new { message = "Trạng thái đã được cập nhật." });
+                return Ok("Trạng thái đã được cập nhật.");
             }
         }
 
