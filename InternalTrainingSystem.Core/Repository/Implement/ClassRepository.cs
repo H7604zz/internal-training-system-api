@@ -139,7 +139,7 @@ public class ClassRepository : IClassRepository
                     .Include(s => s.Class)
                     .ThenInclude(c => c.Employees)
                     .Where(s =>
-                        s.Date == date &&
+                        s.Date.Date == date.Date &&
                         (
                             (s.StartTime <= start && s.EndTime > start) ||
                             (s.StartTime < end && s.EndTime >= end) ||
@@ -167,7 +167,7 @@ public class ClassRepository : IClassRepository
                     var roomConflicts = await _context.Schedules
                         .Include(s => s.Class)
                         .Where(s =>
-                            s.Date == date &&
+                            s.Date.Date == date.Date &&
                             s.Location == item.Location &&
                             s.ClassId != request.ClassId &&
                             (
@@ -441,6 +441,11 @@ public class ClassRepository : IClassRepository
 
         if (class1 == null || class2 == null)
             return false;
+        
+        if (class1.StartDate.Date <= DateTime.Now.Date || class2.StartDate.Date <= DateTime.Now.Date)
+        {
+            throw new ArgumentException("Không thể đổi lớp vì một trong hai lớp đã bắt đầu. Yêu cầu đã bị hủy.");
+        }
 
         if (class1.CourseId != class2.CourseId)
             throw new ArgumentException(
@@ -536,7 +541,7 @@ public class ClassRepository : IClassRepository
             if (classTo == null || classFrom == null)
                 return false;
 
-            if (classTo.StartDate <= DateTime.Now || classFrom.StartDate <= DateTime.Now)
+            if (classTo.StartDate.Date <= DateTime.Now.Date || classFrom.StartDate.Date <= DateTime.Now.Date)
             {
                 swapRequest.Status = ClassSwapConstants.Cancelled;
                 await _context.SaveChangesAsync();
@@ -584,12 +589,16 @@ public class ClassRepository : IClassRepository
     {
         var schedule = await _context.Schedules
             .Include(s => s.ScheduleParticipants)
+            .Include(s => s.Class)
             .FirstOrDefaultAsync(sh => sh.ScheduleId == scheduleId);
 
         if (schedule == null)
             return false;
 
-        if (schedule.Date < DateTime.Today)
+        if (schedule.Date.Date < DateTime.Today.Date)
+            return false;
+
+        if (request.NewDate.Date < schedule.Class.StartDate.Date)
             return false;
 
         var instructorConflict = await _context.Schedules.AnyAsync(sh =>
