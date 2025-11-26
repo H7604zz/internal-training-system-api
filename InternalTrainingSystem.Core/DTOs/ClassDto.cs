@@ -139,5 +139,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string CourseName { get; set; } = string.Empty;
         public string Mentor { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }
+        public string EmployeeId { get; set; } = string.Empty;
     }
 }
