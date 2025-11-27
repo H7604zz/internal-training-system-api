@@ -1,4 +1,5 @@
 ﻿using InternalTrainingSystem.Core.DB;
+using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -105,7 +106,9 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             }
         }
 
-        public async Task<List<Notification>> GetNotificationsAsync(string? userId = null, string? roleName = null)
+        public async Task<List<NotificationResponse>> GetNotificationsAsync(
+            string? userId = null,
+            string? roleName = null)
         {
             var query = _context.Notifications
                 .Include(n => n.Recipients)
@@ -121,9 +124,25 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 query = query.Where(n => n.Recipients.Any(r => r.RoleName == roleName));
             }
 
-            return await query
+            var notifications = await query
                 .OrderByDescending(n => n.SentAt)
                 .ToListAsync();
+
+            // Map sang DTO
+            return notifications.Select(n => new NotificationResponse
+            {
+                Id = n.Id,
+                Type = n.Type,
+                Message = n.Message,
+                SentAt = n.SentAt,
+                Recipients = n.Recipients.Select(r => new NotificationRecipientResponse()
+                {
+                    UserId = r.UserId,
+                    RoleName = r.RoleName,
+                    IsRead = r.IsRead,
+                    ReadAt = r.ReadAt
+                }).ToList()
+            }).ToList();
         }
     }
 }

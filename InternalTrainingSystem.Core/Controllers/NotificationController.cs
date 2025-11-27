@@ -136,20 +136,7 @@ namespace InternalTrainingSystem.Core.Controllers
         public async Task<IActionResult> GetNotifications([FromQuery] string? userId, [FromQuery] string? roleName)
         {
             var notifications = await _notificationService.GetNotificationsAsync(userId, roleName);
-            return Ok(notifications.Select(n => new
-            {
-                n.Id,
-                n.Type,
-                n.Message,
-                n.SentAt,
-                Recipients = n.Recipients.Select(r => new
-                {
-                    r.UserId,
-                    r.RoleName,
-                    r.IsRead,
-                    r.ReadAt
-                })
-            }));
+            return Ok(notifications);
         }
 
         [HttpGet("check-status")]
