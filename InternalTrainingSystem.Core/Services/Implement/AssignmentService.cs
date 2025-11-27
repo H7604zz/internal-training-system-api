@@ -61,7 +61,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 ScheduleId = form.ScheduleId,
                 Title = form.Title,
                 Description = form.Description,
-                StartAt = form.StartAt,
+                StartAt = DateTimeUtils.Now(),
                 DueAt = form.DueAt,
 
                 AttachmentUrl = url,
@@ -71,7 +71,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
 
             await _assignmentRepo.AddAsync(entity, ct);
-            await _uow.SaveChangesAsync(ct);
 
             return new AssignmentDto
             {
