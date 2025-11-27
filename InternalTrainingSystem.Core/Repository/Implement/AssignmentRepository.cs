@@ -30,8 +30,10 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                   .ToListAsync(ct);
 
         public async Task AddAsync(Assignment entity, CancellationToken ct = default)
-            => await _db.Assignments.AddAsync(entity, ct);
-
+        {
+            await _db.Assignments.AddAsync(entity, ct);
+            await _db.SaveChangesAsync();
+        }
         public void Update(Assignment entity)
             => _db.Assignments.Update(entity);
 
