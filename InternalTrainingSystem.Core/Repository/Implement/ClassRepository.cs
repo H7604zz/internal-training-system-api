@@ -825,6 +825,7 @@ public class ClassRepository : IClassRepository
             .Select(u => new StaffInClassDto
             {
                 UserId = u.Id,
+                EmployeeId = u.EmployeeId!,
                 FullName = u.FullName,
                 Email = u.Email
             })
