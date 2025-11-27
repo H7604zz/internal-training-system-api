@@ -346,5 +346,28 @@ namespace InternalTrainingSystem.Core.Controllers
 
             return Ok(classes);
         }
+        
+        /// <summary>
+        /// Lấy danh sách tất cả staff trong 1 lop hoc
+        /// </summary>
+        [HttpGet("{classId}/users")]
+        [Authorize(Roles = UserRoles.Mentor + "," + UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        public async Task<IActionResult> GetUsersInClass(int classId)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
+            
+                var result = await _classService.GetUsersInClassAsync(classId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+
+            }
+        }
     }
 }

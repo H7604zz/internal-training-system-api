@@ -13,6 +13,7 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<ClassDto?> GetClassDetailAsync(int classId);
         Task<List<ClassListDto>> GetClassesByCourseAsync(int courseId);
         Task<PagedResult<ClassDto>> GetClassesAsync(int page, int pageSize);
+        Task<List<StaffInClassDto>> GetUsersInClassAsync(int classId);
 
         // schedule service
         Task<bool> RescheduleAsync(int scheduleId, RescheduleRequest request);

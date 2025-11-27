@@ -806,4 +806,20 @@ public class ClassRepository : IClassRepository
             EmployeeId = employeeId
         }).ToList();
     }
+
+    public async Task<List<StaffInClassDto>> GetUsersInClassAsync(int classId)
+    {
+        var staff = await _context.Classes
+            .Where(c => c.ClassId == classId)
+            .SelectMany(c => c.Employees)
+            .Select(u => new StaffInClassDto
+            {
+                UserId = u.Id,
+                FullName = u.FullName,
+                Email = u.Email
+            })
+            .ToListAsync();
+
+        return staff;
+    }
 }
