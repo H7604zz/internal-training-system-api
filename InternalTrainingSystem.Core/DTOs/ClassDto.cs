@@ -26,6 +26,14 @@ namespace InternalTrainingSystem.Core.DTOs
         public int? AbsentNumberDay { get; set; } = 0;
         public double? ScoreFinal { get; set; } = 0;
     }
+    
+    public class StaffInClassDto
+    {
+        public string UserId { get; set; }
+        public string EmployeeId { get; set; }
+        public string? FullName { get; set; }
+        public string? Email { get; set; }
+    }
 
     public class CreateClassRequestDto
     {

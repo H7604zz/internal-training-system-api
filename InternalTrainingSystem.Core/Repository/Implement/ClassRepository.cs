@@ -13,10 +13,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement;
 public class ClassRepository : IClassRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly ICertificateRepository _certificateRepo;
 
-    public ClassRepository(ApplicationDbContext context)
+    public ClassRepository(ApplicationDbContext context, ICertificateRepository certificateRepo)
     {
         _context = context;
+        _certificateRepo = certificateRepo;
     }
 
     public async Task<bool> CreateClassesAsync(
@@ -740,8 +742,16 @@ public class ClassRepository : IClassRepository
                         enrollment.Status = isPass
                             ? EnrollmentConstants.Status.Completed
                             : EnrollmentConstants.Status.NotPass;
-
-                        if (isPass) enrollment.CompletionDate = DateTime.Now;
+                        
+                        // Tự động cấp chứng chỉ khi pass môn
+                        if (isPass)
+                        {
+                            enrollment.CompletionDate = DateTime.Now;
+                            await _certificateRepo.IssueCertificateAsync(
+                                enrollment.UserId,
+                                classEntity.CourseId
+                            );
+                        }
                     }
                 }
                 catch (Exception)
@@ -805,6 +815,23 @@ public class ClassRepository : IClassRepository
             StartDate = c.StartDate,
             EmployeeId = employeeId
         }).ToList();
+    }
+
+    public async Task<List<StaffInClassDto>> GetUsersInClassAsync(int classId)
+    {
+        var staff = await _context.Classes
+            .Where(c => c.ClassId == classId)
+            .SelectMany(c => c.Employees)
+            .Select(u => new StaffInClassDto
+            {
+                UserId = u.Id,
+                EmployeeId = u.EmployeeId!,
+                FullName = u.FullName,
+                Email = u.Email
+            })
+            .ToListAsync();
+
+        return staff;
     }
     public async Task<List<ApplicationUser>> GetStaffInClassAsync(
     int classId,
