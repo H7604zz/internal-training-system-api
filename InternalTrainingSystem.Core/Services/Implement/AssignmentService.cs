@@ -202,8 +202,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
         public async Task<AssignmentDto?> GetAssignmentForClassAsync(
     int classId,
+    string mentorId,
     CancellationToken ct)
         {
+            var canTeach = await _classRepo.IsMentorOfClassAsync(classId, mentorId, ct);
+            if (!canTeach)
+                throw new UnauthorizedAccessException("Bạn không phải Mentor của lớp này.");
+
             var a = await _assignmentRepo.GetSingleByClassAsync(classId, ct);
             if (a == null) return null;
 
