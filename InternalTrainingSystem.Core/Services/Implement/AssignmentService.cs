@@ -340,7 +340,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 SubmittedAt = sub.SubmittedAt,
                 IsLate = sub.IsLate,
                 Status = sub.Status,
-                Feedback = sub.Feedback,
 
                 FilePath = sub.FilePath,
                 MimeType = sub.MimeType,
@@ -352,7 +351,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
         public async Task<AssignmentSubmissionDetailDto> CreateSubmissionAsync(
     int assignmentId,
     string userId,
-    CreateSubmissionRequest request,
     (string fileName, string relativePath, string url, string? mimeType, long? sizeBytes)? file,
     CancellationToken ct)
         {
@@ -376,7 +374,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 submission.SubmittedAt = now;
                 submission.IsLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value;
                 submission.Status = AssignmentSubmissionConstants.Status.Submitted;
-                submission.Feedback = request?.Note;
 
                 if (file is not null)
                 {
@@ -402,7 +399,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     SubmittedAt = now,
                     IsLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value,
                     Status = AssignmentSubmissionConstants.Status.Submitted,
-                    Feedback = request?.Note,
                 };
 
                 if (file is not null)
@@ -430,7 +426,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 SubmittedAt = saved.SubmittedAt,
                 IsLate = saved.IsLate,
                 Status = saved.Status,
-                Feedback = saved.Feedback,
                 FilePath = saved.FilePath,
                 MimeType = saved.MimeType,
                 SizeBytes = saved.SizeBytes,

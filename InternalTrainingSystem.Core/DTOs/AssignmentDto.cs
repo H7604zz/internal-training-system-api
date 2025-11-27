@@ -52,16 +52,9 @@ namespace InternalTrainingSystem.Core.DTOs
         public int AssignmentId { get; set; }
         public string UserId { get; set; } = null!;
         public string UserFullName { get; set; } = string.Empty;
-
-        public int AttemptNumber { get; set; }
         public DateTime SubmittedAt { get; set; }
         public bool IsLate { get; set; }
-
         public string Status { get; set; } = string.Empty;
-        public decimal? Score { get; set; }
-        public string? Feedback { get; set; }
-
-        public string? OriginalFileName { get; set; }
         public string? FilePath { get; set; }
         public string? MimeType { get; set; }
         public long? SizeBytes { get; set; }
@@ -73,16 +66,8 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Note { get; set; }
     }
 
-    public class GradeSubmissionDto
-    {
-        public int? Score { get; set; }
-        public string? Feedback { get; set; }
-    }
     public class SubmitAssignmentForm
     {
-        // Note (hoặc comment) – map sang CreateSubmissionRequest
-        public string? Note { get; set; }
-
         // File duy nhất
         public IFormFile File { get; set; } = null!;
     }
