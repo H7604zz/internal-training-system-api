@@ -77,7 +77,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _assignmentRepo.AddAsync(entity, ct);
 
             //gửi mail
-            var staffs = await _classRepo.GetStaffInClassAsync(form.ClassId, ct);
+            var staffs = await _classRepo.GetUsersInClassAsync(form.ClassId);
 
             string subject = $"Bài cuối kì mới – {entity.Title}";
 
