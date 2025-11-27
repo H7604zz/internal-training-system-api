@@ -24,8 +24,4 @@
     <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DB\Migrations\" />
-  </ItemGroup>
-
 </Project>

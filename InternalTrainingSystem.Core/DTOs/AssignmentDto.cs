@@ -45,7 +45,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public bool IsLate { get; set; }
 
         public string Status { get; set; } = string.Empty;
-        public int? Score { get; set; }
+        public decimal? Score { get; set; }
     }
 
     public class AssignmentSubmissionDetailDto
@@ -60,7 +60,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public bool IsLate { get; set; }
 
         public string Status { get; set; } = string.Empty;
-        public int? Score { get; set; }
+        public decimal? Score { get; set; }
         public string? Feedback { get; set; }
 
         public string? OriginalFileName { get; set; }

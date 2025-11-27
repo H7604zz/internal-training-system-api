@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InternalTrainingSystem.Core.DB.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251124204731_DeleteRoleHistory")]
-    partial class DeleteRoleHistory
+    [Migration("20251127145155_InitProject")]
+    partial class InitProject
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -280,8 +280,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Property<string>("PublicUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("Score")
-                        .HasColumnType("int");
+                    b.Property<decimal?>("Score")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<long?>("SizeBytes")
                         .HasColumnType("bigint");

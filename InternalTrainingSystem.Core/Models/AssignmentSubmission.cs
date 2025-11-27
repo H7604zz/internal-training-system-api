@@ -16,7 +16,7 @@ namespace InternalTrainingSystem.Core.Models
         public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
         [StringLength(20)]
         public string Status { get; set; } = AssignmentSubmissionConstants.Status.Submitted;
-        public int? Score { get; set; }
+        public decimal? Score { get; set; }
         [StringLength(1000)]
         public string? Feedback { get; set; }
         public bool IsLate { get; set; }

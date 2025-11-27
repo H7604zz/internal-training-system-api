@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InternalTrainingSystem.Core.DB.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitProject : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -284,37 +284,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                         column: x => x.CourseCategoryId,
                         principalTable: "CourseCategories",
                         principalColumn: "CourseCategoryId",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserRoleHistories",
-                columns: table => new
-                {
-                    HistoryId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    RoleId = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    RoleName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    Action = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    ActionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ActionBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserRoleHistories", x => x.HistoryId);
-                    table.ForeignKey(
-                        name: "FK_UserRoleHistories_AspNetUsers_ActionBy",
-                        column: x => x.ActionBy,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_UserRoleHistories_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -912,7 +881,7 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     AttemptNumber = table.Column<int>(type: "int", nullable: false),
                     SubmittedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    Score = table.Column<int>(type: "int", nullable: true),
+                    Score = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Feedback = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     IsLate = table.Column<bool>(type: "bit", nullable: false),
                     OriginalFileName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
@@ -1324,37 +1293,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                 name: "IX_UserAnswers_QuestionId",
                 table: "UserAnswers",
                 column: "QuestionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserRoleHistories_Action",
-                table: "UserRoleHistories",
-                column: "Action");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserRoleHistories_ActionBy",
-                table: "UserRoleHistories",
-                column: "ActionBy");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserRoleHistories_ActionDate",
-                table: "UserRoleHistories",
-                column: "ActionDate");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserRoleHistories_RoleId",
-                table: "UserRoleHistories",
-                column: "RoleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserRoleHistories_UserId_ActionDate",
-                table: "UserRoleHistories",
-                columns: new[] { "UserId", "ActionDate" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserRoleHistories_UserId_RoleId_ActionDate",
-                table: "UserRoleHistories",
-                columns: new[] { "UserId", "RoleId", "ActionDate" },
-                unique: true);
         }
 
         /// <inheritdoc />
@@ -1407,9 +1345,6 @@ namespace InternalTrainingSystem.Core.DB.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserAnswers");
-
-            migrationBuilder.DropTable(
-                name: "UserRoleHistories");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

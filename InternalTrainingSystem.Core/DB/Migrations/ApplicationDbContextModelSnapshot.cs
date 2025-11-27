@@ -277,8 +277,8 @@ namespace InternalTrainingSystem.Core.DB.Migrations
                     b.Property<string>("PublicUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("Score")
-                        .HasColumnType("int");
+                    b.Property<decimal?>("Score")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<long?>("SizeBytes")
                         .HasColumnType("bigint");
