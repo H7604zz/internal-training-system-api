@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.DB;
+﻿using DocumentFormat.OpenXml.InkML;
+using InternalTrainingSystem.Core.DB;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -33,21 +34,15 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                   .Where(s => s.AssignmentId == assignmentId && s.UserId == userId)
                   .OrderByDescending(s => s.SubmittedAt)
                   .ToListAsync(ct);
-
-        public async Task<int> GetMaxAttemptNumberAsync(int assignmentId, string userId, CancellationToken ct = default)
-        {
-            return 0;
-        }
-
-        public async Task SetAllOldSubmissionsNotMain(int assignmentId, string userId, CancellationToken ct)
-        {
-            await Task.CompletedTask;
-        }
-
         public async Task AddAsync(AssignmentSubmission entity, CancellationToken ct = default)
             => await _db.AssignmentSubmissions.AddAsync(entity, ct);
 
         public void Update(AssignmentSubmission entity)
             => _db.AssignmentSubmissions.Update(entity);
+        public Task<AssignmentSubmission?> GetByAssignmentAndUserSingleAsync(int assignmentId,string userId,CancellationToken ct)
+        {
+            return _db.AssignmentSubmissions
+                .FirstOrDefaultAsync(s => s.AssignmentId == assignmentId && s.UserId == userId, ct);
+        }
     }
 }

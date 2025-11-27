@@ -41,7 +41,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var exists = await _assignmentRepo.ExistsInClassAsync(form.ClassId, ct);
             if (exists)
                 throw new InvalidOperationException("Lớp này đã có assignment. Không thể tạo thêm.");
-
+            var classInfo = await _classRepo.GetClassDetailAsync(form.ClassId);
             string? url = null;
             string? path = null;
             string? mime = null;
@@ -76,24 +76,26 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             await _assignmentRepo.AddAsync(entity, ct);
 
-            // --- GỬI EMAIL ---
+            //gửi mail
             var staffs = await _classRepo.GetStaffInClassAsync(form.ClassId, ct);
 
-            string subject = $"Bài tập mới: {entity.Title}";
+            string subject = $"Bài cuối kì mới – {entity.Title}";
+
             string html = $@"
-    <div style='font-family: Arial; max-width: 600px; margin:auto;'>
-        <h2 style='color:#0d6efd;'>Thông báo bài tập mới</h2>
-        <p>Bạn có bài tập mới trong lớp <strong>{form.ClassId}</strong>.</p>
+<div style='font-family: Arial; max-width: 600px; margin:auto;'>
+    <h2 style='color:#0d6efd;'>Thông báo bài tập mới</h2>
+    <p>Bạn có bài tập mới trong lớp <strong>{classInfo.ClassName}</strong>.</p>
 
-        <div style='padding: 15px; background: #f8f9fa; border-radius: 5px; margin:10px 0'>
-            <p><strong>Tiêu đề:</strong> {entity.Title}</p>
-            <p><strong>Mô tả:</strong> {entity.Description}</p>
-            <p><strong>Bắt đầu:</strong> {entity.StartAt:dd/MM/yyyy HH:mm}</p>
-            <p><strong>Hạn nộp:</strong> {entity.DueAt:dd/MM/yyyy HH:mm}</p>
-        </div>
+    <div style='padding: 15px; background: #f8f9fa; border-radius: 5px; margin:10px 0'>
+        <p><strong>Tiêu đề:</strong> {entity.Title}</p>
+        <p><strong>Mô tả:</strong> {entity.Description}</p>
+        <p><strong>Ngày bắt đầu:</strong> {entity.StartAt:dd/MM/yyyy HH:mm}</p>
+        <p><strong>Hạn nộp:</strong> {entity.DueAt:dd/MM/yyyy HH:mm}</p>
+    </div>
 
-        <p>Truy cập hệ thống để xem chi tiết.</p>
-    </div>";
+    <p>Truy cập hệ thống để xem chi tiết.</p>
+</div>";
+
 
             foreach (var s in staffs)
             {
@@ -302,28 +304,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }).ToList();
         }
 
-        public async Task<List<AssignmentSubmissionSummaryDto>> GetMySubmissionsAsync(
-            int assignmentId,
-            string userId,
-            CancellationToken ct)
-        {
-            var list = await _submissionRepo.GetByAssignmentAndUserAsync(assignmentId, userId, ct);
-            return list.Select(s => new AssignmentSubmissionSummaryDto
-            {
-                SubmissionId = s.SubmissionId,
-                UserId = s.UserId,
-                UserFullName = s.User?.FullName ?? string.Empty,
-                SubmittedAt = s.SubmittedAt,
-                IsLate = s.IsLate,
-                Status = s.Status,
-            }).ToList();
-        }
-
-        public async Task<AssignmentSubmissionDetailDto?> GetSubmissionDetailAsync(
-    int submissionId,
-    string requesterId,
-    bool isMentor,
-    CancellationToken ct)
+        public async Task<AssignmentSubmissionDetailDto?> GetSubmissionDetailAsync(int submissionId,
+                                                                                   string requesterId,
+                                                                                   bool isMentor,
+                                                                                   CancellationToken ct)
         {
             var sub = await _submissionRepo.GetByIdWithUserAsync(submissionId, ct);
             if (sub == null) return null;
@@ -332,7 +316,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 var canTeach = await _classRepo.IsMentorOfClassAsync(sub.Assignment.ClassId, requesterId, ct);
                 if (!canTeach)
-                    throw new UnauthorizedAccessException("Không có quyền.");
+                    throw new UnauthorizedAccessException("Bạn không phải Mentor của lớp này.");
             }
             else if (sub.UserId != requesterId)
                 throw new UnauthorizedAccessException("Không được xem bài nộp của người khác.");
@@ -371,31 +355,58 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             var now = DateTime.UtcNow;
 
-            // MARK OLD SUBMISSIONS AS NOT MAIN
-            await _submissionRepo.SetAllOldSubmissionsNotMain(assignmentId, userId, ct);
+            var old = await _submissionRepo.GetByAssignmentAndUserSingleAsync(assignmentId, userId, ct);
 
-            // NEW SUBMISSION
-            var submission = new AssignmentSubmission
-            {
-                AssignmentId = assignmentId,
-                UserId = userId,
-                SubmittedAt = now,
-                IsLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value,
-                Status = AssignmentSubmissionConstants.Status.Submitted,
-                Feedback = request?.Note,
-            };
+            AssignmentSubmission submission;
 
-            // Set file info
-            if (file is not null)
+            if (old != null)
             {
-                var f = file.Value;
-                submission.FilePath = f.relativePath;
-                submission.PublicUrl = f.url;
-                submission.MimeType = f.mimeType;
-                submission.SizeBytes = f.sizeBytes;
+                submission = old;
+
+                submission.SubmittedAt = now;
+                submission.IsLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value;
+                submission.Status = AssignmentSubmissionConstants.Status.Submitted;
+                submission.Feedback = request?.Note;
+
+                if (file is not null)
+                {
+                    // Xoá file cũ nếu có
+                    if (!string.IsNullOrEmpty(old.FilePath))
+                        await _fileStorage.DeleteAsync(old.FilePath, ct);
+
+                    var f = file.Value;
+                    submission.FilePath = f.relativePath;
+                    submission.PublicUrl = f.url;
+                    submission.MimeType = f.mimeType;
+                    submission.SizeBytes = f.sizeBytes;
+                }
+
+                _submissionRepo.Update(submission);
+            }
+            else
+            {
+                submission = new AssignmentSubmission
+                {
+                    AssignmentId = assignmentId,
+                    UserId = userId,
+                    SubmittedAt = now,
+                    IsLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value,
+                    Status = AssignmentSubmissionConstants.Status.Submitted,
+                    Feedback = request?.Note,
+                };
+
+                if (file is not null)
+                {
+                    var f = file.Value;
+                    submission.FilePath = f.relativePath;
+                    submission.PublicUrl = f.url;
+                    submission.MimeType = f.mimeType;
+                    submission.SizeBytes = f.sizeBytes;
+                }
+
+                await _submissionRepo.AddAsync(submission, ct);
             }
 
-            await _submissionRepo.AddAsync(submission, ct);
             await _uow.SaveChangesAsync(ct);
 
             var saved = await _submissionRepo.GetByIdWithUserAsync(submission.SubmissionId, ct);
@@ -410,51 +421,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 IsLate = saved.IsLate,
                 Status = saved.Status,
                 Feedback = saved.Feedback,
-
                 FilePath = saved.FilePath,
                 MimeType = saved.MimeType,
                 SizeBytes = saved.SizeBytes,
                 PublicUrl = saved.PublicUrl
             };
         }
-
-
-        public async Task<AssignmentSubmissionDetailDto> GradeSubmissionAsync(
-    int submissionId,
-    string mentorId,
-    GradeSubmissionDto dto,
-    CancellationToken ct)
-        {
-            var sub = await _submissionRepo.GetByIdWithUserAsync(submissionId, ct)
-                ?? throw new ArgumentException("Submission không tồn tại.");
-
-            var assignment = sub.Assignment;
-            var canTeach = await _classRepo.IsMentorOfClassAsync(assignment.ClassId, mentorId, ct);
-            if (!canTeach)
-                throw new UnauthorizedAccessException("Bạn không có quyền chấm bài.");
-
-            sub.Feedback = dto.Feedback;
-            sub.Status = AssignmentSubmissionConstants.Status.Graded;
-
-            _submissionRepo.Update(sub);
-            await _uow.SaveChangesAsync(ct);
-
-            return new AssignmentSubmissionDetailDto
-            {
-                SubmissionId = sub.SubmissionId,
-                AssignmentId = sub.AssignmentId,
-                UserId = sub.UserId,
-                UserFullName = sub.User.FullName,
-                SubmittedAt = sub.SubmittedAt,
-                IsLate = sub.IsLate,
-                Status = sub.Status,
-                Feedback = sub.Feedback,
-                FilePath = sub.FilePath,
-                MimeType = sub.MimeType,
-                SizeBytes = sub.SizeBytes,
-                PublicUrl = sub.PublicUrl
-            };
-        }
-
     }
 }

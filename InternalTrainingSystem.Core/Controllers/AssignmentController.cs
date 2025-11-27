@@ -134,7 +134,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
 
         /// <summary>
-        /// Mentor: xem toàn bộ bài nộp chính cho 1 assignment
+        /// Mentor: xem toàn bộ bài nộp cho 1 assignment
         /// </summary>
         [HttpGet("{assignmentId:int}/submissions")]
         [Authorize(Roles = "Mentor")]
@@ -170,7 +170,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>
-        /// Staff: nộp bài, MỖI LẦN CHỊ 1 FILE
+        /// Staff: nộp bài, MỖI LẦN CHỉ 1 FILE
         /// </summary>
         [HttpPost("{assignmentId:int}/submissions")]
         [Authorize(Roles = "Staff")]
@@ -215,27 +215,6 @@ namespace InternalTrainingSystem.Core.Controllers
                 nameof(GetSubmissionDetail),
                 new {assignmentId = assignmentId, submissionId = result.SubmissionId },
                 result);
-        }
-
-        /// <summary>
-        /// Mentor: chấm điểm một submission
-        /// </summary>
-        [HttpPut("{assignmentId:int}/submissions/{submissionId:int}/grade")]
-        [Authorize(Roles = "Mentor")]
-        public async Task<ActionResult<AssignmentSubmissionDetailDto>> GradeSubmission(
-            int assignmentId,
-            int submissionId,
-            [FromBody] GradeSubmissionDto dto,
-            CancellationToken ct)
-        {
-            var mentorId = GetUserId();
-
-            var result = await _assignmentService.GradeSubmissionAsync(submissionId, mentorId, dto, ct);
-
-            if (result.AssignmentId != assignmentId)
-                return BadRequest("Submission không thuộc assignment này.");
-
-            return Ok(result);
         }
     }
 }
