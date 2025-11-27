@@ -1,6 +1,7 @@
 ﻿using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.Configuration;
 using InternalTrainingSystem.Core.DB;
+using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
@@ -49,7 +50,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
            await _notificationRepo.DeleteOldNotificationsAsync(courseId, type);
         }
 
-        public async Task<List<Notification>> GetNotificationsAsync(string? userId = null, string? roleName = null)
+        public async Task<List<NotificationResponse>> GetNotificationsAsync(string? userId = null, string? roleName = null)
         {
            return await _notificationRepo.GetNotificationsAsync(userId, roleName);
         }
