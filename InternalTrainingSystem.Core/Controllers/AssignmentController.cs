@@ -77,28 +77,33 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>
-        /// Lấy danh sách assignment của class.
+        /// lấy bài cuối kì của class.
         /// Mentor: xem tất cả.
         /// Staff: chỉ xem nếu thuộc class (Class.Employees).
         /// </summary>
         [HttpGet("{classId:int}")]
         [Authorize]
-        public async Task<ActionResult<List<AssignmentDto>>> GetAssignments(
-            int classId,
-            CancellationToken ct)
+        public async Task<ActionResult<AssignmentDto?>> GetAssignment(
+    int classId,
+    CancellationToken ct)
         {
             var userId = GetUserId();
 
+            AssignmentDto? assignment;
+
             if (User.IsInRole(UserRoles.Mentor))
             {
-                var list = await _assignmentService.GetAssignmentsForClassAsync(classId, ct);
-                return Ok(list);
+                assignment = await _assignmentService.GetAssignmentForClassAsync(classId, ct);
             }
             else
             {
-                var list = await _assignmentService.GetAssignmentsForStaffInClassAsync(classId, userId, ct);
-                return Ok(list);
+                assignment = await _assignmentService.GetAssignmentForStaffInClassAsync(classId, userId, ct);
             }
+
+            if (assignment == null)
+                return NotFound("Lớp này chưa có assignment.");
+
+            return Ok(assignment);
         }
 
         /// <summary>
@@ -134,7 +139,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
 
         /// <summary>
-        /// Mentor: xem toàn bộ bài nộp chính cho 1 assignment
+        /// Mentor: xem toàn bộ bài nộp cho 1 assignment
         /// </summary>
         [HttpGet("{assignmentId:int}/submissions")]
         [Authorize(Roles = "Mentor")]
@@ -170,7 +175,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>
-        /// Staff: nộp bài, MỖI LẦN CHỊ 1 FILE
+        /// Staff: nộp bài, MỖI LẦN CHỉ 1 FILE
         /// </summary>
         [HttpPost("{assignmentId:int}/submissions")]
         [Authorize(Roles = "Staff")]
@@ -215,27 +220,6 @@ namespace InternalTrainingSystem.Core.Controllers
                 nameof(GetSubmissionDetail),
                 new {assignmentId = assignmentId, submissionId = result.SubmissionId },
                 result);
-        }
-
-        /// <summary>
-        /// Mentor: chấm điểm một submission
-        /// </summary>
-        [HttpPut("{assignmentId:int}/submissions/{submissionId:int}/grade")]
-        [Authorize(Roles = "Mentor")]
-        public async Task<ActionResult<AssignmentSubmissionDetailDto>> GradeSubmission(
-            int assignmentId,
-            int submissionId,
-            [FromBody] GradeSubmissionDto dto,
-            CancellationToken ct)
-        {
-            var mentorId = GetUserId();
-
-            var result = await _assignmentService.GradeSubmissionAsync(submissionId, mentorId, dto, ct);
-
-            if (result.AssignmentId != assignmentId)
-                return BadRequest("Submission không thuộc assignment này.");
-
-            return Ok(result);
         }
     }
 }

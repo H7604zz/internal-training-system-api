@@ -23,11 +23,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                   .Include(a => a.Class)
                   .FirstOrDefaultAsync(a => a.AssignmentId == id, ct);
 
-        public Task<List<Assignment>> GetByClassAsync(int classId, CancellationToken ct = default)
-            => _db.Assignments
-                  .Where(a => a.ClassId == classId)
-                  .OrderBy(a => a.DueAt)
-                  .ToListAsync(ct);
+        public async Task<Assignment?> GetSingleByClassAsync(int classId, CancellationToken ct)
+        {
+            return await _db.Assignments
+                .Where(a => a.ClassId == classId)
+                .FirstOrDefaultAsync(ct);
+        }
 
         public async Task AddAsync(Assignment entity, CancellationToken ct = default)
         {
@@ -39,5 +40,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
         public void Remove(Assignment entity)
             => _db.Assignments.Remove(entity);
+        public Task<bool> ExistsInClassAsync(int classId, CancellationToken ct)
+        => _db.Assignments.AnyAsync(a => a.ClassId == classId, ct);
     }
 }

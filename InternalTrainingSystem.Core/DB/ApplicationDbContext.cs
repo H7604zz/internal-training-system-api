@@ -467,7 +467,7 @@ namespace InternalTrainingSystem.Core.DB
                     .HasForeignKey(x => x.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasIndex(x => new { x.AssignmentId, x.UserId, x.AttemptNumber }).IsUnique();
+                entity.HasIndex(x => new { x.AssignmentId, x.UserId }).IsUnique();
                 entity.HasIndex(x => x.SubmittedAt);
 
 
