@@ -6,7 +6,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
     {
         Task<Assignment?> GetByIdAsync(int id, CancellationToken ct = default);
         Task<Assignment?> GetWithClassAsync(int id, CancellationToken ct = default);
-        Task<List<Assignment>> GetByClassAsync(int classId, CancellationToken ct = default);
+        Task<Assignment?> GetSingleByClassAsync(int classId, CancellationToken ct);
         Task AddAsync(Assignment entity, CancellationToken ct = default);
         void Update(Assignment entity);
         void Remove(Assignment entity);

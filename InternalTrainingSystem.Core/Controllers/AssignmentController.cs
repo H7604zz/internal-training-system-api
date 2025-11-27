@@ -77,28 +77,33 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>
-        /// Lấy danh sách assignment của class.
+        /// lấy bài cuối kì của class.
         /// Mentor: xem tất cả.
         /// Staff: chỉ xem nếu thuộc class (Class.Employees).
         /// </summary>
         [HttpGet("{classId:int}")]
         [Authorize]
-        public async Task<ActionResult<List<AssignmentDto>>> GetAssignments(
-            int classId,
-            CancellationToken ct)
+        public async Task<ActionResult<AssignmentDto?>> GetAssignment(
+    int classId,
+    CancellationToken ct)
         {
             var userId = GetUserId();
 
+            AssignmentDto? assignment;
+
             if (User.IsInRole(UserRoles.Mentor))
             {
-                var list = await _assignmentService.GetAssignmentsForClassAsync(classId, ct);
-                return Ok(list);
+                assignment = await _assignmentService.GetAssignmentForClassAsync(classId, ct);
             }
             else
             {
-                var list = await _assignmentService.GetAssignmentsForStaffInClassAsync(classId, userId, ct);
-                return Ok(list);
+                assignment = await _assignmentService.GetAssignmentForStaffInClassAsync(classId, userId, ct);
             }
+
+            if (assignment == null)
+                return NotFound("Lớp này chưa có assignment.");
+
+            return Ok(assignment);
         }
 
         /// <summary>

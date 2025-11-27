@@ -192,13 +192,14 @@ namespace InternalTrainingSystem.Core.Services.Implement
             await _uow.SaveChangesAsync(ct);
         }
 
-        public async Task<List<AssignmentDto>> GetAssignmentsForClassAsync(
+        public async Task<AssignmentDto?> GetAssignmentForClassAsync(
     int classId,
     CancellationToken ct)
         {
-            var list = await _assignmentRepo.GetByClassAsync(classId, ct);
+            var a = await _assignmentRepo.GetSingleByClassAsync(classId, ct);
+            if (a == null) return null;
 
-            return list.Select(a => new AssignmentDto
+            return new AssignmentDto
             {
                 AssignmentId = a.AssignmentId,
                 ClassId = a.ClassId,
@@ -208,10 +209,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 StartAt = a.StartAt,
                 DueAt = a.DueAt,
                 AttachmentUrl = a.AttachmentUrl
-            }).ToList();
+            };
         }
 
-        public async Task<List<AssignmentDto>> GetAssignmentsForStaffInClassAsync(
+        public async Task<AssignmentDto?> GetAssignmentForStaffInClassAsync(
     int classId,
     string userId,
     CancellationToken ct)
@@ -220,9 +221,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (!inClass)
                 throw new UnauthorizedAccessException("Bạn không thuộc lớp này.");
 
-            var list = await _assignmentRepo.GetByClassAsync(classId, ct);
+            var a = await _assignmentRepo.GetSingleByClassAsync(classId, ct);
+            if (a == null) return null;
 
-            return list.Select(a => new AssignmentDto
+            return new AssignmentDto
             {
                 AssignmentId = a.AssignmentId,
                 ClassId = a.ClassId,
@@ -232,7 +234,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 StartAt = a.StartAt,
                 DueAt = a.DueAt,
                 AttachmentUrl = a.AttachmentUrl
-            }).ToList();
+            };
         }
 
         public async Task<AssignmentDto?> GetAssignmentByIdAsync(
