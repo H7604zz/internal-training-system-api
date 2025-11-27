@@ -39,5 +39,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
         public void Remove(Assignment entity)
             => _db.Assignments.Remove(entity);
+        public Task<bool> ExistsInClassAsync(int classId, CancellationToken ct)
+        => _db.Assignments.AnyAsync(a => a.ClassId == classId, ct);
     }
 }

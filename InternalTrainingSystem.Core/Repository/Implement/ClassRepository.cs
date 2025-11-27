@@ -806,4 +806,14 @@ public class ClassRepository : IClassRepository
             EmployeeId = employeeId
         }).ToList();
     }
+    public async Task<List<ApplicationUser>> GetStaffInClassAsync(
+    int classId,
+    CancellationToken ct = default)
+    {
+        return await _context.Classes
+            .Where(c => c.ClassId == classId)
+            .SelectMany(c => c.Employees)
+            .Where(u => u.IsActive) 
+            .ToListAsync(ct);
+    }
 }

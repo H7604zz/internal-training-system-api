@@ -1,5 +1,6 @@
 ﻿using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DTOs;
+using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
 using InternalTrainingSystem.Core.Repository.Interface;
 using InternalTrainingSystem.Core.Services.Interface;
@@ -37,6 +38,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (!canTeach)
                 throw new UnauthorizedAccessException("Bạn không có quyền tạo assignment cho lớp này.");
 
+            var exists = await _assignmentRepo.ExistsInClassAsync(form.ClassId, ct);
+            if (exists)
+                throw new InvalidOperationException("Lớp này đã có assignment. Không thể tạo thêm.");
+
             string? url = null;
             string? path = null;
             string? mime = null;
@@ -46,7 +51,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 var meta = StorageObjectMetadata.ForUpload(form.File.FileName, form.File.ContentType);
                 var folder = $"assignments/class-{form.ClassId}";
-
                 var uploaded = await _fileStorage.SaveAsync(form.File, folder, meta, ct);
 
                 url = uploaded.url;
@@ -72,6 +76,37 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             await _assignmentRepo.AddAsync(entity, ct);
 
+            // --- GỬI EMAIL ---
+            var staffs = await _classRepo.GetStaffInClassAsync(form.ClassId, ct);
+
+            string subject = $"Bài tập mới: {entity.Title}";
+            string html = $@"
+    <div style='font-family: Arial; max-width: 600px; margin:auto;'>
+        <h2 style='color:#0d6efd;'>Thông báo bài tập mới</h2>
+        <p>Bạn có bài tập mới trong lớp <strong>{form.ClassId}</strong>.</p>
+
+        <div style='padding: 15px; background: #f8f9fa; border-radius: 5px; margin:10px 0'>
+            <p><strong>Tiêu đề:</strong> {entity.Title}</p>
+            <p><strong>Mô tả:</strong> {entity.Description}</p>
+            <p><strong>Bắt đầu:</strong> {entity.StartAt:dd/MM/yyyy HH:mm}</p>
+            <p><strong>Hạn nộp:</strong> {entity.DueAt:dd/MM/yyyy HH:mm}</p>
+        </div>
+
+        <p>Truy cập hệ thống để xem chi tiết.</p>
+    </div>";
+
+            foreach (var s in staffs)
+            {
+                if (!string.IsNullOrEmpty(s.Email))
+                {
+                    Hangfire.BackgroundJob.Enqueue(() => EmailHelper.SendEmailAsync(
+                        s.Email!,
+                        subject,
+                        html
+                    ));
+                }
+            }
+
             return new AssignmentDto
             {
                 AssignmentId = entity.AssignmentId,
@@ -84,6 +119,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 AttachmentUrl = entity.AttachmentUrl
             };
         }
+
         public async Task<AssignmentDto> UpdateAssignmentAsync(
     int assignmentId,
     UpdateAssignmentForm form,
@@ -260,11 +296,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 SubmissionId = s.SubmissionId,
                 UserId = s.UserId,
                 UserFullName = s.User?.FullName ?? string.Empty,
-                AttemptNumber = s.AttemptNumber,
                 SubmittedAt = s.SubmittedAt,
                 IsLate = s.IsLate,
                 Status = s.Status,
-                Score = s.Score
             }).ToList();
         }
 
@@ -279,11 +313,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 SubmissionId = s.SubmissionId,
                 UserId = s.UserId,
                 UserFullName = s.User?.FullName ?? string.Empty,
-                AttemptNumber = s.AttemptNumber,
                 SubmittedAt = s.SubmittedAt,
                 IsLate = s.IsLate,
                 Status = s.Status,
-                Score = s.Score
             }).ToList();
         }
 
@@ -311,14 +343,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 AssignmentId = sub.AssignmentId,
                 UserId = sub.UserId,
                 UserFullName = sub.User.FullName,
-                AttemptNumber = sub.AttemptNumber,
                 SubmittedAt = sub.SubmittedAt,
                 IsLate = sub.IsLate,
                 Status = sub.Status,
-                Score = sub.Score,
                 Feedback = sub.Feedback,
 
-                OriginalFileName = sub.OriginalFileName,
                 FilePath = sub.FilePath,
                 MimeType = sub.MimeType,
                 SizeBytes = sub.SizeBytes,
@@ -354,14 +383,12 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 IsLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value,
                 Status = AssignmentSubmissionConstants.Status.Submitted,
                 Feedback = request?.Note,
-                IsMain = true
             };
 
             // Set file info
             if (file is not null)
             {
                 var f = file.Value;
-                submission.OriginalFileName = f.fileName;
                 submission.FilePath = f.relativePath;
                 submission.PublicUrl = f.url;
                 submission.MimeType = f.mimeType;
@@ -379,14 +406,11 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 AssignmentId = saved.AssignmentId,
                 UserId = saved.UserId,
                 UserFullName = saved.User.FullName,
-                AttemptNumber = saved.AttemptNumber,
                 SubmittedAt = saved.SubmittedAt,
                 IsLate = saved.IsLate,
                 Status = saved.Status,
-                Score = saved.Score,
                 Feedback = saved.Feedback,
 
-                OriginalFileName = saved.OriginalFileName,
                 FilePath = saved.FilePath,
                 MimeType = saved.MimeType,
                 SizeBytes = saved.SizeBytes,
@@ -409,7 +433,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (!canTeach)
                 throw new UnauthorizedAccessException("Bạn không có quyền chấm bài.");
 
-            sub.Score = dto.Score;
             sub.Feedback = dto.Feedback;
             sub.Status = AssignmentSubmissionConstants.Status.Graded;
 
@@ -422,13 +445,10 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 AssignmentId = sub.AssignmentId,
                 UserId = sub.UserId,
                 UserFullName = sub.User.FullName,
-                AttemptNumber = sub.AttemptNumber,
                 SubmittedAt = sub.SubmittedAt,
                 IsLate = sub.IsLate,
                 Status = sub.Status,
-                Score = sub.Score,
                 Feedback = sub.Feedback,
-                OriginalFileName = sub.OriginalFileName,
                 FilePath = sub.FilePath,
                 MimeType = sub.MimeType,
                 SizeBytes = sub.SizeBytes,

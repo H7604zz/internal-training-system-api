@@ -24,7 +24,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         public Task<List<AssignmentSubmission>> GetByAssignmentAsync(int assignmentId, CancellationToken ct = default)
     => _db.AssignmentSubmissions
           .Include(s => s.User)
-          .Where(s => s.AssignmentId == assignmentId && s.IsMain)
+          .Where(s => s.AssignmentId == assignmentId)
           .OrderByDescending(s => s.SubmittedAt)
           .ToListAsync(ct);
 
@@ -36,18 +36,12 @@ namespace InternalTrainingSystem.Core.Repository.Implement
 
         public async Task<int> GetMaxAttemptNumberAsync(int assignmentId, string userId, CancellationToken ct = default)
         {
-            int? max = await _db.AssignmentSubmissions
-                .Where(s => s.AssignmentId == assignmentId && s.UserId == userId)
-                .MaxAsync(s => (int?)s.AttemptNumber, ct);
-
-            return max ?? 0;
+            return 0;
         }
 
         public async Task SetAllOldSubmissionsNotMain(int assignmentId, string userId, CancellationToken ct)
         {
-            await _db.AssignmentSubmissions
-                .Where(s => s.AssignmentId == assignmentId && s.UserId == userId)
-                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsMain, false), ct);
+            await Task.CompletedTask;
         }
 
         public async Task AddAsync(AssignmentSubmission entity, CancellationToken ct = default)

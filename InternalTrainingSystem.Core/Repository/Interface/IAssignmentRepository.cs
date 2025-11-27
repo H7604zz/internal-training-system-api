@@ -10,5 +10,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task AddAsync(Assignment entity, CancellationToken ct = default);
         void Update(Assignment entity);
         void Remove(Assignment entity);
+        Task<bool> ExistsInClassAsync(int classId, CancellationToken ct);
     }
 }

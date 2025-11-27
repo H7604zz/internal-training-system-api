@@ -27,5 +27,6 @@ namespace InternalTrainingSystem.Core.Repository.Interface
         Task<List<Class>> GetClassesForMentorAsync(string userId, CancellationToken ct);
         Task<List<Class>> GetClassesForStaffAsync(string userId, CancellationToken ct);
         Task<List<MyClassDto>> GetClassesOfUserAsync(string userId, CancellationToken ct);
+        Task<List<ApplicationUser>> GetStaffInClassAsync(int classId,CancellationToken ct );
     }
 }
