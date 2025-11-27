@@ -93,7 +93,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
             if (User.IsInRole(UserRoles.Mentor))
             {
-                assignment = await _assignmentService.GetAssignmentForClassAsync(classId, ct);
+                assignment = await _assignmentService.GetAssignmentForClassAsync(classId,userId, ct);
             }
             else
             {

@@ -37,11 +37,8 @@ namespace InternalTrainingSystem.Core.DTOs
         public int SubmissionId { get; set; }
         public string UserId { get; set; } = null!;
         public string UserFullName { get; set; } = string.Empty;
-
-        public int AttemptNumber { get; set; }
         public DateTime SubmittedAt { get; set; }
         public bool IsLate { get; set; }
-
         public string Status { get; set; } = string.Empty;
         public decimal? Score { get; set; }
     }
