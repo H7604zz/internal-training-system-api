@@ -351,7 +351,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Lấy danh sách tất cả staff trong 1 lop hoc
         /// </summary>
         [HttpGet("{classId}/users")]
-        [Authorize(Roles = UserRoles.Mentor + "," + UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        [Authorize(Roles = UserRoles.Mentor)]
         public async Task<IActionResult> GetUsersInClass(int classId)
         {
             try
