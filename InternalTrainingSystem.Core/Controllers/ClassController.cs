@@ -114,7 +114,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <returns></returns>
         [HttpGet("{classId}")]
         [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.DirectManager
-            + "," + UserRoles.Staff)]
+            + "," + UserRoles.Staff + "," + UserRoles.Mentor)]
         public async Task<IActionResult> GetClassDetail(int classId)
         {
             var classDetail = await _classService.GetClassDetailAsync(classId);
