@@ -75,6 +75,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
 
             await _assignmentRepo.AddAsync(entity, ct);
+            await _uow.SaveChangesAsync(ct);
 
             //gửi mail
             var staffs = await _classRepo.GetUsersInClassAsync(form.ClassId);
@@ -138,7 +139,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             // UPDATE FIELDS
             assignment.Title = form.Title;
             assignment.Description = form.Description;
-            assignment.StartAt = form.StartAt;
             assignment.DueAt = form.DueAt;
 
             if (form.File != null)
@@ -177,9 +177,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
 
         public async Task DeleteAssignmentAsync(
-            int assignmentId,
-            string mentorId,
-            CancellationToken ct)
+    int assignmentId,
+    string mentorId,
+    CancellationToken ct)
         {
             var assignment = await _assignmentRepo.GetWithClassAsync(assignmentId, ct)
                 ?? throw new ArgumentException("Assignment không tồn tại.");
@@ -188,9 +188,17 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (!canTeach)
                 throw new UnauthorizedAccessException("Bạn không có quyền xoá assignment này.");
 
+            var oldFile = assignment.AttachmentFilePath;
+
             _assignmentRepo.Remove(assignment);
             await _uow.SaveChangesAsync(ct);
+
+            if (!string.IsNullOrEmpty(oldFile))
+            {
+                await _fileStorage.DeleteAsync(oldFile, ct);
+            }
         }
+
 
         public async Task<AssignmentDto?> GetAssignmentForClassAsync(
     int classId,
@@ -355,7 +363,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             if (!inClass)
                 throw new UnauthorizedAccessException("Bạn không thuộc lớp này.");
 
-            var now = DateTime.UtcNow;
+            var now = DateTimeUtils.Now();
 
             var old = await _submissionRepo.GetByAssignmentAndUserSingleAsync(assignmentId, userId, ct);
 

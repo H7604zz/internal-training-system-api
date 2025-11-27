@@ -27,7 +27,6 @@ namespace InternalTrainingSystem.Core.DTOs
     {
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public DateTime? StartAt { get; set; }
         public DateTime? DueAt { get; set; }
         // optional: nộp file mới để replace file cũ
         public IFormFile? File { get; set; }
