@@ -16,7 +16,6 @@ namespace InternalTrainingSystem.Core.Models
         [StringLength(20)]
         public string Status { get; set; } = AssignmentSubmissionConstants.Status.Submitted;
         [StringLength(1000)]
-        public string? Feedback { get; set; }
         public bool IsLate { get; set; }
         [StringLength(255)]
         public string? FilePath { get; set; }

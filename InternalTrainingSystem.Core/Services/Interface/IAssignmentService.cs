@@ -19,7 +19,6 @@ namespace InternalTrainingSystem.Core.Services.Interface
         Task<AssignmentSubmissionDetailDto> CreateSubmissionAsync(
             int assignmentId,
             string userId,
-            CreateSubmissionRequest request,
             (string fileName, string relativePath, string url, string? mimeType, long? sizeBytes)? file,
             CancellationToken ct);
 

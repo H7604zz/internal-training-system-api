@@ -204,15 +204,9 @@ namespace InternalTrainingSystem.Core.Controllers
                 sizeBytes: (long?)form.File.Length
             );
 
-            var request = new CreateSubmissionRequest
-            {
-                Note = form.Note
-            };
-
             var result = await _assignmentService.CreateSubmissionAsync(
                 assignmentId,
                 userId,
-                request,
                 uploadedFile,
                 ct);
 
