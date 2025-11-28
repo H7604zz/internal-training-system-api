@@ -354,7 +354,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 UserId = sub.UserId,
                 UserFullName = sub.User.FullName,
                 SubmittedAt = sub.SubmittedAt,
-                Status = sub.Status,
 
                 FilePath = sub.FilePath,
                 MimeType = sub.MimeType,
@@ -412,7 +411,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     AssignmentId = assignmentId,
                     UserId = userId,
                     SubmittedAt = now,
-                    Status = AssignmentSubmissionConstants.Status.Submitted,
                 };
 
                 if (file is not null)
@@ -438,7 +436,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 UserId = saved.UserId,
                 UserFullName = saved.User.FullName,
                 SubmittedAt = saved.SubmittedAt,
-                Status = saved.Status,
                 FilePath = saved.FilePath,
                 MimeType = saved.MimeType,
                 SizeBytes = saved.SizeBytes,

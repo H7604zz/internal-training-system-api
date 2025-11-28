@@ -13,8 +13,6 @@ namespace InternalTrainingSystem.Core.Models
         [Required]
         public string UserId { get; set; } = null!;
         public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
-        [StringLength(20)]
-        public string Status { get; set; } = AssignmentSubmissionConstants.Status.Submitted;
         [StringLength(255)]
         public string? FilePath { get; set; }
         public string? MimeType { get; set; }
