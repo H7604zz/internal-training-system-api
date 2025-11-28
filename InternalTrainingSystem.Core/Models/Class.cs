@@ -39,6 +39,8 @@ namespace InternalTrainingSystem.Core.Models
 
         public string? CreatedById { get; set; }
 
+        public bool IsScoreSubmitted { get; set; } = false;
+
         // Navigation Properties
         [ForeignKey("CourseId")]
         public virtual Course Course { get; set; } = null!;
