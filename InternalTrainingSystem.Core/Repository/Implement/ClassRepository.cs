@@ -812,22 +812,27 @@ public class ClassRepository : IClassRepository
 
     public async Task<List<StaffInClassDto>> GetUsersInClassAsync(int classId)
     {
+        var classInfo = await _context.Classes
+            .Where(c => c.ClassId == classId)
+            .Select(c => new { c.ClassId, c.CourseId })
+            .FirstOrDefaultAsync();
+
+        if (classInfo == null)
+            return new List<StaffInClassDto>();
+
         var staff = await _context.Classes
             .Where(c => c.ClassId == classId)
-            .SelectMany(c => c.Employees, (c, u) => new { c.CourseId, User = u })
-            .GroupJoin(
-                _context.CourseEnrollments,
-                cu => new { cu.User.Id, cu.CourseId },
-                e => new { Id = e.UserId, e.CourseId },
-                (cu, enrollments) => new { cu.User, Enrollment = enrollments.FirstOrDefault() }
-            )
-            .Select(x => new StaffInClassDto
+            .SelectMany(c => c.Employees)
+            .Select(u => new StaffInClassDto
             {
-                UserId = x.User.Id,
-                EmployeeId = x.User.EmployeeId!,
-                FullName = x.User.FullName,
-                Email = x.User.Email,
-                ScoreFinal = x.Enrollment != null ? x.Enrollment.Score : 0
+                UserId = u.Id,
+                EmployeeId = u.EmployeeId!,
+                FullName = u.FullName,
+                Email = u.Email,
+                ScoreFinal = _context.CourseEnrollments
+                    .Where(ce => ce.UserId == u.Id && ce.CourseId == classInfo.CourseId)
+                    .Select(ce => ce.Score)
+                    .FirstOrDefault()
             })
             .ToListAsync();
 
