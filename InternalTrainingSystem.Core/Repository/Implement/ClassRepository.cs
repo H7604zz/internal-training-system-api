@@ -47,21 +47,13 @@ public class ClassRepository : IClassRepository
         var createdClasses = new List<Class>();
         var userIndex = 0;
 
+        var dateString = DateTime.Now.ToString("yyyyMMdd");
+
         for (var i = 1; i <= numClasses; i++)
         {
             var currentClassSize = baseCount + (i <= remainder ? 1 : 0);
-
-            var baseClassName = $"Lớp {course.Code}-{i}";
-            var finalClassName = baseClassName;
-            var suffix = 1;
-
-            while (await _context.Classes.AnyAsync(c => c.ClassName == finalClassName) ||
-                   createdClasses.Any(c => c.ClassName == finalClassName)
-                  )
-            {
-                finalClassName = $"{baseClassName}-{suffix}";
-                suffix++;
-            }
+            var classLetter = (char)('A' + (i - 1));
+            var finalClassName = $"Lớp {course.Code}-{dateString}-{classLetter}";
 
             var newClass = new Class
             {
@@ -92,7 +84,8 @@ public class ClassRepository : IClassRepository
             .Where(e => e.CourseId == request.CourseId && userIds.Contains(e.UserId))
             .ToListAsync();
 
-        foreach (var e in enrollments) e.Status = EnrollmentConstants.Status.InProgress;
+        foreach (var e in enrollments)
+            e.Status = EnrollmentConstants.Status.InProgress;
 
         await _context.SaveChangesAsync();
 
