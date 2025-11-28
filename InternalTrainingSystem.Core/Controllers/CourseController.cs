@@ -49,7 +49,7 @@ namespace InternalTrainingSystem.Core.Controllers
         [HttpPut("{id}")]
         [Consumes("multipart/form-data")]
         [RequestSizeLimit(600 * 1024 * 1024)]
-        //[Authorize(Roles = UserRoles.TrainingDepartment)]
+        [Authorize(Roles = UserRoles.TrainingDepartment)]
         public async Task<IActionResult> UpdateCourse(
             int id,
             [FromForm] UpdateCourseFormDto form,
