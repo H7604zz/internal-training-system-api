@@ -29,11 +29,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
           .OrderByDescending(s => s.SubmittedAt)
           .ToListAsync(ct);
 
-        public Task<List<AssignmentSubmission>> GetByAssignmentAndUserAsync(int assignmentId, string userId, CancellationToken ct = default)
-            => _db.AssignmentSubmissions
-                  .Where(s => s.AssignmentId == assignmentId && s.UserId == userId)
-                  .OrderByDescending(s => s.SubmittedAt)
-                  .ToListAsync(ct);
         public async Task AddAsync(AssignmentSubmission entity, CancellationToken ct = default)
             => await _db.AssignmentSubmissions.AddAsync(entity, ct);
 
