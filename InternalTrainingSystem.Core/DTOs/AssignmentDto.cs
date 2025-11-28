@@ -37,10 +37,9 @@ namespace InternalTrainingSystem.Core.DTOs
     {
         public int SubmissionId { get; set; }
         public string UserId { get; set; } = null!;
-        public string UserFullName { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string EmployeeId { get; set; } = string.Empty;
         public DateTime SubmittedAt { get; set; }
-
-        public string Status { get; set; } = string.Empty;
         public string? PublicUrl { get; set; }
     }
 

@@ -229,9 +229,9 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 {
                     SubmissionId = s.SubmissionId,
                     UserId = s.UserId,
-                    UserFullName = s.User?.FullName ?? "",
+                    FullName = s.User.FullName,
+                    EmployeeId = s.User?.EmployeeId ?? "N/A",
                     SubmittedAt = s.SubmittedAt,
-                    Status = s.Status,
                     PublicUrl = s.PublicUrl,
                 }).ToList()
             };
@@ -324,9 +324,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
             {
                 SubmissionId = s.SubmissionId,
                 UserId = s.UserId,
-                UserFullName = s.User?.FullName ?? string.Empty,
+                FullName = s.User?.FullName ?? string.Empty,
                 SubmittedAt = s.SubmittedAt,
-                Status = s.Status,
                 PublicUrl = s.PublicUrl,
             }).ToList();
         }
