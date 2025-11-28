@@ -99,6 +99,10 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 course.IsMandatory = meta.IsMandatory;
                 course.UpdatedDate = DateTime.Now;
                 course.CreatedById = updatedByUserId;
+                if (course.Status == CourseConstants.Status.Reject)
+                {
+                    course.Status = CourseConstants.Status.Pending;
+                }
 
                 // 2) Departments
                 course.Departments.Clear();
