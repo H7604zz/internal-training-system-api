@@ -707,10 +707,13 @@ public class ClassRepository : IClassRepository
         if (classEntity.MentorId != mentorId)
             return false;
 
+        // Lấy danh sách employeeIds trước
+        var employeeIds = classEntity.Employees.Select(e => e.Id).ToList();
+
         var inProgressEnrollments = await _context.CourseEnrollments
             .Where(e => e.CourseId == classEntity.CourseId
                         && e.Status == EnrollmentConstants.Status.InProgress
-                        && classEntity.Employees.Any(emp => emp.Id == e.UserId))
+                        && employeeIds.Contains(e.UserId))
             .ToListAsync();
 
         if (!inProgressEnrollments.Any())
