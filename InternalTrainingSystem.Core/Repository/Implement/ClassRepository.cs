@@ -54,15 +54,6 @@ public class ClassRepository : IClassRepository
             var currentClassSize = baseCount + (i <= remainder ? 1 : 0);
             var classLetter = (char)('A' + (i - 1));
             var finalClassName = $"Lớp {course.Code}-{dateString}-{classLetter}";
-            var suffix = 1;
-            var baseName = finalClassName;
-
-            while (await _context.Classes.AnyAsync(c => c.ClassName == finalClassName) ||
-                   createdClasses.Any(c => c.ClassName == finalClassName))
-            {
-                    finalClassName = $"{baseName}{suffix}";
-                suffix++;
-            }
 
             var newClass = new Class
             {
