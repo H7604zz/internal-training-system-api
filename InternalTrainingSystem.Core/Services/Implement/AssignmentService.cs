@@ -212,6 +212,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
             var a = await _assignmentRepo.GetSingleByClassAsync(classId, ct);
             if (a == null) return null;
 
+            var submissions = await _submissionRepo.GetByAssignmentAsync(a.AssignmentId, ct);
+
             return new AssignmentDto
             {
                 AssignmentId = a.AssignmentId,
@@ -221,7 +223,17 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Description = a.Description,
                 StartAt = a.StartAt,
                 DueAt = a.DueAt,
-                AttachmentUrl = a.AttachmentUrl
+                AttachmentUrl = a.AttachmentUrl,
+
+                Submissions = submissions.Select(s => new AssignmentSubmissionSummaryDto
+                {
+                    SubmissionId = s.SubmissionId,
+                    UserId = s.UserId,
+                    UserFullName = s.User?.FullName ?? "",
+                    SubmittedAt = s.SubmittedAt,
+                    Status = s.Status,
+                    PublicUrl = s.PublicUrl,
+                }).ToList()
             };
         }
 
@@ -314,8 +326,8 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 UserId = s.UserId,
                 UserFullName = s.User?.FullName ?? string.Empty,
                 SubmittedAt = s.SubmittedAt,
-                IsLate = s.IsLate,
                 Status = s.Status,
+                PublicUrl = s.PublicUrl,
             }).ToList();
         }
 
@@ -343,7 +355,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 UserId = sub.UserId,
                 UserFullName = sub.User.FullName,
                 SubmittedAt = sub.SubmittedAt,
-                IsLate = sub.IsLate,
                 Status = sub.Status,
 
                 FilePath = sub.FilePath,
@@ -368,23 +379,23 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             var now = DateTimeUtils.Now();
 
-            var old = await _submissionRepo.GetByAssignmentAndUserSingleAsync(assignmentId, userId, ct);
+            if (assignment.DueAt.HasValue && now > assignment.DueAt.Value)
+                throw new InvalidOperationException("Đã quá hạn nộp bài. Bạn không thể nộp nữa.");
+
+            var existing = await _submissionRepo.GetByAssignmentAndUserSingleAsync(assignmentId, userId, ct);
 
             AssignmentSubmission submission;
 
-            if (old != null)
+            if (existing != null)
             {
-                submission = old;
-
+                // update file
+                submission = existing;
                 submission.SubmittedAt = now;
-                submission.IsLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value;
-                submission.Status = AssignmentSubmissionConstants.Status.Submitted;
 
                 if (file is not null)
                 {
-                    // Xoá file cũ nếu có
-                    if (!string.IsNullOrEmpty(old.FilePath))
-                        await _fileStorage.DeleteAsync(old.FilePath, ct);
+                    if (!string.IsNullOrEmpty(existing.FilePath))
+                        await _fileStorage.DeleteAsync(existing.FilePath, ct);
 
                     var f = file.Value;
                     submission.FilePath = f.relativePath;
@@ -402,7 +413,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                     AssignmentId = assignmentId,
                     UserId = userId,
                     SubmittedAt = now,
-                    IsLate = assignment.DueAt.HasValue && now > assignment.DueAt.Value,
                     Status = AssignmentSubmissionConstants.Status.Submitted,
                 };
 
@@ -429,7 +439,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 UserId = saved.UserId,
                 UserFullName = saved.User.FullName,
                 SubmittedAt = saved.SubmittedAt,
-                IsLate = saved.IsLate,
                 Status = saved.Status,
                 FilePath = saved.FilePath,
                 MimeType = saved.MimeType,

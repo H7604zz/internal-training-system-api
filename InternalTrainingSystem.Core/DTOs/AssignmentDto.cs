@@ -12,6 +12,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public DateTime? StartAt { get; set; }
         public DateTime? DueAt { get; set; }
         public string? AttachmentUrl { get; set; }
+        public List<AssignmentSubmissionSummaryDto>? Submissions { get; set; }
     }
 
     public class CreateAssignmentForm
@@ -38,9 +39,9 @@ namespace InternalTrainingSystem.Core.DTOs
         public string UserId { get; set; } = null!;
         public string UserFullName { get; set; } = string.Empty;
         public DateTime SubmittedAt { get; set; }
-        public bool IsLate { get; set; }
+
         public string Status { get; set; } = string.Empty;
-        public decimal? Score { get; set; }
+        public string? PublicUrl { get; set; }
     }
 
     public class AssignmentSubmissionDetailDto
@@ -50,7 +51,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public string UserId { get; set; } = null!;
         public string UserFullName { get; set; } = string.Empty;
         public DateTime SubmittedAt { get; set; }
-        public bool IsLate { get; set; }
         public string Status { get; set; } = string.Empty;
         public string? FilePath { get; set; }
         public string? MimeType { get; set; }
