@@ -33,6 +33,7 @@ namespace InternalTrainingSystem.Core.DTOs
         public string EmployeeId { get; set; }
         public string? FullName { get; set; }
         public string? Email { get; set; }
+        public double? ScoreFinal { get; set; } = 0;
     }
 
     public class CreateClassRequestDto

@@ -814,13 +814,20 @@ public class ClassRepository : IClassRepository
     {
         var staff = await _context.Classes
             .Where(c => c.ClassId == classId)
-            .SelectMany(c => c.Employees)
-            .Select(u => new StaffInClassDto
+            .SelectMany(c => c.Employees, (c, u) => new { c.CourseId, User = u })
+            .GroupJoin(
+                _context.CourseEnrollments,
+                cu => new { cu.User.Id, cu.CourseId },
+                e => new { Id = e.UserId, e.CourseId },
+                (cu, enrollments) => new { cu.User, Enrollment = enrollments.FirstOrDefault() }
+            )
+            .Select(x => new StaffInClassDto
             {
-                UserId = u.Id,
-                EmployeeId = u.EmployeeId!,
-                FullName = u.FullName,
-                Email = u.Email
+                UserId = x.User.Id,
+                EmployeeId = x.User.EmployeeId!,
+                FullName = x.User.FullName,
+                Email = x.User.Email,
+                ScoreFinal = x.Enrollment != null ? x.Enrollment.Score : 0
             })
             .ToListAsync();
 
