@@ -22,11 +22,11 @@ namespace InternalTrainingSystem.Core.Repository.Interface
 
         Task<List<ClassSwapDto>> GetSwapClassRequestAsync(string userId);
         Task<bool> UpdateScoresAsync(string mentorId, ScoreFinalRequest request);
+        Task<UsersInClassResponse> GetUsersInClassAsync(int classId);
         Task<bool> IsMentorOfClassAsync(int classId, string mentorId, CancellationToken ct = default);
         Task<bool> IsInClassAsync(int classId, string userId, CancellationToken ct = default);
         Task<List<Class>> GetClassesForMentorAsync(string userId, CancellationToken ct);
         Task<List<Class>> GetClassesForStaffAsync(string userId, CancellationToken ct);
         Task<List<MyClassDto>> GetClassesOfUserAsync(string userId, CancellationToken ct);
-        Task<List<StaffInClassDto>> GetUsersInClassAsync(int classId);
     }
 }

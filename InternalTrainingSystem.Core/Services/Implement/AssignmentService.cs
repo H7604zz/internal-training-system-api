@@ -98,7 +98,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
 </div>";
 
 
-            foreach (var s in staffs)
+            foreach (var s in staffs.Users)
             {
                 if (!string.IsNullOrEmpty(s.Email))
                 {

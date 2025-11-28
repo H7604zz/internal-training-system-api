@@ -64,7 +64,7 @@ namespace InternalTrainingSystem.Core.Services.Implement
             return await _classRepo.GetClassesAsync(page, pageSize);
         }
 
-        public async Task<List<StaffInClassDto>> GetUsersInClassAsync(int classId)
+        public async Task<UsersInClassResponse> GetUsersInClassAsync(int classId)
         {
             return await _classRepo.GetUsersInClassAsync(classId);
         }

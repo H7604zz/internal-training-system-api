@@ -14,4 +14,10 @@ namespace InternalTrainingSystem.Core.DTOs
         public bool IsSubmitted { get; set; } = false;
         public List<UserScoreDto> UserScore { get; set; } = new();
     }
+
+    public class UsersInClassResponse
+    {
+        public List<StaffInClassDto> Users { get; set; } = new();
+        public bool IsScoreSubmitted { get; set; }
+    }
 }

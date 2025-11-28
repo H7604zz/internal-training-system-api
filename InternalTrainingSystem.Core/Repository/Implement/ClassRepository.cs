@@ -739,6 +739,7 @@ public class ClassRepository : IClassRepository
                             ? EnrollmentConstants.Status.Completed
                             : EnrollmentConstants.Status.NotPass;
                         
+                        classEntity.IsScoreSubmitted = true;   
                         // Tự động cấp chứng chỉ khi pass môn
                         if (isPass)
                         {
@@ -813,15 +814,15 @@ public class ClassRepository : IClassRepository
         }).ToList();
     }
 
-    public async Task<List<StaffInClassDto>> GetUsersInClassAsync(int classId)
+    public async Task<UsersInClassResponse> GetUsersInClassAsync(int classId)
     {
         var classInfo = await _context.Classes
             .Where(c => c.ClassId == classId)
-            .Select(c => new { c.ClassId, c.CourseId })
+            .Select(c => new { c.ClassId, c.CourseId, c.IsScoreSubmitted })
             .FirstOrDefaultAsync();
 
         if (classInfo == null)
-            return new List<StaffInClassDto>();
+            return new UsersInClassResponse();
 
         var staff = await _context.Classes
             .Where(c => c.ClassId == classId)
@@ -839,6 +840,10 @@ public class ClassRepository : IClassRepository
             })
             .ToListAsync();
 
-        return staff;
+        return new UsersInClassResponse
+        {
+            Users = staff,
+            IsScoreSubmitted = classInfo.IsScoreSubmitted
+        };
     }
 }
