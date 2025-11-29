@@ -57,11 +57,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? PublicUrl { get; set; }
     }
 
-    public class CreateSubmissionRequest
-    {
-        public string? Note { get; set; }
-    }
-
     public class SubmitAssignmentForm
     {
         // File duy nhất

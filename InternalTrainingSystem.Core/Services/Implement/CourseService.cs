@@ -239,28 +239,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }
         }
 
-        public async Task UndoCompleteLessonAsync(int lessonId, string userId, CancellationToken ct = default)
-        {
-            var lesson = await _lessonProgressRepo.GetLessonWithModuleCourseAsync(lessonId, ct)
-                ?? throw new ArgumentException("Không tìm thấy bài học.");
-
-            var enrolled = await _lessonProgressRepo.IsEnrolledAsync(lesson.Module.CourseId, userId, ct);
-            if (!enrolled) throw new UnauthorizedAccessException("Bạn chưa được ghi danh vào khóa học này.");
-
-            await _lessonProgressRepo.UpsertDoneAsync(userId, lessonId, done: false, ct);
-            await _lessonProgressRepo.SaveChangesAsync(ct);
-
-            await _courseHistoryRepository.AddHistoryAsync(new CourseHistory
-            {
-                Action = CourseAction.ProgressUpdated,
-                ActionDate = DateTime.UtcNow,
-                UserId = userId,
-                CourseId = lesson.Module.CourseId,
-                Description = $"Hủy đánh dấu hoàn thành bài học '{lesson.Title}'."
-            }, ct);
-            await _lessonProgressRepo.SaveChangesAsync(ct);
-        }
-
         public async Task<CourseLearningDto> GetCourseLearningAsync(
                                                                     int courseId,
                                                                     string userId,

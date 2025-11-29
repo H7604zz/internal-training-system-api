@@ -125,63 +125,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             };
         }
 
-        public async Task<StartQuizResponse> StartAttemptAsync(
-            int quizId,
-            string userId,
-            CancellationToken ct = default)
-        {
-            var quiz = await _quizRepo.GetActiveQuizWithQuestionsAsync(quizId, ct);
-            if (quiz == null)
-                throw new InvalidOperationException("Không tìm thấy bài kiểm tra hoặc bài kiểm tra đã bị vô hiệu hóa.");
-
-            var currentCount = await _attemptRepo.CountAttemptsAsync(quizId, userId, ct);
-            var nextAttemptNumber = currentCount + 1;
-
-            if (nextAttemptNumber > quiz.MaxAttempts)
-                throw new InvalidOperationException("Bạn đã vượt quá số lần làm bài tối đa.");
-
-            var maxScore = quiz.Questions.Where(x => x.IsActive).Sum(x => x.Points);
-
-            var now = DateTimeUtils.Now(); // giờ Việt Nam
-            var end = quiz.TimeLimit > 0 ? now.AddMinutes(quiz.TimeLimit) : (DateTime?)null;
-
-            var attempt = new QuizAttempt
-            {
-                QuizId = quizId,
-                UserId = userId,
-                AttemptNumber = nextAttemptNumber,
-                StartTime = now,
-                EndTime = end,
-                Status = QuizConstants.Status.InProgress,
-                Score = 0,
-                MaxScore = maxScore,
-                Percentage = 0,
-                IsPassed = false
-            };
-
-            attempt = await _attemptRepo.AddAttemptAsync(attempt, ct);
-
-            await _historyRepo.AddHistoryAsync(new CourseHistory
-            {
-                Action = CourseAction.QuizStarted,
-                ActionDate = DateTimeUtils.Now(), // giờ VN
-                UserId = userId,
-                QuizId = quiz.QuizId,
-                QuizAttemptId = attempt.AttemptId,
-                Description = $"Bắt đầu lượt làm bài #{nextAttemptNumber} cho bài kiểm tra '{quiz.Title}'."
-            }, ct);
-            await _uow.SaveChangesAsync(ct);
-
-            return new StartQuizResponse
-            {
-                AttemptId = attempt.AttemptId,
-                AttemptNumber = nextAttemptNumber,
-                StartTimeUtc = attempt.StartTime, // giờ VN
-                EndTimeUtc = end,                 // giờ VN
-                TimeLimit = quiz.TimeLimit
-            };
-        }
-
         public async Task<AttemptResultDto> SubmitAttemptAsync(
             int attemptId,
             string userId,

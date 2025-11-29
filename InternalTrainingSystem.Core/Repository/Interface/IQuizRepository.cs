@@ -5,9 +5,7 @@ namespace InternalTrainingSystem.Core.Repository.Interface
 {
     public interface IQuizRepository
     {
-        Task<bool> CheckQuizPassedAsync(int quizId);
         Task<Quiz?> GetActiveQuizWithQuestionsAsync(int quizId, CancellationToken ct = default);
-        Task<int> GetQuizMaxScoreAsync(int quizId, CancellationToken ct = default);
         Task<QuizDetailDto2?> GetDetailAsync(int quizId, CancellationToken ct);
         Task<Quiz?> GetActiveQuizAsync(int quizId, CancellationToken ct = default);
     }

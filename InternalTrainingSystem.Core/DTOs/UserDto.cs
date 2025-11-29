@@ -66,28 +66,6 @@ namespace InternalTrainingSystem.Core.DTOs
     }
 
 
-    public class UpdateUserDto
-    {
-        [Required]
-        [StringLength(100)]
-        public string FullName { get; set; } = string.Empty;
-
-        [StringLength(20)]
-        public string? EmployeeId { get; set; }
-
-        [StringLength(100)]
-        public string? Department { get; set; }
-
-        [StringLength(100)]
-        public string? Position { get; set; }
-
-        public DateTime? HireDate { get; set; }
-
-        public bool IsActive { get; set; } = true;
-
-        public List<string> Roles { get; set; } = new List<string>();
-    }
-
     public class UpdateProfileDto
     {
         [Required]
@@ -96,13 +74,6 @@ namespace InternalTrainingSystem.Core.DTOs
 
         [Phone]
         public string? PhoneNumber { get; set; }
-    }
-
-    public class AdminResetPasswordDto
-    {
-        [Required]
-        [StringLength(100, MinimumLength = 6)]
-        public string NewPassword { get; set; } = string.Empty;
     }
 
     public class UserSearchDto
@@ -149,33 +120,5 @@ namespace InternalTrainingSystem.Core.DTOs
         // Course Enrollment Info
         public string Status { get; set; } = EnrollmentConstants.Status.InProgress;
         public double? Score { get; set; } 
-    }
-
-    public class ApiResponseDto<T>
-    {
-        public bool Success { get; set; }
-        public T? Data { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public List<string> Errors { get; set; } = new List<string>();
-
-        public static ApiResponseDto<T> SuccessResult(T data, string message = "")
-        {
-            return new ApiResponseDto<T>
-            {
-                Success = true,
-                Data = data,
-                Message = message
-            };
-        }
-
-        public static ApiResponseDto<T> ErrorResult(string message, List<string>? errors = null)
-        {
-            return new ApiResponseDto<T>
-            {
-                Success = false,
-                Message = message,
-                Errors = errors ?? new List<string>()
-            };
-        }
     }
 }

@@ -86,14 +86,6 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }
         }
 
-        public string GenerateRefreshToken()
-        {
-            var randomBytes = new byte[64];
-            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
-            rng.GetBytes(randomBytes);
-            return Convert.ToBase64String(randomBytes);
-        }
-
         // Temporary in-memory storage for refresh tokens
         // In production, use database or Redis
         private static readonly Dictionary<string, string> _refreshTokenStore = new();

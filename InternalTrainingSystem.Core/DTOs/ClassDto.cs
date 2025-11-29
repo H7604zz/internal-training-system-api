@@ -48,13 +48,6 @@ namespace InternalTrainingSystem.Core.DTOs
         public string? Description { get; set; }
     }
 
-    public class GetAllClassesRequest
-    {
-        public string? Search { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-    }
-
     public class ClassListDto
     {
         public int ClassId { get; set; }

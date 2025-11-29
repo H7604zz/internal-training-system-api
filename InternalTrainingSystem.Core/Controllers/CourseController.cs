@@ -26,12 +26,11 @@ namespace InternalTrainingSystem.Core.Controllers
         private readonly IHubContext<NotificationHub> _hub;
         private readonly ICategoryService _categoryService;
         private readonly ICourseHistoryService _courseHistoryService;
-        private readonly ICourseMaterialService _courseMaterialService;
         private readonly IClassService _classService;
 
         public CourseController(ICourseService courseService, ICourseEnrollmentService courseEnrollmentService,
             IHubContext<NotificationHub> hub, IUserService userService, INotificationService notificationService,
-            ICategoryService categoryService, ICourseMaterialService courseMaterialService, ICourseHistoryService courseHistoryService,
+            ICategoryService categoryService, ICourseHistoryService courseHistoryService,
             IClassService classService)
         {
             _courseService = courseService;
@@ -41,7 +40,6 @@ namespace InternalTrainingSystem.Core.Controllers
             _categoryService = categoryService;
             _notificationService = notificationService;
             _courseHistoryService = courseHistoryService;
-            _courseMaterialService = courseMaterialService;
             _classService = classService;
         }
 
