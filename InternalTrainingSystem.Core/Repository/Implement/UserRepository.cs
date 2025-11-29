@@ -251,7 +251,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                 int totalSessions = cls.Schedules.Count;
                 int absentDays = attendances.Count(a => a.Status == AttendanceConstants.Status.Absent);
 
-                double attendanceRate = totalSessions > 0
+                double absentRate = totalSessions > 0
                     ? Math.Round((double)absentDays / totalSessions * 100, 2)
                     : 0;
                 var enrollment = await _context.CourseEnrollments
@@ -265,7 +265,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
                     CourseName = cls.Course?.CourseName!,
                     TotalSessions = totalSessions,
                     AbsentDays = absentDays,
-                    AttendanceRate = attendanceRate,
+                    AbsentRate = absentRate,
 
                     Status = enrollment?.Status ?? EnrollmentConstants.Status.InProgress,
                     Score = enrollment?.Score,

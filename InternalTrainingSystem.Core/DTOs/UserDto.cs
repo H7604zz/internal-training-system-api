@@ -144,7 +144,7 @@ namespace InternalTrainingSystem.Core.DTOs
         // Attendance
         public int TotalSessions { get; set; }
         public int AbsentDays { get; set; }
-        public double AttendanceRate { get; set; }
+        public double AbsentRate { get; set; }
 
         // Course Enrollment Info
         public string Status { get; set; } = EnrollmentConstants.Status.InProgress;
