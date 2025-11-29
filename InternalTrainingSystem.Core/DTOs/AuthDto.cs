@@ -113,6 +113,12 @@ namespace InternalTrainingSystem.Core.DTOs
         public string NewRole { get; set; } = string.Empty;
     }
 
+    public class ToggleUserStatusDto
+    {
+        [Required]
+        public string UserId { get; set; } = string.Empty;
+    }
+
     public class ApiResponseDto
     {
         public bool Success { get; set; }

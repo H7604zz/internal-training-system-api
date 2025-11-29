@@ -1,4 +1,5 @@
-﻿using InternalTrainingSystem.Core.Common.Constants;
+﻿using Humanizer;
+using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
@@ -248,8 +249,13 @@ namespace InternalTrainingSystem.Core.Services.Implement
 
             var a = await _assignmentRepo.GetSingleByClassAsync(classId, ct);
             if (a == null) return null;
+            var submission = await _submissionRepo.GetByAssignmentAndUserSingleAsync(
+        a.AssignmentId,
+        userId,
+        ct
+    );
 
-            return new AssignmentDto
+            var dto = new AssignmentDto
             {
                 AssignmentId = a.AssignmentId,
                 ClassId = a.ClassId,
@@ -258,8 +264,24 @@ namespace InternalTrainingSystem.Core.Services.Implement
                 Description = a.Description,
                 StartAt = a.StartAt,
                 DueAt = a.DueAt,
-                AttachmentUrl = a.AttachmentUrl
+                AttachmentUrl = a.AttachmentUrl,
+                Submissions = new List<AssignmentSubmissionSummaryDto>()
             };
+
+            if (submission != null)
+            {
+                dto.Submissions.Add(new AssignmentSubmissionSummaryDto
+                {
+                    SubmissionId = submission.SubmissionId,
+                    UserId = submission.UserId,
+                    FullName = submission.User?.FullName ?? "",
+                    EmployeeId = submission.User?.EmployeeId ?? "N/A",
+                    SubmittedAt = submission.SubmittedAt,
+                    PublicUrl = submission.PublicUrl
+                });
+            }
+
+            return dto;
         }
 
         public async Task<AssignmentDto?> GetAssignmentByIdAsync(

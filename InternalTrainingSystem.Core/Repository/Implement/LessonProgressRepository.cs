@@ -61,6 +61,7 @@ namespace InternalTrainingSystem.Core.Repository.Implement
           && e.UserId == userId
           && (e.Status == EnrollmentConstants.Status.Enrolled 
             || e.Status == EnrollmentConstants.Status.Completed
+            || e.Status == EnrollmentConstants.Status.NotPass
             || e.Status == EnrollmentConstants.Status.InProgress),
         ct);
 

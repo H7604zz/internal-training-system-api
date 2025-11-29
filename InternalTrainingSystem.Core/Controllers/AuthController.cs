@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Wordprocessing;
+using InternalTrainingSystem.Core.Common.Constants;
 using InternalTrainingSystem.Core.DTOs;
 using InternalTrainingSystem.Core.Helper;
 using InternalTrainingSystem.Core.Models;
@@ -53,12 +54,21 @@ namespace InternalTrainingSystem.Core.Controllers
                 }
 
                 var user = await _userManager.FindByEmailAsync(request.Email);
-                if (user == null || !user.IsActive)
+                if (user == null)
                 {
                     return BadRequest(new LoginResponseDto
                     {
                         Success = false,
                         Message = "Sai tài khoản hoặc mật khẩu"
+                    });
+                }
+
+                if (!user.IsActive)
+                {
+                    return BadRequest(new LoginResponseDto
+                    {
+                        Success = false,
+                        Message = "Tài khoản của bạn đã bị khóa vĩnh viễn, hãy liên hệ với Admin của bạn để được giải quyết."
                     });
                 }
 
@@ -114,24 +124,6 @@ namespace InternalTrainingSystem.Core.Controllers
                             Message = $"Đăng nhập thành công nhưng tạo token thất bại: {tokenEx.Message}"
                         });
                     }
-                }
-
-                if (result.IsLockedOut)
-                {
-                    return BadRequest(new LoginResponseDto
-                    {
-                        Success = false,
-                        Message = "Tài khoản đã bị khóa do nhiều lần đăng nhập thất bại"
-                    });
-                }
-
-                if (result.IsNotAllowed)
-                {
-                    return BadRequest(new LoginResponseDto
-                    {
-                        Success = false,
-                        Message = "Tài khoản không được phép đăng nhập"
-                    });
                 }
 
                 return BadRequest(new LoginResponseDto
@@ -588,10 +580,48 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         /// <summary>
+        /// Khóa/Mở khóa tài khoản user (chỉ Admin)
+        /// </summary>
+        [HttpPost("toggle-status")]
+        [Authorize(Roles = UserRoles.Administrator)]
+        public async Task<IActionResult> ToggleUserStatus([FromBody] ToggleUserStatusDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest("Dữ liệu không hợp lệ");
+                }
+
+                var user = await _userManager.FindByIdAsync(request.UserId);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                // Toggle status
+                user.IsActive = !user.IsActive;
+                var result = await _userManager.UpdateAsync(user);
+
+                if (!result.Succeeded)
+                {
+                    return BadRequest("Không thể cập nhật trạng thái người dùng");
+                }
+
+                var statusText = user.IsActive ? "mở khóa" : "khóa";
+                return Ok($"Đã {statusText} tài khoản {user.FullName} thành công");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Có lỗi xảy ra: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Đổi role của user (chỉ Admin)
         /// </summary>
         [HttpPost("change-role")]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = UserRoles.Administrator)]
         public async Task<IActionResult> ChangeUserRole([FromBody] ChangeUserRoleDto request)
         {
             try
