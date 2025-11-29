@@ -5,6 +5,7 @@ using InternalTrainingSystem.Core.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using InternalTrainingSystem.Core.Common.Constants;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -31,6 +32,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Lấy thông tin quiz cho 1 attempt cụ thể (dùng khi đang làm bài)
         /// </summary>
         [HttpGet("{quizId:int}/attempt/{attemptId:int}")]
+        [Authorize(Roles = UserRoles.Staff)]
 		public async Task<ActionResult<QuizDetailDto>> GetQuizForAttempt(int quizId, int attemptId, [FromQuery] bool shuffleQuestions = true, [FromQuery] bool shuffleAnswers = true, CancellationToken ct = default)
 		{
 			try
@@ -48,6 +50,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Lấy kết quả attempt (bao gồm Score, MaxScore, Percentage, Status, IsPassed…)
         /// </summary>
         [HttpGet("attempt/{attemptId:int}/result")]
+        [Authorize(Roles = UserRoles.Staff)]
 		public async Task<ActionResult<AttemptResultDto>> Result(int attemptId, CancellationToken ct)
 		{
 			var res = await _quizService.GetAttemptResultAsync(attemptId, GetUserId(), ct);
@@ -58,6 +61,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Bắt đầu làm quiz theo lesson (lesson.Type = Quiz)
         /// </summary>
         [HttpPost("start/lesson/{lessonId:int}")]
+        [Authorize(Roles = UserRoles.Staff)]
 		public async Task<ActionResult<StartQuizResponse>> StartByLesson(int lessonId, CancellationToken ct)
 		{
 			var res = await _quizService.StartAttemptByLessonAsync(lessonId, GetUserId(), ct);
@@ -67,6 +71,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Nộp bài làm quiz theo lesson
         /// </summary>
         [HttpPost("submit/lesson/{lessonId:int}/attempt/{attemptId:int}")]
+        [Authorize(Roles = UserRoles.Staff)]
 		public async Task<ActionResult<AttemptResultDto>> SubmitByLesson(int lessonId, int attemptId, [FromBody] SubmitAttemptRequest req, CancellationToken ct)
 		{
 			var res = await _quizService.SubmitAttemptByLessonAsync(lessonId, attemptId, GetUserId(), req, ct);
@@ -76,6 +81,7 @@ namespace InternalTrainingSystem.Core.Controllers
 		/// Lấy info quiz theo lesson để Staff xem trước khi làm (MaxAttempts, PassingScore, TimeLimit, RemainingAttempts, IsLocked, HasPassed, BestScore…)
 		/// </summary>
 		[HttpGet("{quizId:int}/info")]
+		[Authorize(Roles = UserRoles.Staff)]
 		public async Task<ActionResult<QuizInfoDto>> GetQuizInfo(int quizId, CancellationToken ct = default)
 		{
 			var result = await _quizService.GetQuizInfoAsync(quizId, GetUserId(), ct);
@@ -90,6 +96,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="quizId"></param>
         /// <returns></returns>
         [HttpGet("{courseId}/{quizId}/history")]
+        [Authorize(Roles = UserRoles.Staff)]
 		public async Task<IActionResult> GetUserQuizHistory(int courseId, int quizId)
 		{
 			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -101,6 +108,7 @@ namespace InternalTrainingSystem.Core.Controllers
 		}
 
 		[HttpGet("{id:int}")]
+		[Authorize]
 		public async Task<IActionResult> GetDetail(
 			[FromRoute] int id,
 			CancellationToken ct = default)

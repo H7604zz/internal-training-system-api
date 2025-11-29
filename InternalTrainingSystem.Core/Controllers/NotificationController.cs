@@ -133,6 +133,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> GetNotifications([FromQuery] string? userId, [FromQuery] string? roleName)
         {
             var notifications = await _notificationService.GetNotificationsAsync(userId, roleName);

@@ -96,7 +96,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="classId"></param>
         /// <returns></returns>
         [HttpGet("{classId}/schedule")]
-        //[Authorize]
+        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.Staff + "," + UserRoles.Mentor)]
         public async Task<IActionResult> GetClassSchedule(int classId)
         {
             var result = await _classService.GetClassScheduleAsync(classId);
@@ -267,7 +267,8 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.DirectManager)]
+        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.DirectManager
+            + "," + UserRoles.BoardOfDirectors)]
         public async Task<ActionResult<PagedResult<ClassDto>>> GetClasses([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (page <= 0) page = 1;
@@ -307,6 +308,8 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="courseId"></param>
         /// <returns></returns>
         [HttpGet("by-course/{courseId}")]
+        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.DirectManager 
+                + "," + UserRoles.Mentor + "," + UserRoles.Staff)]
         public async Task<IActionResult> GetClassesByCourse(int courseId)
         {
             var classList = await _classService.GetClassesByCourseAsync(courseId);

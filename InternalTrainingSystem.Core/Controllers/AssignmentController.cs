@@ -82,10 +82,10 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Staff: chỉ xem nếu thuộc class (Class.Employees).
         /// </summary>
         [HttpGet("{classId:int}")]
-        [Authorize]
+        [Authorize(Roles = UserRoles.Mentor + "," + UserRoles.TrainingDepartment + "," + UserRoles.Staff)]
         public async Task<ActionResult<AssignmentDto?>> GetAssignment(
-    int classId,
-    CancellationToken ct)
+            int classId,
+            CancellationToken ct)
         {
             var userId = GetUserId();
 
@@ -110,7 +110,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Xem chi tiết 1 assignment thuộc class
         /// </summary>
         [HttpGet("{classId:int}/{assignmentId:int}")]
-        [Authorize]
+        [Authorize(Roles = UserRoles.Mentor + "," + UserRoles.TrainingDepartment)]
         public async Task<ActionResult<AssignmentDto>> GetAssignmentById(
             int classId,
             int assignmentId,
@@ -156,7 +156,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Mentor + Staff: xem chi tiết một submission
         /// </summary>
         [HttpGet("{assignmentId:int}/submissions/{submissionId:int}")]
-        [Authorize]
+        [Authorize(Roles = UserRoles.Mentor + "," + UserRoles.Staff)]
         public async Task<ActionResult<AssignmentSubmissionDetailDto>> GetSubmissionDetail(
             int assignmentId,
             int submissionId,

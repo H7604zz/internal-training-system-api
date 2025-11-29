@@ -152,16 +152,8 @@ namespace InternalTrainingSystem.Core.Controllers
             return Ok(new { courseId = id, isActive = dto.Status });
         }
 
-        //api này không cần thiết
-        [HttpGet("search")]
-        public async Task<ActionResult<PagedResult<CourseListItemDto>>> Search([FromQuery] CourseSearchRequest req,
-            CancellationToken ct)
-        {
-            var result = await _courseService.SearchAsync(req, ct);
-            return Ok(result);
-        }
-
-        [HttpGet()]
+        [HttpGet]
+        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.BoardOfDirectors + "," + UserRoles.DirectManager)]
         public async Task<ActionResult<PagedResult<CourseListItemDto>>> GetAllCoursesPaged([FromQuery] GetAllCoursesRequest request)
         {
             try
@@ -181,6 +173,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// </summary>
         /// <param name="id">CourseId</param>
         [HttpGet("{id:int}/detail")]
+        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.BoardOfDirectors + "," + UserRoles.Mentor)]
         public async Task<IActionResult> GetCourseDetail([FromRoute][Required] int id, CancellationToken ct)
         {
             var dto = await _courseService.GetCourseDetailAsync(id, ct);
@@ -191,7 +184,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpPatch("update-pending-status/{courseId}")]
-        //[Authorize(Roles = UserRoles.DirectManager)]
+        [Authorize(Roles = UserRoles.BoardOfDirectors)]
         public async Task<IActionResult> UpdatePendingCourseStatus(int courseId, [FromBody] UpdatePendingCourseStatusRequest request)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -227,7 +220,7 @@ namespace InternalTrainingSystem.Core.Controllers
 
         /// <summary>Chuyển 1 course từ Active -> Deleted (xóa mềm theo status).</summary>
         [HttpPatch("{courseId}")]
-
+        [Authorize(Roles = UserRoles.BoardOfDirectors)]
         public async Task<IActionResult> DeleteActiveCourse(int courseId, [FromBody] string? rejectReason)
         {
             if (string.IsNullOrWhiteSpace(rejectReason))
@@ -345,7 +338,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet("{courseId}/eligible-staff")]
-        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetEligibleUsers(int courseId, [FromQuery] UserSearchDto searchDto)
         {
             var result = _userService.GetEligibleStaff(courseId, searchDto);
@@ -423,7 +416,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet("{courseId}/confirmed-staff")]
-        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetConfirmedUsers(int courseId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var notice = _notificationService.GetNotificationByCourseAndType(courseId, NotificationType.CourseFinalized);
@@ -437,7 +430,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet("{courseId}/confirmed-staff/count")]
-        //[Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
+        [Authorize(Roles = UserRoles.DirectManager + "," + UserRoles.TrainingDepartment)]
         public IActionResult GetConfirmedUsersCount(int courseId)
         {
             var confirmedUsers = _userService.GetStaffConfirmCourse(courseId, 1, int.MaxValue);
@@ -447,7 +440,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpPost("{courseId}/finalize-enrollments")]
-        //[Authorize(Roles = UserRoles.DirectManager)]
+        [Authorize(Roles = UserRoles.DirectManager)]
         public async Task<IActionResult> FinalizeEnrollments(int courseId)
         {
             var course = await _courseService.GetCourseByCourseIdAsync(courseId);
@@ -493,66 +486,15 @@ namespace InternalTrainingSystem.Core.Controllers
 
         //HttpGet /categories
         [HttpGet("/categories")]
+        [Authorize]
         public ActionResult<IEnumerable<CourseCategory>> GetCategories()
         {
             var items = _categoryService.GetCategories();
             return Ok(items);
         }
 
-        [HttpPut("{id:int}/resubmit")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> ResubmitAfterReject(int id, [FromForm(Name = "metadata")] string metadata, [FromForm] List<IFormFile> lessonFiles, [FromForm] string? resubmitNote,
-        CancellationToken ct)
-        {
-            if (string.IsNullOrWhiteSpace(metadata))
-                return BadRequest(new { message = "metadata is required and must be a JSON string" });
-
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-
-            UpdateCourseMetadataDto? dto;
-            try
-            {
-                dto = JsonSerializer.Deserialize<UpdateCourseMetadataDto>(metadata, options);
-                if (dto == null) throw new JsonException();
-            }
-            catch
-            {
-                return BadRequest(new { message = "metadata is not valid JSON" });
-            }
-
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                        ?? User.Identity?.Name
-                        ?? "system";
-
-            try
-            {
-                var course = await _courseService.UpdateAndResubmitToPendingAsync(
-                    id, dto, lessonFiles, userId, resubmitNote, ct);
-
-                return Ok(new
-                {
-                    message = "Resubmitted to Pending successfully.",
-                    courseId = course.CourseId,
-                    status = course.Status,
-                    note = course.RejectionReason,
-                    updatedAt = course.UpdatedDate
-                });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, new { message = "Failed to resubmit course." });
-            }
-        }
-
-        //[Authorize(Roles = UserRoles.)]
         [HttpGet("histories")]
+        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.BoardOfDirectors + "," + UserRoles.Mentor)]
         public async Task<IActionResult> GetCourseHistoriesByIdAsync(int Id)
         {
             // Lấy danh sách lịch sử từ service
@@ -573,20 +515,7 @@ namespace InternalTrainingSystem.Core.Controllers
                 throw new UnauthorizedAccessException("No user id.");
             return uid;
         }
-        // lấy outline khóa học cho staff để học
-        [HttpGet("{courseId:int}/outline")]
-        [Authorize]
-        public async Task<ActionResult<CourseOutlineDto>> GetOutline(int courseId, CancellationToken ct)
-        {
-            try
-            {
-                var userId = RequireUserId();
-                var dto = await _courseService.GetOutlineAsync(courseId, userId, ct);
-                return Ok(dto);
-            }
-            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
-            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
-        }
+        
         // lấy tiến độ của staff
         [HttpGet("{courseId:int}/progress")]
         [Authorize]
@@ -603,7 +532,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
         // đánh dấu hoàn thành lesson
         [HttpPost("lessons/{lessonId:int}/complete")]
-        [Authorize]
+        [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> CompleteLesson(int lessonId, CancellationToken ct)
         {
             try
@@ -616,23 +545,10 @@ namespace InternalTrainingSystem.Core.Controllers
             catch (ArgumentException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return Conflict(ex.Message); } // 409 khi chưa pass quiz
         }
-        // hủy đánh dấu hoàn thành lesson
-        [HttpDelete("lessons/{lessonId:int}/complete")]
-        [Authorize]
-        public async Task<IActionResult> UndoCompleteLesson(int lessonId, CancellationToken ct)
-        {
-            try
-            {
-                var userId = RequireUserId();
-                await _courseService.UndoCompleteLessonAsync(lessonId, userId, ct);
-                return NoContent();
-            }
-            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
-            catch (ArgumentException ex) { return NotFound(new { message = ex.Message }); }
-        }
+        
         // trả toàn bộ course với tình trạng đã hoàn thành lesson hoặc chưa
         [HttpGet("{courseId:int}/learning")]
-        [Authorize]
+        [Authorize(Roles = UserRoles.Staff)]
         public async Task<ActionResult<CourseLearningDto>> GetLearning(int courseId, CancellationToken ct)
         {
             try
@@ -657,6 +573,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="courseId"></param>
         /// <returns></returns>
         [HttpGet("statistics/{courseId}")]
+        [Authorize(Roles = UserRoles.TrainingDepartment + "," + UserRoles.BoardOfDirectors + "," + UserRoles.Mentor)]
         public async Task<IActionResult> GetStatisticsCourse(int courseId)
         {
             var classList = await _classService.GetClassesByCourseAsync(courseId);

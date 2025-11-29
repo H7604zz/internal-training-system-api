@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
+using InternalTrainingSystem.Core.Common.Constants;
+using Microsoft.AspNetCore.Authorization;
 
 namespace InternalTrainingSystem.Core.Controllers
 {
@@ -16,13 +18,10 @@ namespace InternalTrainingSystem.Core.Controllers
     public class CertificateController : ControllerBase
     {
         private readonly ICertificateService _certificateService;
-        private readonly IUserService _userService;
 
-        public CertificateController(ICertificateService certificateService,
-            IUserService userServices, IConfiguration config)
+        public CertificateController(ICertificateService certificateService)
         {
             _certificateService = certificateService;
-            _userService = userServices;
         }
 
         /// <summary>
@@ -32,6 +31,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="userId"></param>
         /// <returns></returns>
         [HttpGet("{courseId}")]
+        [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> GetCertificateByCourseId(int courseId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -54,6 +54,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="courseId"></param>
         /// <returns></returns>
         [HttpGet("{courseId}/download")]
+        [Authorize(Roles = UserRoles.Staff)]
         public async Task<IActionResult> DownloadCertificate(int courseId)
         {
             try

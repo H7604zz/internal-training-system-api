@@ -18,6 +18,7 @@ namespace InternalTrainingSystem.Core.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = UserRoles.Administrator + "," + UserRoles.HR)]
         public async Task<IActionResult> GetDepartments()
         {
             var departments = await _departmentService.GetDepartmentsAsync();
@@ -31,7 +32,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet("detail")]
-        [Authorize(Roles = UserRoles.Administrator + "," + UserRoles.TrainingDepartment + "," + UserRoles.HR)]
+        [Authorize(Roles = UserRoles.Administrator + "," + UserRoles.HR)]
         public async Task<IActionResult> GetDepartmentDetail([FromQuery] DepartmentDetailRequestDto request)
         {
             var department = await _departmentService.GetDepartmentDetailAsync(request);
