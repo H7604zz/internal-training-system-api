@@ -280,7 +280,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Lấy danh sách tất cả người dùng
         /// </summary>
         [HttpGet]
-        [Authorize(Roles = UserRoles.Administrator)]
+        [Authorize(Roles = UserRoles.Administrator + "," + UserRoles.HR)]
         public async Task<IActionResult> GetAllUsers([FromQuery] GetUsersRequestDto request)
         {
             try
