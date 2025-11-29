@@ -18,7 +18,6 @@ namespace InternalTrainingSystem.Core.Repository.Implement
         public async Task<QuizAttempt> AddAttemptAsync(QuizAttempt attempt, CancellationToken ct = default)
         {
             _db.QuizAttempts.Add(attempt);
-            await _db.SaveChangesAsync(ct);
             return attempt;
         }
 
@@ -42,6 +41,15 @@ namespace InternalTrainingSystem.Core.Repository.Implement
             await _db.QuizAttempts
                 .Where(a => a.AttemptId == attemptId)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.Status, status), ct);
+        }
+        public Task<int> CountAttemptsTodayAsync(int quizId,string userId,DateTime from,DateTime to,CancellationToken ct)
+        {
+            return _db.QuizAttempts
+                .Where(x => x.QuizId == quizId
+                            && x.UserId == userId
+                            && x.StartTime >= from
+                            && x.StartTime < to)
+                .CountAsync(ct);
         }
     }
 }

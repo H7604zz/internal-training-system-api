@@ -393,10 +393,16 @@ namespace InternalTrainingSystem.Core.Services.Implement
             }
 
             // Create new attempt
-            var currentCount = attempts.Count;
-            var nextAttemptNumber = currentCount + 1;
+            var todayStart = now.Date;
+            var todayEnd = todayStart.AddDays(1);
+
+            var todayCount = await _attemptRepo.CountAttemptsTodayAsync(
+                quiz.QuizId, userId, todayStart, todayEnd, ct);
+
+            var nextAttemptNumber = todayCount + 1;
+
             if (nextAttemptNumber > quiz.MaxAttempts)
-                throw new InvalidOperationException("Bạn đã vượt quá số lần làm bài tối đa.");
+                throw new InvalidOperationException("Bạn đã hết số lượt làm bài hôm nay. Vui lòng quay lại vào ngày mai.");
 
             var maxScore = quiz.Questions.Where(q => q.IsActive).Sum(q => q.Points);
             var end = quiz.TimeLimit > 0 ? now.AddMinutes(quiz.TimeLimit) : (DateTime?)null;
