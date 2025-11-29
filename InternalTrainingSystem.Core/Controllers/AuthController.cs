@@ -621,7 +621,7 @@ namespace InternalTrainingSystem.Core.Controllers
         /// Đổi role của user (chỉ Admin)
         /// </summary>
         [HttpPost("change-role")]
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = UserRoles.Administrator)]
         public async Task<IActionResult> ChangeUserRole([FromBody] ChangeUserRoleDto request)
         {
             try
